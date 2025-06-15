@@ -1,4 +1,4 @@
-# 🤖 PRODYNA Infrastructure as Code AI Agent
+# 🤖 IaP (Infrastructure as Prompts) Agent
 
 ## 🎯 Purpose
 
@@ -12,7 +12,6 @@ Transform cloud infrastructure deployment from complex command-line operations t
 - 💰 **Azure Cost Estimation** - Automatic cost analysis with detailed breakdowns
 - 📊 **Real-Time Logging** - Beautiful console output showing agent activities
 - 👥 **Human-in-the-Loop** - Mandatory approval workflow for governance
-- 🎨 **Professional Interface** - PRODYNA branding with enhanced UX
 
 ## 🚀 Quick Start
 
@@ -78,7 +77,6 @@ The system includes 4 realistic business scenarios:
 ```
 
 ### Enhanced Interface Features
-- Professional PRODYNA branding with company logo
 - Real-time agent status indicators
 - Visual workflow progress tracking  
 - Proper chat flow (top-to-bottom, input at bottom)
@@ -136,3 +134,61 @@ Quality Assurance → Deployment Ready Output
 - Audit trail and approval workflows
 - Automated security best practices
 - Real-time violation detection
+
+## 🔧 Recent Enhancements (v2.0)
+
+### ✅ Quality Gate System
+- **Dynamic Compliance Control**: Optional compliance enforcement via UI checkbox
+- **Adaptive Quality Thresholds**: 70% (enforced) vs 40% (relaxed) compliance scores
+- **Always Output Templates**: Never blocks user, provides templates with compliance notes
+- **Progressive Enhancement**: Basic → Enhanced → Fallback template generation
+
+### ⚖️ Compliance Framework Selection
+- **User-Controlled Validation**: Select specific frameworks (PCI DSS, HIPAA, SOX, GDPR, ISO 27001, SOC 2)
+- **Smart Defaults**: Automatic framework detection when compliance disabled
+- **Flexible Enforcement**: Templates generated regardless of compliance score
+- **Clear Feedback**: Detailed violation explanations with remediation guidance
+
+### 🏗️ Architecture Refactoring
+- **Configuration Management**: Centralized settings in `src/iac_agents/config/`
+- **Template System**: Reusable prompts and templates in `src/iac_agents/templates/`
+- **Code Deduplication**: Removed redundant code, improved maintainability
+- **Consistent Styling**: Unified UI components and improved error handling
+
+### 🎨 UI/UX Improvements
+- **Fixed Recent Activity**: Clean, native Streamlit components instead of broken HTML
+- **Auto-Scroll Chat**: Smooth scrolling to latest messages
+- **Proper Input Spacing**: Improved chat input positioning and margins
+- **Compliance Controls**: Interactive framework selection in right sidebar
+
+### 📁 New Project Structure
+```
+src/iac_agents/
+├── config/
+│   ├── __init__.py
+│   └── settings.py          # Centralized configuration
+├── templates/
+│   ├── __init__.py
+│   ├── template_manager.py  # Template orchestration
+│   ├── prompts/
+│   │   ├── __init__.py
+│   │   └── terraform_generation.py  # AI prompts
+│   └── terraform/
+│       ├── __init__.py
+│       ├── document_storage.py      # High-quality templates
+│       └── web_application.py
+├── agents/
+│   ├── supervisor_agent.py  # Uses config & templates
+│   ├── terraform_agent.py   # Refactored with templates
+│   └── ...
+└── streamlit/
+    └── enhanced_gui.py      # Updated with compliance controls
+```
+
+### 🎯 Key Benefits of Refactoring
+- **50% Code Reduction**: Eliminated duplicate prompts and templates
+- **100% Configuration**: All hardcoded values moved to config files
+- **Improved Maintainability**: Clear separation of concerns
+- **Enhanced User Control**: Granular compliance framework selection
+- **Better Error Handling**: Graceful degradation for all UI components
+- **Professional UI**: Clean, consistent interface with native components

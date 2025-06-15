@@ -14,6 +14,8 @@ from .research_agent import TerraformResearchAgent
 from ..compliance_framework import ComplianceFramework
 from ..approval_workflow import TerraformApprovalWorkflow
 from ..logging_system import log_agent_start, log_agent_complete, log_user_update, log_info, log_warning
+from ..config.settings import config
+from ..templates.template_manager import template_manager
 
 load_dotenv()
 
@@ -84,7 +86,7 @@ class SupervisorAgent:
         else:
             return ChatOpenAI(model="gpt-4", temperature=0.2)
     
-    def process_user_request(self, user_input: str) -> str:
+    def process_user_request(self, user_input: str, compliance_settings: dict = None) -> str:
         """Main entry point for processing user infrastructure requests."""
         log_agent_start(self.name, "Processing user request", {"input_length": len(user_input)})
         
@@ -103,6 +105,9 @@ class SupervisorAgent:
                 stage_results={},
                 issues_found=[]
             )
+            
+            # Store compliance settings for use throughout workflow
+            self.compliance_settings = compliance_settings or {"enforce_compliance": False, "selected_frameworks": []}
             
             # Execute workflow
             log_user_update(f"📋 Created execution plan with {len(workflow_plan.stages)} stages")
@@ -124,21 +129,7 @@ class SupervisorAgent:
         """Analyze user requirements and create a workflow plan."""
         log_agent_start(self.name, "Analyzing requirements")
         
-        system_prompt = """You are an expert infrastructure architect. Analyze the user's requirements and determine:
-
-1. Complexity level (1-10): How complex is this infrastructure request?
-2. Required compliance frameworks: What compliance standards might apply?
-3. Estimated effort: How long might this take to implement?
-4. Key challenges: What potential issues should we watch for?
-
-Respond in JSON format:
-{
-    "complexity_score": <1-10>,
-    "compliance_frameworks": ["framework1", "framework2"],
-    "estimated_duration_minutes": <number>,
-    "key_challenges": ["challenge1", "challenge2"],
-    "infrastructure_type": "web_app|database|ml_platform|enterprise|other"
-}"""
+        system_prompt = template_manager.get_prompt("requirements_analysis")
         
         messages = [
             SystemMessage(content=system_prompt),
@@ -409,9 +400,17 @@ Respond in JSON format:
                 log_warning("Compliance Agent", f"Template regeneration failed: {str(e)}")
                 raise ValueError("No template available for validation and regeneration failed")
         
+        # Determine which frameworks to use for validation
+        if hasattr(self, 'compliance_settings') and self.compliance_settings.get("enforce_compliance"):
+            # Use user-selected frameworks
+            validation_frameworks = self.compliance_settings.get("selected_frameworks", [])
+        else:
+            # Use plan-determined frameworks (legacy behavior)
+            validation_frameworks = plan.compliance_frameworks
+        
         # Run compliance validation
         compliance_result = self.compliance_framework.validate_template(
-            template, plan.compliance_frameworks
+            template, validation_frameworks
         )
         
         # Basic template validation
@@ -421,11 +420,22 @@ Respond in JSON format:
         compliance_score = compliance_result.get("compliance_score", 0)
         violations_count = len(compliance_result.get("violations", []))
         
-        # Quality gate: Check if template meets minimum standards
-        minimum_score_threshold = 80.0
-        maximum_violations_threshold = 3
+        # Quality gate: Check if template meets minimum standards using config
+        if hasattr(self, 'compliance_settings') and self.compliance_settings.get("enforce_compliance"):
+            minimum_score_threshold = config.compliance.minimum_score_enforced
+            maximum_violations_threshold = config.compliance.max_violations_enforced
+        else:
+            minimum_score_threshold = config.compliance.minimum_score_relaxed
+            maximum_violations_threshold = config.compliance.max_violations_relaxed
         
-        if compliance_score < minimum_score_threshold or violations_count > maximum_violations_threshold:
+        # Only apply quality gates if compliance enforcement is enabled AND frameworks are selected
+        should_enforce_quality_gates = (
+            hasattr(self, 'compliance_settings') and 
+            self.compliance_settings.get("enforce_compliance") and 
+            len(validation_frameworks) > 0
+        )
+        
+        if should_enforce_quality_gates and (compliance_score < minimum_score_threshold or violations_count > maximum_violations_threshold):
             log_warning("Compliance Agent", f"Template quality below threshold: {compliance_score:.1f}% score, {violations_count} violations")
             log_user_update(f"⚠️ Template quality insufficient (Score: {compliance_score:.1f}%, Violations: {violations_count})")
             log_user_update("🔄 Attempting to improve template quality...")
@@ -464,11 +474,20 @@ Respond in JSON format:
                         compliance_score = compliance_result.get("compliance_score", 0)
                         violations_count = len(compliance_result.get("violations", []))
         
+        # Determine if quality gate passed based on compliance settings
+        if should_enforce_quality_gates:
+            quality_gate_passed = compliance_score >= minimum_score_threshold and violations_count <= maximum_violations_threshold
+        else:
+            # If compliance is not enforced, quality gate always passes (basic validation only)
+            quality_gate_passed = True
+        
         result = {
             "compliance_validation": compliance_result,
             "basic_validation": basic_validation,
             "overall_score": compliance_score,
-            "quality_gate_passed": compliance_score >= minimum_score_threshold and violations_count <= maximum_violations_threshold
+            "quality_gate_passed": quality_gate_passed,
+            "compliance_enforced": should_enforce_quality_gates,
+            "validation_frameworks": validation_frameworks
         }
         
         log_agent_complete("Compliance Agent", "Validation completed", {
@@ -710,40 +729,11 @@ Respond in JSON format:
         if any("network" in rule.lower() for rule in violation_types):
             enhancement_guidance.append("- Include proper network security configurations")
         
-        enhanced_prompt = f"""You are an expert Terraform engineer specializing in secure, compliant infrastructure.
-
-Generate a high-quality Terraform template that addresses these specific compliance requirements:
-{chr(10).join(enhancement_guidance)}
-
-Requirements: {requirements}
-
-CRITICAL REQUIREMENTS:
-1. Include all necessary security configurations
-2. Add encryption for all data at rest and in transit  
-3. Implement proper access controls and least privilege
-4. Include monitoring, logging, and alerting
-5. Add backup and disaster recovery where applicable
-6. Use secure network configurations
-7. Include proper tagging for governance
-
-Respond with only the HCL code block, no explanatory text:
-
-```hcl
-terraform {{
-  required_providers {{
-    azurerm = {{
-      source  = "hashicorp/azurerm"
-      version = "~>3.0"
-    }}
-  }}
-}}
-
-provider "azurerm" {{
-  features {{}}
-}}
-
-# Your secure, compliant resources here
-```"""
+        enhanced_prompt = template_manager.get_prompt(
+            "enhanced_terraform",
+            enhancement_guidance=chr(10).join(enhancement_guidance),
+            requirements=requirements
+        )
 
         try:
             messages = [
@@ -771,500 +761,14 @@ provider "azurerm" {{
         """Get a high-quality fallback template that meets compliance standards."""
         log_agent_start("Fallback Template Provider", "Providing high-quality fallback template")
         
-        requirements_lower = requirements.lower()
+        template = template_manager.get_fallback_template(requirements)
         
-        # Document storage template with high compliance
-        if any(keyword in requirements_lower for keyword in ["document", "file", "storage", "legal", "retention"]):
-            template = '''terraform {
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~>3.0"
-    }
-  }
-}
-
-provider "azurerm" {
-  features {
-    key_vault {
-      purge_soft_delete_on_destroy    = true
-      recover_soft_deleted_key_vaults = true
-    }
-  }
-}
-
-resource "azurerm_resource_group" "main" {
-  name     = "legal-documents-rg"
-  location = "East US"
-  
-  tags = {
-    Environment   = "production"
-    Purpose       = "legal-document-storage"
-    Compliance    = "SOX,GDPR,PCI-DSS"
-    DataClass     = "confidential"
-    Backup        = "required"
-    Retention     = "7-years"
-  }
-}
-
-resource "azurerm_key_vault" "main" {
-  name                = "legal-docs-kv-${random_string.suffix.result}"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
-  tenant_id           = data.azurerm_client_config.current.tenant_id
-  sku_name            = "premium"
-
-  enabled_for_disk_encryption     = true
-  enabled_for_deployment          = false
-  enabled_for_template_deployment = false
-  purge_protection_enabled        = true
-  soft_delete_retention_days      = 90
-
-  network_acls {
-    default_action = "Deny"
-    bypass         = "AzureServices"
-  }
-
-  tags = azurerm_resource_group.main.tags
-}
-
-resource "azurerm_storage_account" "main" {
-  name                          = "legaldocs${random_string.suffix.result}"
-  resource_group_name           = azurerm_resource_group.main.name
-  location                      = azurerm_resource_group.main.location
-  account_tier                  = "Standard"
-  account_replication_type      = "GRS"
-  min_tls_version              = "TLS1_2"
-  allow_nested_items_to_be_public = false
-  enable_https_traffic_only     = true
-
-  blob_properties {
-    versioning_enabled = true
-    delete_retention_policy {
-      days = 2555  # 7 years
-    }
-    container_delete_retention_policy {
-      days = 2555
-    }
-  }
-
-  network_rules {
-    default_action = "Deny"
-    bypass         = ["AzureServices"]
-  }
-
-  identity {
-    type = "SystemAssigned"
-  }
-
-  tags = azurerm_resource_group.main.tags
-}
-
-resource "azurerm_storage_account_customer_managed_key" "main" {
-  storage_account_id = azurerm_storage_account.main.id
-  key_vault_id       = azurerm_key_vault.main.id
-  key_name           = azurerm_key_vault_key.storage.name
-}
-
-resource "azurerm_key_vault_key" "storage" {
-  name         = "storage-encryption-key"
-  key_vault_id = azurerm_key_vault.main.id
-  key_type     = "RSA"
-  key_size     = 2048
-
-  key_opts = [
-    "decrypt",
-    "encrypt",
-    "sign",
-    "unwrapKey",
-    "verify",
-    "wrapKey",
-  ]
-
-  depends_on = [azurerm_key_vault_access_policy.storage]
-}
-
-resource "azurerm_key_vault_access_policy" "storage" {
-  key_vault_id = azurerm_key_vault.main.id
-  tenant_id    = data.azurerm_client_config.current.tenant_id
-  object_id    = azurerm_storage_account.main.identity[0].principal_id
-
-  key_permissions = [
-    "Get",
-    "UnwrapKey",
-    "WrapKey"
-  ]
-}
-
-resource "azurerm_storage_container" "documents" {
-  name                  = "legal-documents"
-  storage_account_name  = azurerm_storage_account.main.name
-  container_access_type = "private"
-}
-
-resource "azurerm_log_analytics_workspace" "main" {
-  name                = "legal-docs-logs"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
-  sku                 = "PerGB2018"
-  retention_in_days   = 2555  # 7 years
-
-  tags = azurerm_resource_group.main.tags
-}
-
-resource "azurerm_monitor_diagnostic_setting" "storage" {
-  name                       = "storage-diagnostics"
-  target_resource_id         = azurerm_storage_account.main.id
-  log_analytics_workspace_id = azurerm_log_analytics_workspace.main.id
-
-  enabled_log {
-    category = "StorageRead"
-  }
-  enabled_log {
-    category = "StorageWrite"
-  }
-  enabled_log {
-    category = "StorageDelete"
-  }
-
-  metric {
-    category = "Transaction"
-    enabled  = true
-  }
-}
-
-resource "azurerm_backup_vault" "main" {
-  name                = "legal-docs-backup-vault"
-  resource_group_name = azurerm_resource_group.main.name
-  location            = azurerm_resource_group.main.location
-  datastore_type      = "VaultStore"
-  redundancy          = "GeoRedundant"
-
-  tags = azurerm_resource_group.main.tags
-}
-
-resource "random_string" "suffix" {
-  length  = 8
-  special = false
-  upper   = false
-}
-
-data "azurerm_client_config" "current" {}'''
-            
-            log_agent_complete("Fallback Template Provider", "High-quality document storage template provided")
-            return template
-        
-        # Web application template with high compliance  
-        elif any(keyword in requirements_lower for keyword in ["web", "app", "application", "website"]):
-            template = '''terraform {
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~>3.0"
-    }
-  }
-}
-
-provider "azurerm" {
-  features {}
-}
-
-resource "azurerm_resource_group" "main" {
-  name     = "secure-webapp-rg"
-  location = "East US"
-  
-  tags = {
-    Environment = "production"
-    Purpose     = "secure-web-application"
-    Compliance  = "SOX,GDPR,PCI-DSS"
-    Monitoring  = "enabled"
-  }
-}
-
-resource "azurerm_virtual_network" "main" {
-  name                = "webapp-vnet"
-  address_space       = ["10.0.0.0/16"]
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
-
-  tags = azurerm_resource_group.main.tags
-}
-
-resource "azurerm_subnet" "webapp" {
-  name                 = "webapp-subnet"
-  resource_group_name  = azurerm_resource_group.main.name
-  virtual_network_name = azurerm_virtual_network.main.name
-  address_prefixes     = ["10.0.1.0/24"]
-}
-
-resource "azurerm_network_security_group" "webapp" {
-  name                = "webapp-nsg"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
-
-  security_rule {
-    name                       = "HTTPS"
-    priority                   = 1001
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "443"
-    source_address_prefix      = "*"
-    destination_address_prefix = "*"
-  }
-
-  tags = azurerm_resource_group.main.tags
-}
-
-resource "azurerm_app_service_plan" "main" {
-  name                = "secure-webapp-plan"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
-
-  sku {
-    tier = "Standard"
-    size = "S1"
-  }
-
-  tags = azurerm_resource_group.main.tags
-}
-
-resource "azurerm_app_service" "main" {
-  name                = "secure-webapp-${random_string.suffix.result}"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
-  app_service_plan_id = azurerm_app_service_plan.main.id
-  https_only          = true
-
-  site_config {
-    always_on                 = true
-    min_tls_version          = "1.2"
-    ftps_state               = "Disabled"
-    http2_enabled            = true
-    use_32_bit_worker_process = false
-  }
-
-  identity {
-    type = "SystemAssigned"
-  }
-
-  logs {
-    detailed_error_messages_enabled = true
-    failed_request_tracing_enabled   = true
-    
-    http_logs {
-      file_system {
-        retention_in_days = 30
-        retention_in_mb   = 35
-      }
-    }
-  }
-
-  tags = azurerm_resource_group.main.tags
-}
-
-resource "azurerm_log_analytics_workspace" "main" {
-  name                = "webapp-logs"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
-  sku                 = "PerGB2018"
-  retention_in_days   = 90
-
-  tags = azurerm_resource_group.main.tags
-}
-
-resource "azurerm_application_insights" "main" {
-  name                = "webapp-insights"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
-  workspace_id        = azurerm_log_analytics_workspace.main.id
-  application_type    = "web"
-
-  tags = azurerm_resource_group.main.tags
-}
-
-resource "random_string" "suffix" {
-  length  = 8
-  special = false
-  upper   = false
-}'''
-
-            log_agent_complete("Fallback Template Provider", "High-quality web application template provided")
-            return template
-        
-        # Default secure infrastructure template
-        else:
-            template = '''terraform {
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~>3.0"
-    }
-  }
-}
-
-provider "azurerm" {
-  features {}
-}
-
-resource "azurerm_resource_group" "main" {
-  name     = "secure-infrastructure-rg"
-  location = "East US"
-  
-  tags = {
-    Environment = "production"
-    Purpose     = "secure-infrastructure"
-    Compliance  = "enterprise-standards"
-    ManagedBy   = "terraform"
-    Monitoring  = "enabled"
-  }
-}
-
-resource "azurerm_log_analytics_workspace" "main" {
-  name                = "infrastructure-logs"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
-  sku                 = "PerGB2018"
-  retention_in_days   = 90
-
-  tags = azurerm_resource_group.main.tags
-}'''
-
-            log_agent_complete("Fallback Template Provider", "High-quality default template provided")
-            return template
+        log_agent_complete("Fallback Template Provider", "High-quality fallback template provided")
+        return template
     
     def _generate_fallback_template(self, user_input: str) -> str:
         """Generate a fallback template when extraction fails."""
-        user_input_lower = user_input.lower()
-        
-        # Document storage template
-        if any(keyword in user_input_lower for keyword in ["document", "file", "storage", "legal"]):
-            return '''terraform {
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~>3.0"
-    }
-  }
-}
-
-provider "azurerm" {
-  features {}
-}
-
-resource "azurerm_resource_group" "main" {
-  name     = "documents-rg"
-  location = "East US"
-  
-  tags = {
-    Environment = "production"
-    Purpose     = "document-storage"
-  }
-}
-
-resource "azurerm_storage_account" "documents" {
-  name                     = "documentsstorageacct"
-  resource_group_name      = azurerm_resource_group.main.name
-  location                 = azurerm_resource_group.main.location
-  account_tier             = "Standard"
-  account_replication_type = "GRS"
-  
-  blob_properties {
-    versioning_enabled = true
-    delete_retention_policy {
-      days = 365
-    }
-  }
-  
-  tags = {
-    Environment = "production"
-    Purpose     = "document-storage"
-  }
-}
-
-resource "azurerm_storage_container" "documents" {
-  name                  = "documents"
-  storage_account_name  = azurerm_storage_account.documents.name
-  container_access_type = "private"
-}'''
-        
-        # Web application template
-        elif any(keyword in user_input_lower for keyword in ["web", "app", "application", "website"]):
-            return '''terraform {
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~>3.0"
-    }
-  }
-}
-
-provider "azurerm" {
-  features {}
-}
-
-resource "azurerm_resource_group" "main" {
-  name     = "webapp-rg"
-  location = "East US"
-  
-  tags = {
-    Environment = "production"
-    Purpose     = "web-application"
-  }
-}
-
-resource "azurerm_app_service_plan" "main" {
-  name                = "webapp-plan"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
-  
-  sku {
-    tier = "Standard"
-    size = "S1"
-  }
-}
-
-resource "azurerm_app_service" "main" {
-  name                = "webapp-service"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
-  app_service_plan_id = azurerm_app_service_plan.main.id
-  
-  site_config {
-    always_on = true
-  }
-  
-  tags = {
-    Environment = "production"
-    Purpose     = "web-application"
-  }
-}'''
-        
-        # Default basic template
-        else:
-            return '''terraform {
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~>3.0"
-    }
-  }
-}
-
-provider "azurerm" {
-  features {}
-}
-
-resource "azurerm_resource_group" "main" {
-  name     = "main-rg"
-  location = "East US"
-  
-  tags = {
-    Environment = "production"
-    ManagedBy   = "terraform"
-  }
-}'''
+        return template_manager.get_fallback_template(user_input)
     
     def _should_continue_after_error(self, stage: WorkflowStage, error: str) -> bool:
         """Determine if workflow should continue after an error."""
@@ -1284,39 +788,52 @@ resource "azurerm_resource_group" "main" {
         quality_gate_passed = validation_results.get("quality_gate_passed", False)
         compliance_score = validation_results.get("overall_score", 0)
         
-        # Only proceed with final response if quality gates are met
+        # Always provide template, but with appropriate warnings if quality gates not met
         if not quality_gate_passed:
             log_warning(self.name, f"Quality gates not met - compliance score: {compliance_score:.1f}%")
-            log_user_update("❌ Template quality insufficient for deployment recommendation")
-            return ("## ⚠️ Template Quality Review Required\n\n"
-                   f"The generated template achieved a compliance score of {compliance_score:.1f}%, "
-                   "which is below the minimum threshold for production deployment.\n\n"
-                   "**Recommended Actions:**\n"
-                   "1. Review security and compliance requirements\n"
-                   "2. Consider consulting with infrastructure security team\n"
-                   "3. Request manual template review and enhancement\n\n"
-                   "Please refine your requirements or contact support for assistance.")
+            log_user_update(f"⚠️ Template generated with compliance score: {compliance_score:.1f}%")
         
         response_parts = []
         
-        # Add template if generated and quality gates passed
+        # Always add template if generated, with appropriate quality indicators
         if "template_generation" in results:
             template = results["template_generation"].get("template", "")
             if template:
-                response_parts.append(f"## 🏗️ Production-Ready Infrastructure Template\n\n```hcl\n{template}\n```\n")
+                if quality_gate_passed:
+                    response_parts.append(f"## 🏗️ Production-Ready Infrastructure Template\n\n```hcl\n{template}\n```\n")
+                else:
+                    response_parts.append(f"## ⚠️ Infrastructure Template (Compliance Review Needed)\n\n```hcl\n{template}\n```\n")
         
-        # Add validation results with quality confirmation
+        # Add validation results with appropriate status
         if "validation_and_compliance" in results:
             validation = results["validation_and_compliance"]
             compliance_score = validation.get("overall_score", 0)
             violations_count = len(validation.get("compliance_validation", {}).get("violations", []))
             
-            response_parts.append(f"## ✅ Quality Validation Passed\n\n")
-            response_parts.append(f"**Compliance Score:** {compliance_score:.1f}% ✅\n")
-            response_parts.append(f"**Security Violations:** {violations_count} (within acceptable limits)\n")
-            response_parts.append(f"**Quality Gate:** PASSED ✅\n\n")
+            if quality_gate_passed:
+                response_parts.append(f"## ✅ Quality Validation Passed\n\n")
+                response_parts.append(f"**Compliance Score:** {compliance_score:.1f}% ✅\n")
+                response_parts.append(f"**Security Violations:** {violations_count} (within acceptable limits)\n")
+                response_parts.append(f"**Quality Gate:** PASSED ✅\n\n")
+            else:
+                response_parts.append(f"## ⚠️ Compliance Review Required\n\n")
+                response_parts.append(f"**Compliance Score:** {compliance_score:.1f}% ⚠️\n")
+                response_parts.append(f"**Security Violations:** {violations_count} (requires attention)\n")
+                response_parts.append(f"**Quality Gate:** REVIEW NEEDED ⚠️\n\n")
+                
+                # Add specific violation details for low-compliance templates
+                compliance_data = validation.get("compliance_validation", {})
+                violations = compliance_data.get("violations", [])
+                if violations:
+                    response_parts.append(f"**Key Compliance Issues:**\n")
+                    for i, violation in enumerate(violations[:3]):  # Show top 3 violations
+                        if hasattr(violation, 'rule_name') and hasattr(violation, 'description'):
+                            response_parts.append(f"{i+1}. {violation.rule_name}: {violation.description}\n")
+                    if len(violations) > 3:
+                        response_parts.append(f"   ... and {len(violations) - 3} more issues\n")
+                    response_parts.append("\n")
             
-            # Add specific compliance details
+            # Add framework compliance details
             compliance_data = validation.get("compliance_validation", {})
             if compliance_data.get("frameworks_validated"):
                 frameworks = ", ".join(compliance_data.get("frameworks_validated", []))
@@ -1329,32 +846,49 @@ resource "azurerm_resource_group" "main" {
                 cost_summary = cost_data.get('summary', 'Cost analysis completed')
                 response_parts.append(f"## 💰 Cost Estimate\n\n{cost_summary}\n")
         
-        # Add approval information with quality confirmation
+        # Add approval information with appropriate status
         if "approval_preparation" in results:
             approval_data = results["approval_preparation"]
             approval_summary = approval_data.get("approval_summary", "")
-            response_parts.append(f"## ⚖️ Ready for Approval\n\n")
-            response_parts.append(f"✅ **Template Quality Verified** - Ready for production deployment consideration\n\n")
+            if quality_gate_passed:
+                response_parts.append(f"## ⚖️ Ready for Approval\n\n")
+                response_parts.append(f"✅ **Template Quality Verified** - Ready for production deployment consideration\n\n")
+            else:
+                response_parts.append(f"## ⚖️ Approval Required (with Compliance Review)\n\n")
+                response_parts.append(f"⚠️ **Additional Review Needed** - Template requires compliance assessment before deployment\n\n")
             response_parts.append(f"{approval_summary}\n")
         
-        # Add workflow summary with quality metrics
+        # Add workflow summary with appropriate quality metrics
         completed_stages = len(self.current_workflow.completed_stages) if self.current_workflow else 0
         issues_count = len(self.current_workflow.issues_found) if self.current_workflow else 0
         
         response_parts.append(f"## 📊 Workflow Summary\n\n")
         response_parts.append(f"- **Stages Completed:** {completed_stages}/{len(plan.stages)} ✅\n")
-        response_parts.append(f"- **Quality Gate Status:** PASSED ✅\n")
+        
+        if quality_gate_passed:
+            response_parts.append(f"- **Quality Gate Status:** PASSED ✅\n")
+            response_parts.append(f"- **Ready for Production:** ✅ YES\n")
+        else:
+            response_parts.append(f"- **Quality Gate Status:** REVIEW NEEDED ⚠️\n")
+            response_parts.append(f"- **Ready for Production:** ⚠️ REQUIRES COMPLIANCE REVIEW\n")
+            
         response_parts.append(f"- **Issues Found:** {issues_count}\n")
         response_parts.append(f"- **Estimated Complexity:** {plan.complexity_score}/10\n")
-        response_parts.append(f"- **Ready for Production:** ✅ YES\n")
         
-        # Add next steps for high-quality templates
+        # Add appropriate next steps based on quality gate status
         response_parts.append(f"\n## 🚀 Next Steps\n\n")
-        response_parts.append(f"1. ✅ **Template Quality Verified** - Meets enterprise security standards\n")
-        response_parts.append(f"2. 🔍 **Review Deployment Plan** - Verify resources match requirements\n")
-        response_parts.append(f"3. 🧪 **Test in Development** - Deploy to development environment first\n")
-        response_parts.append(f"4. ⚖️ **Submit for Approval** - Ready for stakeholder review\n")
-        response_parts.append(f"5. 🚀 **Deploy to Production** - Execute deployment after approval\n")
+        if quality_gate_passed:
+            response_parts.append(f"1. ✅ **Template Quality Verified** - Meets enterprise security standards\n")
+            response_parts.append(f"2. 🔍 **Review Deployment Plan** - Verify resources match requirements\n")
+            response_parts.append(f"3. 🧪 **Test in Development** - Deploy to development environment first\n")
+            response_parts.append(f"4. ⚖️ **Submit for Approval** - Ready for stakeholder review\n")
+            response_parts.append(f"5. 🚀 **Deploy to Production** - Execute deployment after approval\n")
+        else:
+            response_parts.append(f"1. ⚠️ **Review Compliance Issues** - Address security violations listed above\n")
+            response_parts.append(f"2. 🔍 **Security Assessment** - Have security team review template\n")
+            response_parts.append(f"3. 🧪 **Test in Development** - Deploy to development environment first\n")
+            response_parts.append(f"4. 🔧 **Template Enhancement** - Consider implementing recommended security measures\n")
+            response_parts.append(f"5. ⚖️ **Submit for Review** - Requires additional approval due to compliance gaps\n")
         
         final_response = "\n".join(response_parts)
         

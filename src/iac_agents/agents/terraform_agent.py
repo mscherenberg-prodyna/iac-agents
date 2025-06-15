@@ -6,6 +6,8 @@ from langchain_openai import AzureChatOpenAI, ChatOpenAI
 from langchain.schema import HumanMessage, SystemMessage
 from dotenv import load_dotenv
 from .research_agent import TerraformResearchAgent
+from ..config.settings import config
+from ..templates.template_manager import template_manager
 
 load_dotenv()
 
@@ -31,10 +33,10 @@ class TerraformAgent:
                 api_key=azure_key,
                 azure_deployment=azure_deployment,
                 api_version=os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview"),
-                temperature=0.1
+                temperature=config.agents.terraform_agent_temperature
             )
         else:
-            return ChatOpenAI(model="gpt-4", temperature=0.1)
+            return ChatOpenAI(model="gpt-4", temperature=config.agents.terraform_agent_temperature)
         
     def generate_response(self, user_input: str) -> str:
         """Generate a response to user infrastructure requirements."""
@@ -71,39 +73,7 @@ class TerraformAgent:
     
     def _generate_terraform_template(self, requirements: str, research_context: str = "") -> str:
         """Generate Terraform template based on requirements and optional research context."""
-        system_prompt = """You are an expert Terraform engineer. Generate valid Terraform templates based on user requirements.
-
-Rules:
-1. Always include provider configuration
-2. Use descriptive resource names with consistent naming conventions
-3. Include necessary variables and outputs
-4. Add comments explaining complex configurations
-5. Follow Terraform best practices for security and maintainability
-6. Focus on Azure resources unless another provider is specified
-
-RESPONSE FORMAT:
-You must respond with a brief description followed by a single HCL code block. Do not nest code blocks or include explanatory text inside the HCL block.
-
-Start your response with a description, then provide the code in this exact format:
-
-```hcl
-terraform {
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~>3.0"
-    }
-  }
-}
-
-provider "azurerm" {
-  features {}
-}
-
-# Your resources here
-```
-
-Do not include nested code blocks or extra formatting."""
+        system_prompt = template_manager.get_prompt("terraform_system")
 
         if research_context:
             system_prompt += f"\n\nAdditional context from Terraform documentation:\n{research_context}"
