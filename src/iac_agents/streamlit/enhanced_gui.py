@@ -9,10 +9,10 @@ import streamlit as st
 from iac_agents.agents import SupervisorAgent
 from iac_agents.approval_workflow import TerraformApprovalWorkflow
 from iac_agents.config.settings import config
-from iac_agents.config.ui_styles import AUTO_SCROLL_JS, MAIN_CSS
 from iac_agents.deployment_automation import TerraformDeploymentManager
 from iac_agents.logging_system import agent_logger
-from iac_agents.showcase_scenarios import SHOWCASE_SCENARIOS, get_all_scenario_titles
+from iac_agents.templates.scenario_loader import scenario_loader
+from iac_agents.templates.ui_loader import ui_loader
 
 
 def load_image_as_base64(image_path: str) -> str:
@@ -35,7 +35,7 @@ def setup_page_config():
     )
 
     # Apply custom CSS styling
-    st.markdown(MAIN_CSS, unsafe_allow_html=True)
+    st.markdown(ui_loader.get_main_css(), unsafe_allow_html=True)
 
 
 def display_header():
@@ -225,7 +225,7 @@ I can help you transform your infrastructure requirements into production-ready 
 
     # Create a scrollable container for messages with unique key
     message_container = st.container()
-    
+
     # Add a unique element that we can target for scrolling
     scroll_target_key = f"scroll_target_{len(st.session_state.messages)}"
 
@@ -234,11 +234,13 @@ I can help you transform your infrastructure requirements into production-ready 
         for _, message in enumerate(st.session_state.messages):
             with st.chat_message(message["role"]):
                 st.markdown(message["content"])
-        
+
         # Add an invisible element at the bottom to scroll to
         if len(st.session_state.messages) > 1:
-            st.markdown(f'<div id="{scroll_target_key}" style="height: 1px;"></div>', 
-                       unsafe_allow_html=True)
+            st.markdown(
+                f'<div id="{scroll_target_key}" style="height: 1px;"></div>',
+                unsafe_allow_html=True,
+            )
 
     # Auto-scroll to bottom when new messages are added
     if len(st.session_state.messages) > 1:  # More than just welcome message
@@ -248,7 +250,7 @@ I can help you transform your infrastructure requirements into production-ready 
         // Enhanced autoscroll with multiple strategies
         function enhancedScrollToBottom() {{
             var scrolled = false;
-            
+
             // Strategy 1: Scroll to our target element
             try {{
                 var target = parent.document.getElementById('{scroll_target_key}');
@@ -259,7 +261,7 @@ I can help you transform your infrastructure requirements into production-ready 
             }} catch(e) {{
                 console.log('Target element scroll failed:', e);
             }}
-            
+
             // Strategy 2: Original chat message scrolling
             if (!scrolled) {{
                 try {{
@@ -273,7 +275,7 @@ I can help you transform your infrastructure requirements into production-ready 
                     console.log('Chat message scroll failed:', e);
                 }}
             }}
-            
+
             // Strategy 3: Scroll main container
             if (!scrolled) {{
                 try {{
@@ -286,7 +288,7 @@ I can help you transform your infrastructure requirements into production-ready 
                     console.log('Main container scroll failed:', e);
                 }}
             }}
-            
+
             // Strategy 4: Window scroll
             if (!scrolled) {{
                 try {{
@@ -295,10 +297,10 @@ I can help you transform your infrastructure requirements into production-ready 
                     console.log('Window scroll failed:', e);
                 }}
             }}
-            
+
             return scrolled;
         }}
-        
+
         // Execute with multiple timing attempts
         setTimeout(enhancedScrollToBottom, 50);
         setTimeout(enhancedScrollToBottom, 200);
@@ -324,7 +326,7 @@ def display_showcase_scenarios():
     """Display demo scenarios in sidebar."""
     st.sidebar.markdown("### 🎬 Demo Scenarios")
 
-    scenario_titles = get_all_scenario_titles()
+    scenario_titles = scenario_loader.get_all_scenario_titles()
     selected_scenario = st.sidebar.selectbox(
         "Choose a business scenario:",
         ["Custom Request"] + scenario_titles,
@@ -332,7 +334,8 @@ def display_showcase_scenarios():
     )
 
     if selected_scenario != "Custom Request":
-        for scenario_key, scenario in SHOWCASE_SCENARIOS.items():
+        scenarios = scenario_loader.get_all_scenarios()
+        for scenario_key, scenario in scenarios.items():
             if scenario["title"] == selected_scenario:
                 with st.sidebar.expander("📋 Scenario Details", expanded=False):
                     st.markdown(f"**Context:** {scenario['business_context']}")
@@ -457,18 +460,14 @@ def main():
                         st.session_state.messages.append(
                             {"role": "assistant", "content": error_msg}
                         )
-                    
+
                     # Force rerun to trigger autoscroll with new messages
                     st.rerun()
 
     with col2:
         # Compliance Framework Selection
         st.markdown(
-            """
-        <div class="sidebar-section">
-            <h3>⚖️ Compliance Settings</h3>
-        </div>
-        """,
+            ui_loader.format_sidebar_section("⚖️ Compliance Settings", ""),
             unsafe_allow_html=True,
         )
 
@@ -516,11 +515,7 @@ def main():
 
         # System metrics with improved styling
         st.markdown(
-            """
-        <div class="sidebar-section">
-            <h3>📈 System Metrics</h3>
-        </div>
-        """,
+            ui_loader.format_sidebar_section("📈 System Metrics", ""),
             unsafe_allow_html=True,
         )
 
@@ -535,42 +530,24 @@ def main():
             )
 
             # Display metrics with custom styling
-            st.markdown(
-                f"""
-            <div class="metric-container">
-                <span class="metric-label">Total Messages</span>
-                <span class="metric-value">{total_messages}</span>
-            </div>
-            <div class="metric-container">
-                <span class="metric-label">Active Agents</span>
-                <span class="metric-value">{active_agents_count}</span>
-            </div>
-            <div class="metric-container">
-                <span class="metric-label">Session Status</span>
-                <span class="metric-value">🟢 Active</span>
-            </div>
-            """,
-                unsafe_allow_html=True,
+            metrics_html = (
+                ui_loader.format_metric_container("Total Messages", str(total_messages))
+                + ui_loader.format_metric_container(
+                    "Active Agents", str(active_agents_count)
+                )
+                + ui_loader.format_metric_container("Session Status", "🟢 Active")
             )
+            st.markdown(metrics_html, unsafe_allow_html=True)
 
         except Exception:
             st.markdown(
-                """
-            <div class="metric-container">
-                <span class="metric-label">System Status</span>
-                <span class="metric-value">🟡 Initializing</span>
-            </div>
-            """,
+                ui_loader.format_metric_container("System Status", "🟡 Initializing"),
                 unsafe_allow_html=True,
             )
 
         # Recent logs with improved display
         st.markdown(
-            """
-        <div class="sidebar-section">
-            <h3>📝 Console Log</h3>
-        </div>
-        """,
+            ui_loader.format_sidebar_section("📝 Console Log", ""),
             unsafe_allow_html=True,
         )
 

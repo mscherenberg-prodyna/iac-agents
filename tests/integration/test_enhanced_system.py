@@ -1,6 +1,6 @@
 """Test script to demonstrate the enhanced agent system with console logging."""
 
-import time
+
 from src.iac_agents.agents.supervisor_agent import SupervisorAgent
 from src.iac_agents.logging_system import log_user_update
 
@@ -10,12 +10,12 @@ def test_enhanced_system():
     print("🎬 Testing Enhanced Infrastructure as Code AI Agent")
     print("=" * 60)
     print()
-    
+
     log_user_update("Starting enhanced system test")
-    
+
     # Initialize supervisor agent
     supervisor = SupervisorAgent()
-    
+
     # Test simple request
     test_request = """
     I need a simple web application deployment for a startup:
@@ -26,14 +26,14 @@ def test_enhanced_system():
     - Auto-scaling capability
     - Estimated budget: $200/month
     """
-    
+
     print("🤖 Processing test request...")
     print(f"Request: {test_request.strip()}")
     print()
-    
+
     # Process request (this will show console logging)
     response = supervisor.process_user_request(test_request)
-    
+
     print()
     print("✅ Test completed!")
     print()

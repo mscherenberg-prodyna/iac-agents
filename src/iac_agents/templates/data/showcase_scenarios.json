@@ -1,0 +1,75 @@
+{
+  "startup_mvp": {
+    "title": "🚀 Startup MVP Environment",
+    "business_context": "A startup needs to quickly deploy their MVP to validate product-market fit",
+    "user_request": "\nWe're a fintech startup launching our MVP. We need:\n\nBusiness Requirements:\n- Secure web application for 1000+ concurrent users\n- PCI DSS compliance for payment processing\n- 99.9% uptime SLA\n- Auto-scaling for traffic spikes\n- Separate dev/staging/prod environments\n\nTechnical Needs:\n- React frontend with global CDN\n- Node.js API with load balancing\n- PostgreSQL database with encryption\n- Redis for session management\n- Application monitoring and alerts\n- CI/CD pipeline integration\n\nBudget: $500/month initially, scalable to $2000/month\n\nTimeline: Production ready in 3 days\n        ",
+    "expected_resources": [
+      "Azure App Service (Premium tier)",
+      "Azure Database for PostgreSQL (Flexible Server)",
+      "Azure Redis Cache",
+      "Azure Application Gateway with WAF",
+      "Azure CDN",
+      "Azure Key Vault",
+      "Application Insights",
+      "Azure DevOps integration"
+    ],
+    "compliance_requirements": ["PCI DSS", "GDPR", "SOC 2"],
+    "estimated_cost": "$450-750/month"
+  },
+  "enterprise_migration": {
+    "title": "🏢 Enterprise Application Migration",
+    "business_context": "Large enterprise migrating legacy on-premises application to Azure",
+    "user_request": "\nEnterprise Migration Project:\n\nCurrent State:\n- Legacy .NET application on Windows Server 2012\n- SQL Server 2016 database (500GB)\n- 50,000 daily active users\n- 24/7 operations requirement\n- Complex AD integration\n\nMigration Requirements:\n- Zero-downtime migration strategy\n- Enhanced security and compliance\n- Cost optimization (target 30% reduction)\n- Disaster recovery across regions\n- Advanced monitoring and analytics\n\nGovernance:\n- Must comply with SOX, HIPAA, ISO 27001\n- Approved vendor list constraints\n- Network isolation requirements\n- Audit trail for all changes\n\nGo-live date: 6 weeks\n        ",
+    "expected_resources": [
+      "Azure Virtual Machines (multiple tiers)",
+      "Azure SQL Database (Premium)",
+      "Azure Active Directory Premium",
+      "Azure Site Recovery",
+      "Azure Backup",
+      "Network Security Groups",
+      "Azure Firewall",
+      "Log Analytics Workspace",
+      "Azure Monitor",
+      "Azure Policy"
+    ],
+    "compliance_requirements": ["SOX", "HIPAA", "ISO 27001", "PCI DSS"],
+    "estimated_cost": "$3,500-5,000/month"
+  },
+  "ai_ml_platform": {
+    "title": "🤖 AI/ML Research Platform",
+    "business_context": "Research team needs scalable ML infrastructure for model training and inference",
+    "user_request": "\nAI Research Platform Requirements:\n\nResearch Needs:\n- Large language model training (up to 100B parameters)\n- Computer vision model development\n- Multi-GPU training capabilities\n- Jupyter notebook environment\n- Data lake for 10TB+ datasets\n\nInfrastructure:\n- GPU clusters (V100/A100)\n- High-performance storage\n- Container orchestration\n- Model versioning and registry\n- Automated ML pipelines\n\nCollaboration:\n- Multi-tenant access for 20+ researchers\n- Resource quotas and billing tracking\n- Integration with popular ML frameworks\n- Experiment tracking and visualization\n\nSecurity:\n- Sensitive research data protection\n- IP compliance and access controls\n- Secure data sharing capabilities\n        ",
+    "expected_resources": [
+      "Azure Machine Learning",
+      "Azure Kubernetes Service with GPU nodes",
+      "Azure Data Lake Storage Gen2",
+      "Azure Container Registry",
+      "Azure Databricks",
+      "Azure Cognitive Services",
+      "Azure Storage (Premium SSD)",
+      "Azure Virtual Network",
+      "Azure Active Directory B2B"
+    ],
+    "compliance_requirements": ["ISO 27001", "Research Data Protection"],
+    "estimated_cost": "$8,000-15,000/month"
+  },
+  "ecommerce_scale": {
+    "title": "🛒 E-commerce Black Friday Preparation",
+    "business_context": "E-commerce company preparing for 10x traffic surge during Black Friday",
+    "user_request": "\nBlack Friday Infrastructure Scaling:\n\nCurrent Baseline:\n- 10,000 concurrent users normal load\n- $2M monthly revenue\n- Existing Azure App Service setup\n\nBlack Friday Projections:\n- 100,000+ concurrent users expected\n- 50x increase in transaction volume\n- Payment processing must never fail\n- Image/video content delivery globally\n\nRequirements:\n- Auto-scaling from 10 to 1000+ instances\n- Global load distribution\n- Database read replicas\n- CDN for static content\n- Real-time inventory management\n- Fraud detection integration\n\nBusiness Critical:\n- Zero downtime during peak hours\n- Sub-second page load times globally\n- PCI DSS compliance for payments\n- Real-time analytics dashboard\n\nDuration: Scale up 1 week before, scale down 1 week after\n        ",
+    "expected_resources": [
+      "Azure App Service (Premium/Isolated tiers)",
+      "Azure Database for MySQL (Hyperscale)",
+      "Azure Redis Cache (Premium)",
+      "Azure CDN Premium",
+      "Azure Traffic Manager",
+      "Azure Application Gateway",
+      "Azure Functions for serverless scaling",
+      "Azure Event Grid",
+      "Azure Cosmos DB",
+      "Azure Monitor with custom metrics"
+    ],
+    "compliance_requirements": ["PCI DSS", "GDPR"],
+    "estimated_cost": "$15,000-25,000/month during peak"
+  }
+}

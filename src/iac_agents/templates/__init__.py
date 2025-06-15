@@ -1,6 +1,17 @@
 """Templates module for IAC Agents."""
 
-from .template_manager import template_manager, TemplateManager
-from .template_loader import template_loader, TemplateLoader
+from .scenario_loader import ScenarioLoader, scenario_loader
+from .template_loader import TemplateLoader, template_loader
+from .template_manager import TemplateManager, template_manager
+from .ui_loader import UIStyleLoader, ui_loader
 
-__all__ = ["template_manager", "TemplateManager", "template_loader", "TemplateLoader"]
+__all__ = [
+    "template_manager",
+    "TemplateManager",
+    "template_loader",
+    "TemplateLoader",
+    "ui_loader",
+    "UIStyleLoader",
+    "scenario_loader",
+    "ScenarioLoader",
+]

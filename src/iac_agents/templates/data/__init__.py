@@ -1,0 +1,1 @@
+"""Data templates directory."""

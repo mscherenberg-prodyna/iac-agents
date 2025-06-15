@@ -6,7 +6,7 @@ from src.iac_agents.agents.supervisor_agent import SupervisorAgent
 def test_extraction_with_sample():
     """Test extraction with a sample response that mimics the issue."""
     supervisor = SupervisorAgent()
-    
+
     # Simulate the problematic response format
     sample_response = """## Generated Terraform Template
 
@@ -45,17 +45,17 @@ resource "azurerm_storage_account" "main" {
     print("🧪 Testing extraction logic with sample nested code blocks")
     print(f"Sample response length: {len(sample_response)} characters")
     print()
-    
+
     # Test extraction
     extracted = supervisor._extract_template(sample_response)
-    
+
     print(f"✅ Extracted template length: {len(extracted)} characters")
     print()
     print("📋 Extracted content:")
     print("-" * 40)
     print(extracted)
     print("-" * 40)
-    
+
     # Check if it's valid terraform
     is_valid = supervisor._is_valid_terraform_content(extracted)
     print(f"\n🔍 Is valid Terraform content: {is_valid}")
