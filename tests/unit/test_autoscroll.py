@@ -43,15 +43,15 @@ def test_css_scroll_improvements():
 
 
 @pytest.mark.unit
-def test_enhanced_gui_integration():
-    """Test that enhanced GUI properly integrates autoscroll."""
+def test_gui_integration():
+    """Test that GUI properly integrates autoscroll."""
     # This would normally require a full Streamlit test environment
     # For now, just verify imports work
-    from src.iac_agents.streamlit.enhanced_gui import display_chat_interface
+    from src.iac_agents.streamlit.gui import main
 
     # Test that the function exists and is callable
-    assert callable(display_chat_interface)
-    assert display_chat_interface.__name__ == "display_chat_interface"
+    assert callable(main)
+    assert main.__name__ == "main"
 
 
 # Tests can be run with: python -m pytest tests/unit/test_autoscroll.py -v

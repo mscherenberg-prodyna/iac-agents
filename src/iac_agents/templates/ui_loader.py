@@ -14,11 +14,6 @@ class UIStyleLoader:
         css_content = self._loader.load_css_file("main_styles")
         return f"<style>\n{css_content}\n</style>"
 
-    def get_auto_scroll_js(self) -> str:
-        """Get the auto-scroll JavaScript wrapped in HTML script tags."""
-        js_content = self._loader.load_js_file("auto_scroll")
-        return f"<script>\n{js_content}\n</script>"
-
     def get_sidebar_section_template(self) -> str:
         """Get the sidebar section HTML template."""
         return self._loader.load_html_template("sidebar_section")

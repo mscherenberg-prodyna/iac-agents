@@ -94,12 +94,12 @@ class TemplateLoader:
 
     def load_css_file(self, css_name: str) -> str:
         """Load a CSS file."""
-        file_path = f"html/{css_name}.css"
+        file_path = f"css/{css_name}.css"
         return self.load_text_file(file_path)
 
     def load_js_file(self, js_name: str) -> str:
         """Load a JavaScript file."""
-        file_path = f"html/{js_name}.js"
+        file_path = f"js/{js_name}.js"
         return self.load_text_file(file_path)
 
     def load_showcase_scenarios(self) -> Dict[str, Any]:
