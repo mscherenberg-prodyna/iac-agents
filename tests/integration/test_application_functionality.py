@@ -46,10 +46,19 @@ def test_template_manager():
     # Test that prompts are loaded
     assert len(tm._prompt_templates) > 0
     
-    # Test prompt retrieval
-    if "terraform_generation" in tm._prompt_templates:
-        prompt = tm.get_prompt("terraform_generation", user_request="test")
-        assert "test" in prompt
+    # Test prompt retrieval with the correct template names
+    expected_prompts = ["terraform_system", "enhanced_terraform", "requirements_analysis"]
+    for prompt_name in expected_prompts:
+        if prompt_name in tm._prompt_templates:
+            prompt = tm.get_prompt(prompt_name)
+            assert prompt, f"Prompt {prompt_name} should not be empty"
+    
+    # Test terraform templates are loaded
+    assert len(tm._terraform_templates) > 0
+    expected_templates = ["document_storage", "web_application", "default"]
+    for template_name in expected_templates:
+        template = tm.get_terraform_template(template_name)
+        assert template, f"Template {template_name} should not be empty"
 
 @pytest.mark.integration
 def test_supervisor_agent():

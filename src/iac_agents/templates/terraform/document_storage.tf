@@ -1,6 +1,4 @@
-"""High-quality Terraform templates for document storage solutions."""
-
-DOCUMENT_STORAGE_TEMPLATE = '''terraform {
+terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
@@ -174,4 +172,4 @@ resource "random_string" "suffix" {
   upper   = false
 }
 
-data "azurerm_client_config" "current" {}'''
+data "azurerm_client_config" "current" {}

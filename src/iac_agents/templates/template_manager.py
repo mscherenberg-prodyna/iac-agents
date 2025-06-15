@@ -1,30 +1,27 @@
 """Template manager for prompts and Terraform templates."""
 
 from typing import Dict, List, Optional
-from .prompts.terraform_generation import (
-    TERRAFORM_SYSTEM_PROMPT,
-    ENHANCED_TERRAFORM_PROMPT_TEMPLATE,
-    REQUIREMENTS_ANALYSIS_PROMPT
-)
-from .terraform.document_storage import DOCUMENT_STORAGE_TEMPLATE
-from .terraform.web_application import WEB_APPLICATION_TEMPLATE, DEFAULT_TEMPLATE
+from .template_loader import template_loader
 
 
 class TemplateManager:
     """Manages prompts and Terraform templates."""
     
     def __init__(self):
-        self._prompt_templates = {
-            "terraform_system": TERRAFORM_SYSTEM_PROMPT,
-            "enhanced_terraform": ENHANCED_TERRAFORM_PROMPT_TEMPLATE,
-            "requirements_analysis": REQUIREMENTS_ANALYSIS_PROMPT
-        }
-        
-        self._terraform_templates = {
-            "document_storage": DOCUMENT_STORAGE_TEMPLATE,
-            "web_application": WEB_APPLICATION_TEMPLATE,
-            "default": DEFAULT_TEMPLATE
-        }
+        self._prompt_templates = None
+        self._terraform_templates = None
+        self._load_templates()
+    
+    def _load_templates(self):
+        """Load all templates from files."""
+        try:
+            self._prompt_templates = template_loader.load_all_prompt_templates()
+            self._terraform_templates = template_loader.load_all_terraform_templates()
+        except Exception as e:
+            # Fallback to empty dictionaries if loading fails
+            self._prompt_templates = {}
+            self._terraform_templates = {}
+            print(f"Warning: Failed to load templates: {e}")
     
     def get_prompt(self, prompt_name: str, **kwargs) -> str:
         """Get a prompt template with optional formatting."""
@@ -62,11 +59,15 @@ class TemplateManager:
     
     def list_available_prompts(self) -> List[str]:
         """List all available prompt templates."""
-        return list(self._prompt_templates.keys())
+        return template_loader.list_available_prompt_templates()
     
     def list_available_terraform_templates(self) -> List[str]:
         """List all available Terraform templates."""
-        return list(self._terraform_templates.keys())
+        return template_loader.list_available_terraform_templates()
+    
+    def reload_templates(self):
+        """Reload all templates from files."""
+        self._load_templates()
 
 
 # Global template manager instance

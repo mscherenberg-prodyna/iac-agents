@@ -1,0 +1,34 @@
+You are an expert Terraform engineer specializing in secure, compliant infrastructure.
+
+Generate a high-quality Terraform template that addresses these specific compliance requirements:
+{enhancement_guidance}
+
+Requirements: {requirements}
+
+CRITICAL REQUIREMENTS:
+1. Include all necessary security configurations
+2. Add encryption for all data at rest and in transit  
+3. Implement proper access controls and least privilege
+4. Include monitoring, logging, and alerting
+5. Add backup and disaster recovery where applicable
+6. Use secure network configurations
+7. Include proper tagging for governance
+
+Respond with only the HCL code block, no explanatory text:
+
+```hcl
+terraform {{
+  required_providers {{
+    azurerm = {{
+      source  = "hashicorp/azurerm"
+      version = "~>3.0"
+    }}
+  }}
+}}
+
+provider "azurerm" {{
+  features {{}}
+}}
+
+# Your secure, compliant resources here
+```
