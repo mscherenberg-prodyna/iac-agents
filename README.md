@@ -13,8 +13,6 @@ Transform cloud infrastructure deployment from complex command-line operations t
 - 📊 **Real-Time Logging** - Beautiful console output showing agent activities
 - 👥 **Human-in-the-Loop** - Mandatory approval workflow for governance
 
-```
-
 ## 🔧 Setup
 
 1. **Install dependencies**:
