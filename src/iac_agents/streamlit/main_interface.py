@@ -6,11 +6,19 @@ from iac_agents.agents import SupervisorAgent
 from iac_agents.approval_workflow import TerraformApprovalWorkflow
 from iac_agents.deployment_automation import TerraformDeploymentManager
 
-from .components import (add_message, display_agent_status,
-                         display_chat_interface, display_cost_estimation,
-                         display_header, display_metrics,
-                         display_showcase_scenarios, display_workflow_progress,
-                         setup_page_config)
+from .components import (
+    add_message,
+    display_agent_status,
+    display_chat_interface,
+    display_cost_estimation,
+    display_header,
+    display_showcase_scenarios,
+    display_workflow_progress,
+    render_compliance_settings,
+    render_deployment_config,
+    render_system_metrics,
+    setup_page_config,
+)
 
 
 class StreamlitInterface:
@@ -42,9 +50,6 @@ class StreamlitInterface:
         # Showcase scenarios
         scenario_request = display_showcase_scenarios()
 
-        # System metrics
-        display_metrics()
-
         # Cost estimation
         display_cost_estimation(st.session_state.get("cost_data", {}))
 
@@ -55,8 +60,20 @@ class StreamlitInterface:
         # Header
         display_header()
 
-        # Chat interface
-        return display_chat_interface()
+        # Create two-column layout: chat + right sidebar
+        col1, col2 = st.columns([3, 1])
+
+        with col1:
+            # Chat interface
+            user_input = display_chat_interface()
+
+        with col2:
+            # Right sidebar with compliance settings and deployment config
+            render_compliance_settings()
+            render_deployment_config()
+            render_system_metrics()
+
+        return user_input
 
     def process_user_input(self, user_input: str):
         """Process user input through the agent system."""

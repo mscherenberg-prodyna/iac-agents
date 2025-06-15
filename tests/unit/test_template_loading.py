@@ -1,6 +1,5 @@
 """Unit tests for the refactored template system."""
 
-
 import pytest
 
 from src.iac_agents.templates.template_loader import TemplateLoader

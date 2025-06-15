@@ -25,9 +25,9 @@ Transform cloud infrastructure deployment from complex command-line operations t
    - Deployment: **AZURE_OPENAI_DEPLOYMENT**
    - API key: **AZURE_OPENAI_API_KEY**
 
-3. **Run demo**:
+3. **Run Streamlit Web Interface**:
    ```bash
-   poetry run python run_enhanced_demo.py
+   poetry run streamlit run src/iac_agents/streamlit/gui.py
    ```
 
 ## 🏗️ Architecture
