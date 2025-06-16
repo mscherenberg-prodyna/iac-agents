@@ -3,12 +3,17 @@
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph
 
-from .nodes import (approval_preparation_node, cost_estimation_node,
-                    requirements_analysis_node, research_planning_node,
-                    template_generation_node, validation_compliance_node)
+from .nodes import (
+    approval_preparation_node,
+    cost_estimation_node,
+    requirements_analysis_node,
+    research_planning_node,
+    template_generation_node,
+    validation_compliance_node,
+)
 from .response_compiler import compile_final_response
 from .routing import should_estimate_costs, should_research
-from .state import InfrastructureStateDict
+from .state import ComplianceSettings, InfrastructureState, InfrastructureStateDict
 
 
 class InfrastructureWorkflow:
@@ -65,8 +70,6 @@ class InfrastructureWorkflow:
 
     def execute(self, user_input: str, compliance_settings: dict = None) -> dict:
         """Execute the workflow with user input."""
-        from .state import ComplianceSettings
-
         # Create Pydantic compliance settings if provided
         pydantic_compliance = None
         if compliance_settings:
@@ -84,8 +87,6 @@ class InfrastructureWorkflow:
                 )
 
         # Create initial state as Pydantic model
-        from .state import InfrastructureState
-
         try:
             initial_state = InfrastructureState(
                 user_input=user_input,

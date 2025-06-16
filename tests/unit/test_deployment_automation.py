@@ -8,6 +8,7 @@ from src.iac_agents.deployment_automation import (
     DeploymentStatus,
     TerraformDeploymentManager,
 )
+from tests.utils import create_deployment_status
 
 
 def test_deployment_manager_initialization():
@@ -21,16 +22,7 @@ def test_deployment_manager_initialization():
 
 def test_deployment_status_creation():
     """Test DeploymentStatus dataclass creation."""
-    status = DeploymentStatus(
-        deployment_id="test-123",
-        status="planning",
-        resources_created=[],
-        resources_modified=[],
-        resources_destroyed=[],
-        output_values={},
-        logs=[],
-        started_at=datetime.now(),
-    )
+    status = create_deployment_status("test-123", "planning")
     assert status.deployment_id == "test-123"
     assert status.status == "planning"
     assert isinstance(status.logs, list)
@@ -69,16 +61,7 @@ def test_deployment_manager_get_status():
     manager = TerraformDeploymentManager()
 
     # Manually add a deployment status
-    test_status = DeploymentStatus(
-        deployment_id="test-123",
-        status="planned",
-        resources_created=[],
-        resources_modified=[],
-        resources_destroyed=[],
-        output_values={},
-        logs=[],
-        started_at=datetime.now(),
-    )
+    test_status = create_deployment_status("test-123", "planned")
     manager.deployments["test-123"] = test_status
 
     # Get status
@@ -168,16 +151,7 @@ def test_terraform_command_execution(mock_run):
     mock_run.return_value = Mock(returncode=0, stdout="Success output", stderr="")
 
     manager = TerraformDeploymentManager()
-    test_status = DeploymentStatus(
-        deployment_id="test-123",
-        status="planning",
-        resources_created=[],
-        resources_modified=[],
-        resources_destroyed=[],
-        output_values={},
-        logs=[],
-        started_at=datetime.now(),
-    )
+    test_status = create_deployment_status("test-123", "planning")
 
     result = manager._run_terraform_command("/tmp/test", ["version"], test_status)
 

@@ -1,13 +1,20 @@
 """Unit tests for logging system."""
 
+import threading
+import time
 from datetime import datetime
 from unittest.mock import patch
 
 
-from src.iac_agents.logging_system import (AgentLogger, log_agent_complete,
-                                           log_agent_start, log_error,
-                                           log_info, log_user_update,
-                                           log_warning)
+from src.iac_agents.logging_system import (
+    AgentLogger,
+    log_agent_complete,
+    log_agent_start,
+    log_error,
+    log_info,
+    log_user_update,
+    log_warning,
+)
 
 
 def test_log_user_update():
@@ -212,8 +219,6 @@ def test_agent_timing():
 
 def test_concurrent_logging():
     """Test that logging works with concurrent calls."""
-    import threading
-    import time
 
     def log_worker(worker_id):
         for i in range(10):

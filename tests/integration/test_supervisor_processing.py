@@ -5,7 +5,10 @@ from src.iac_agents.logging_system import log_user_update
 
 
 def test_basic_request_processing():
-    """Test that supervisor agent can process simple infrastructure requests and return appropriate responses with rate limiting protection."""
+    """Test that supervisor agent can process simple infrastructure requests.
+
+    Returns appropriate responses with rate limiting protection.
+    """
     log_user_update("Testing simple infrastructure request")
 
     supervisor = SupervisorAgent()

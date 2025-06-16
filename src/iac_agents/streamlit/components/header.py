@@ -43,7 +43,8 @@ def display_header():
     with col1:
         st.markdown("# 🤖 Infrastructure as Prompts AI Agent")
         st.markdown(
-            "**Transform infrastructure deployment from complex command-line operations to simple conversational requests.**"
+            "**Transform infrastructure deployment from complex command-line "
+            "operations to simple conversational requests.**"
         )
 
     with col2:

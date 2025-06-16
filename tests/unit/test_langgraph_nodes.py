@@ -4,19 +4,23 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from src.iac_agents.agents.nodes.approval_preparation import \
-    approval_preparation_node
+from src.iac_agents.agents.nodes.approval_preparation import approval_preparation_node
 from src.iac_agents.agents.nodes.cost_estimation import cost_estimation_node
 from src.iac_agents.agents.nodes.requirements_analysis import (
-    _determine_workflow_stages, _estimate_complexity,
-    _extract_compliance_requirements, _extract_components,
-    requirements_analysis_node)
+    _determine_workflow_stages,
+    _estimate_complexity,
+    _extract_compliance_requirements,
+    _extract_components,
+    requirements_analysis_node,
+)
 from src.iac_agents.agents.nodes.template_generation import (
-    _extract_template_from_response, _is_valid_terraform_content,
-    template_generation_node)
-from src.iac_agents.agents.nodes.validation_compliance import \
-    validation_compliance_node
+    _extract_template_from_response,
+    _is_valid_terraform_content,
+    template_generation_node,
+)
+from src.iac_agents.agents.nodes.validation_compliance import validation_compliance_node
 from src.iac_agents.agents.state import WorkflowStage
+from src.iac_agents.templates.template_loader import TemplateLoader
 
 
 def test_requirements_analysis_node():
@@ -124,7 +128,7 @@ def test_template_generation_node(mock_terraform_agent):
     mock_agent = Mock()
     mock_agent.generate_response.return_value = """
     Here's your template:
-    
+
     ```hcl
     resource "azurerm_storage_account" "test" {
       name = "mystorageaccount"
@@ -153,7 +157,7 @@ def test_extract_template_from_response():
     """Test template extraction from agent response."""
     response_with_hcl = """
     Here's your infrastructure template:
-    
+
     ```hcl
     resource "azurerm_storage_account" "test" {
       name                     = "mystorageaccount"
@@ -163,7 +167,7 @@ def test_extract_template_from_response():
       account_replication_type = "LRS"
     }
     ```
-    
+
     This template creates a basic storage account.
     """
 
@@ -180,7 +184,7 @@ def test_extract_template_from_response():
     # Test with generic code block
     response_generic = """
     Here's the template:
-    
+
     ```
     resource "azurerm_storage_account" "test" {
       name = "test"
@@ -195,11 +199,8 @@ def test_extract_template_from_response():
 
 def test_is_valid_terraform_content():
     """Test Terraform content validation."""
-    valid_terraform = """
-    resource "azurerm_storage_account" "test" {
-      name = "test"
-    }
-    """
+    loader = TemplateLoader()
+    valid_terraform = loader.load_terraform_template("test_basic_terraform")
 
     invalid_content = "This is just text"
     partial_content = "resource {"
@@ -267,15 +268,9 @@ def test_validation_compliance_node_no_template():
 
 def test_cost_estimation_node():
     """Test cost estimation node."""
+    loader = TemplateLoader()
     state = {
-        "final_template": """
-        resource "azurerm_storage_account" "test" {
-          name = "test"
-        }
-        resource "azurerm_virtual_machine" "vm" {
-          name = "testvm"
-        }
-        """,
+        "final_template": loader.load_terraform_template("test_multiple_vm_storage"),
         "completed_stages": [
             "requirements_analysis",
             "template_generation",

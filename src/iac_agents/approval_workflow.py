@@ -224,7 +224,7 @@ Please address the concerns and submit a new request with the revised template.
 """
 
     def _request_changes(
-        self, request: ApprovalRequest, reviewer: str, notes: Optional[str]
+        self, request: ApprovalRequest, _reviewer: str, notes: Optional[str]
     ) -> str:
         """Request changes to deployment."""
         request.reviewer_notes = notes

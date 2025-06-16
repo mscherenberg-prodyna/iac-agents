@@ -3,7 +3,7 @@
 from typing import Any, Dict, List
 
 from ...logging_system import log_agent_complete, log_agent_start
-from ..state import InfrastructureStateDict, WorkflowStage
+from ..state import InfrastructureStateDict, RequirementsAnalysisResult, WorkflowStage
 
 
 def requirements_analysis_node(
@@ -32,8 +32,6 @@ def requirements_analysis_node(
     }
 
     # Create proper RequirementsAnalysisResult
-    from ..state import RequirementsAnalysisResult
-
     analysis_result = RequirementsAnalysisResult(
         status="completed",
         data=extracted_info,

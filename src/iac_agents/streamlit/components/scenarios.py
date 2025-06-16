@@ -38,7 +38,7 @@ def display_showcase_scenarios():
 def get_scenario_by_title(title: str):
     """Get a scenario by its title."""
     scenarios = scenario_loader.get_all_scenarios()
-    for scenario_key, scenario in scenarios.items():
+    for _, scenario in scenarios.items():
         if scenario["title"] == title:
             return scenario
     return None

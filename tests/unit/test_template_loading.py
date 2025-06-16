@@ -3,8 +3,7 @@
 import pytest
 
 from src.iac_agents.templates.template_loader import TemplateLoader
-from src.iac_agents.templates.template_manager import (TemplateManager,
-                                                       template_manager)
+from src.iac_agents.templates.template_manager import TemplateManager, template_manager
 
 
 @pytest.mark.unit

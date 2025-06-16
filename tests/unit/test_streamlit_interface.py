@@ -5,8 +5,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from src.iac_agents.agents import SupervisorAgent
-from src.iac_agents.streamlit.components.sidebar import \
-    display_workflow_progress
+from src.iac_agents.streamlit.components.sidebar import display_workflow_progress
 from src.iac_agents.streamlit.main_interface import StreamlitInterface
 
 

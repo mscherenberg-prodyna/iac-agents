@@ -33,6 +33,23 @@ class TerraformDeploymentManager:
         self.working_dir = working_directory or tempfile.mkdtemp(prefix="terraform_")
         self.deployments: Dict[str, DeploymentStatus] = {}
 
+    def _create_deployment_status(
+        self, deployment_id: str, status: str = "planning", **kwargs
+    ) -> DeploymentStatus:
+        """Create a new DeploymentStatus instance with defaults."""
+        defaults = {
+            "deployment_id": deployment_id,
+            "status": status,
+            "resources_created": [],
+            "resources_modified": [],
+            "resources_destroyed": [],
+            "output_values": {},
+            "logs": [],
+            "started_at": datetime.now(),
+        }
+        defaults.update(kwargs)
+        return DeploymentStatus(**defaults)
+
     def create_deployment_workspace(
         self, deployment_id: str, template: str, variables: Dict[str, str] = None
     ) -> str:
@@ -81,16 +98,7 @@ terraform {{
             deployment_id, template, variables
         )
 
-        deployment_status = DeploymentStatus(
-            deployment_id=deployment_id,
-            status="planning",
-            resources_created=[],
-            resources_modified=[],
-            resources_destroyed=[],
-            output_values={},
-            logs=[],
-            started_at=datetime.now(),
-        )
+        deployment_status = self._create_deployment_status(deployment_id, "planning")
 
         self.deployments[deployment_id] = deployment_status
 

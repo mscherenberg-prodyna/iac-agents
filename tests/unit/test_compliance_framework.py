@@ -1,6 +1,7 @@
 """Unit tests for compliance framework."""
 
 from src.iac_agents.compliance_framework import ComplianceFramework
+from src.iac_agents.templates.template_loader import TemplateLoader
 
 
 def test_compliance_framework_initialization():
@@ -13,19 +14,9 @@ def test_compliance_framework_initialization():
 def test_validate_template_basic():
     """Test basic template validation."""
     framework = ComplianceFramework()
+    loader = TemplateLoader()
 
-    template = """
-    resource "azurerm_storage_account" "test" {
-      name                     = "mystorageaccount"
-      resource_group_name      = azurerm_resource_group.main.name
-      location                 = azurerm_resource_group.main.location
-      account_tier             = "Standard"
-      account_replication_type = "LRS"
-      
-      enable_https_traffic_only = true
-    }
-    """
-
+    template = loader.load_terraform_template("test_storage_account")
     result = framework.validate_template(template, ["GDPR"])
 
     assert isinstance(result, dict)
@@ -49,24 +40,9 @@ def test_validate_template_empty():
 def test_validate_template_multiple_frameworks():
     """Test validation with multiple compliance frameworks."""
     framework = ComplianceFramework()
+    loader = TemplateLoader()
 
-    template = """
-    resource "azurerm_storage_account" "test" {
-      name                     = "mystorageaccount"
-      resource_group_name      = azurerm_resource_group.main.name
-      location                 = azurerm_resource_group.main.location
-      account_tier             = "Standard"
-      account_replication_type = "LRS"
-      
-      enable_https_traffic_only = true
-      
-      network_rules {
-        default_action = "Deny"
-        ip_rules       = ["10.0.0.0/16"]
-      }
-    }
-    """
-
+    template = loader.load_terraform_template("test_multiple_frameworks")
     result = framework.validate_template(template, ["GDPR", "PCI DSS", "HIPAA"])
 
     assert isinstance(result, dict)
@@ -78,21 +54,10 @@ def test_validate_template_multiple_frameworks():
 def test_validate_template_security_issues():
     """Test validation detects security issues."""
     framework = ComplianceFramework()
+    loader = TemplateLoader()
 
     # Template with obvious security issues
-    template = """
-    resource "azurerm_storage_account" "test" {
-      name                     = "mystorageaccount"
-      resource_group_name      = azurerm_resource_group.main.name
-      location                 = azurerm_resource_group.main.location
-      account_tier             = "Standard"
-      account_replication_type = "LRS"
-      
-      enable_https_traffic_only = false
-      allow_blob_public_access  = true
-    }
-    """
-
+    template = loader.load_terraform_template("test_security_issues")
     result = framework.validate_template(template, ["GDPR", "PCI DSS"])
 
     assert isinstance(result, dict)
@@ -105,27 +70,9 @@ def test_validate_template_security_issues():
 def test_validate_template_with_encryption():
     """Test validation with encryption settings."""
     framework = ComplianceFramework()
+    loader = TemplateLoader()
 
-    template = """
-    resource "azurerm_storage_account" "test" {
-      name                     = "mystorageaccount"
-      resource_group_name      = azurerm_resource_group.main.name
-      location                 = azurerm_resource_group.main.location
-      account_tier             = "Standard"
-      account_replication_type = "LRS"
-      
-      enable_https_traffic_only = true
-      
-      identity {
-        type = "SystemAssigned"
-      }
-      
-      customer_managed_key {
-        key_vault_key_id = azurerm_key_vault_key.test.id
-      }
-    }
-    """
-
+    template = loader.load_terraform_template("test_with_encryption")
     result = framework.validate_template(template, ["GDPR", "HIPAA"])
 
     assert isinstance(result, dict)
@@ -165,27 +112,9 @@ def test_validate_template_error_handling():
 def test_validate_template_networking_rules():
     """Test validation with networking security rules."""
     framework = ComplianceFramework()
+    loader = TemplateLoader()
 
-    template = """
-    resource "azurerm_network_security_group" "test" {
-      name                = "test-nsg"
-      location            = azurerm_resource_group.main.location
-      resource_group_name = azurerm_resource_group.main.name
-
-      security_rule {
-        name                       = "allow-ssh"
-        priority                   = 1001
-        direction                  = "Inbound"
-        access                     = "Allow"
-        protocol                   = "Tcp"
-        source_port_range          = "*"
-        destination_port_range     = "22"
-        source_address_prefix      = "*"
-        destination_address_prefix = "*"
-      }
-    }
-    """
-
+    template = loader.load_terraform_template("test_networking_rules")
     result = framework.validate_template(template, ["ISO 27001", "SOX"])
 
     assert isinstance(result, dict)
@@ -200,16 +129,11 @@ def test_compliance_score_bounds():
     """Test that compliance scores are within valid bounds."""
     framework = ComplianceFramework()
 
+    loader = TemplateLoader()
     templates = [
         "",  # Empty
         'resource "azurerm_storage_account" "test" {}',  # Minimal
-        """
-        resource "azurerm_storage_account" "secure" {
-          enable_https_traffic_only = true
-          allow_blob_public_access  = false
-          min_tls_version          = "TLS1_2"
-        }
-        """,  # Secure
+        loader.load_terraform_template("test_secure_storage"),  # Secure
     ]
 
     for template in templates:
@@ -221,15 +145,9 @@ def test_compliance_score_bounds():
 def test_framework_specific_rules():
     """Test framework-specific compliance rules."""
     framework = ComplianceFramework()
+    loader = TemplateLoader()
 
-    template = """
-    resource "azurerm_storage_account" "test" {
-      name                     = "mystorageaccount"
-      enable_https_traffic_only = true
-      allow_blob_public_access  = false
-      min_tls_version          = "TLS1_2"
-    }
-    """
+    template = loader.load_terraform_template("test_framework_specific")
 
     # Test different frameworks return different results
     gdpr_result = framework.validate_template(template, ["GDPR"])
@@ -246,15 +164,9 @@ def test_framework_specific_rules():
 def test_validate_template_framework_specific():
     """Test template validation with framework-specific rules."""
     framework = ComplianceFramework()
+    loader = TemplateLoader()
 
-    template = """
-    resource "azurerm_storage_account" "test" {
-      name                     = "mystorageaccount"
-      enable_https_traffic_only = true
-      allow_blob_public_access  = false
-      min_tls_version          = "TLS1_2"
-    }
-    """
+    template = loader.load_terraform_template("test_framework_specific")
 
     # Test with different frameworks
     gdpr_result = framework.validate_template(template, ["GDPR"])
@@ -269,34 +181,9 @@ def test_validate_template_framework_specific():
 def test_multiple_resource_validation():
     """Test validation with multiple resources."""
     framework = ComplianceFramework()
+    loader = TemplateLoader()
 
-    template = """
-    resource "azurerm_resource_group" "main" {
-      name     = "test-rg"
-      location = "East US"
-    }
-    
-    resource "azurerm_storage_account" "test" {
-      name                     = "mystorageaccount"
-      resource_group_name      = azurerm_resource_group.main.name
-      location                 = azurerm_resource_group.main.location
-      account_tier             = "Standard"
-      account_replication_type = "LRS"
-      
-      enable_https_traffic_only = true
-      allow_blob_public_access  = false
-    }
-    
-    resource "azurerm_key_vault" "test" {
-      name                = "test-keyvault"
-      location            = azurerm_resource_group.main.location
-      resource_group_name = azurerm_resource_group.main.name
-      
-      enabled_for_disk_encryption = true
-      purge_protection_enabled    = true
-    }
-    """
-
+    template = loader.load_terraform_template("test_multiple_resources")
     result = framework.validate_template(template, ["GDPR", "ISO 27001"])
 
     assert isinstance(result, dict)

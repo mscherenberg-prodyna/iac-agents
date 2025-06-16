@@ -3,7 +3,7 @@
 # Legacy agent imports removed
 from ...logging_system import log_agent_complete, log_agent_start, log_warning
 from ...templates.template_manager import template_manager
-from ..state import InfrastructureStateDict, WorkflowStage
+from ..state import InfrastructureStateDict, TemplateGenerationResult, WorkflowStage
 
 
 def template_generation_node(state: InfrastructureStateDict) -> InfrastructureStateDict:
@@ -29,8 +29,6 @@ def template_generation_node(state: InfrastructureStateDict) -> InfrastructureSt
             template = template_manager.get_fallback_template(user_input)
 
         # Create proper TemplateGenerationResult
-        from ..state import TemplateGenerationResult
-
         result = TemplateGenerationResult(
             status="completed",
             data={

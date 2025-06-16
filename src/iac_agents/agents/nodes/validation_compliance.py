@@ -4,7 +4,7 @@
 from ...compliance_framework import ComplianceFramework
 from ...config.settings import config
 from ...logging_system import log_agent_complete, log_agent_start, log_warning
-from ..state import InfrastructureStateDict, WorkflowStage
+from ..state import ComplianceValidationResult, InfrastructureStateDict, WorkflowStage
 
 
 def validation_compliance_node(
@@ -73,8 +73,6 @@ def validation_compliance_node(
     )
 
     # Create proper ComplianceValidationResult
-    from ..state import ComplianceValidationResult
-
     validation_result = ComplianceValidationResult(
         status="completed",
         data={

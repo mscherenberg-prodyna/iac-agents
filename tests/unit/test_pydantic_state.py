@@ -3,12 +3,15 @@
 import pytest
 from pydantic import ValidationError
 
-from src.iac_agents.agents.state import (ComplianceSettings,
-                                         ComplianceValidationResult,
-                                         InfrastructureState,
-                                         RequirementsAnalysisResult,
-                                         StageResult, TemplateGenerationResult,
-                                         WorkflowStage)
+from src.iac_agents.agents.state import (
+    ComplianceSettings,
+    ComplianceValidationResult,
+    InfrastructureState,
+    RequirementsAnalysisResult,
+    StageResult,
+    TemplateGenerationResult,
+    WorkflowStage,
+)
 
 
 def test_compliance_settings_validation():

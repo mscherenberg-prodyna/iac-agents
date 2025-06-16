@@ -168,7 +168,7 @@ class ComplianceFramework:
             level=ComplianceLevel.CRITICAL,
             frameworks=["PCI DSS", "HIPAA", "SOX"],
             pattern=(
-                r'public_network_access_enabled.*=.*false|'
+                r"public_network_access_enabled.*=.*false|"
                 r'firewall_rule.*start_ip_address.*=.*"10\.|192\.168\.|172\."'
             ),
             negative_pattern=r'public_network_access_enabled.*=.*true|firewall_rule.*start_ip_address.*=.*"0\.0\.0\.0"',
@@ -318,7 +318,7 @@ class ComplianceFramework:
         return sorted(violations, key=sort_key)
 
     def generate_compliance_report(
-        self, validation_result: Dict[str, Any], frameworks: List[str]
+        self, validation_result: Dict[str, Any], _frameworks: List[str]
     ) -> str:
         """Generate a human-readable compliance report."""
         violations = validation_result["violations"]

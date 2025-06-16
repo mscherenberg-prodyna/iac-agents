@@ -6,8 +6,11 @@ import pytest
 @pytest.mark.integration
 def test_core_imports():
     """Test that all core components can be imported."""
-    from src.iac_agents.agents import (SupervisorAgent, TerraformAgent,
-                                       TerraformResearchAgent)
+    from src.iac_agents.agents import (
+        SupervisorAgent,
+        TerraformAgent,
+        TerraformResearchAgent,
+    )
     from src.iac_agents.config.settings import config
     from src.iac_agents.templates.template_manager import TemplateManager
 
@@ -79,8 +82,11 @@ def test_supervisor_agent():
 @pytest.mark.integration
 def test_agents_instantiate():
     """Test that all agent types can be instantiated."""
-    from src.iac_agents.agents import (SupervisorAgent, TerraformAgent,
-                                       TerraformResearchAgent)
+    from src.iac_agents.agents import (
+        SupervisorAgent,
+        TerraformAgent,
+        TerraformResearchAgent,
+    )
 
     # Test agent instantiation
     supervisor = SupervisorAgent()

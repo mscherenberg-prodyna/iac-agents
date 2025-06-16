@@ -2,8 +2,12 @@
 
 import pytest
 
-from src.iac_agents.config.settings import (AgentSettings, ComplianceSettings,
-                                            UISettings, config)
+from src.iac_agents.config.settings import (
+    AgentSettings,
+    ComplianceSettings,
+    UISettings,
+    config,
+)
 
 
 @pytest.mark.unit

@@ -65,8 +65,7 @@ def test_streamlit_interface_initialization_with_supervisor():
 @pytest.mark.integration
 def test_sidebar_workflow_progress_compatibility():
     """Test that sidebar workflow progress works with current supervisor."""
-    from src.iac_agents.streamlit.components.sidebar import \
-        display_workflow_progress
+    from src.iac_agents.streamlit.components.sidebar import display_workflow_progress
 
     supervisor = SupervisorAgent()
 

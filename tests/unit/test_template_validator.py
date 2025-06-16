@@ -4,6 +4,7 @@ from src.iac_agents.template_validator import (
     TerraformTemplateValidator,
     ValidationResult,
 )
+from src.iac_agents.templates.template_loader import TemplateLoader
 
 
 def test_template_validator_initialization():
@@ -34,27 +35,9 @@ def test_validation_result_creation():
 def test_template_validator_valid_template():
     """Test validator with valid Terraform template."""
     validator = TerraformTemplateValidator()
+    loader = TemplateLoader()
 
-    valid_template = """
-    terraform {
-      required_version = ">= 1.0"
-    }
-    
-    provider "azurerm" {
-      features {}
-    }
-    
-    resource "azurerm_storage_account" "test" {
-      name                     = "mystorageaccount"
-      resource_group_name      = azurerm_resource_group.main.name
-      location                 = azurerm_resource_group.main.location
-      account_tier             = "Standard"
-      account_replication_type = "LRS"
-      
-      enable_https_traffic_only = true
-    }
-    """
-
+    valid_template = loader.load_terraform_template("test_complete_template")
     result = validator.validate_template(valid_template)
 
     assert isinstance(result, ValidationResult)
@@ -64,16 +47,9 @@ def test_template_validator_valid_template():
 def test_template_validator_invalid_template():
     """Test validator with invalid Terraform template."""
     validator = TerraformTemplateValidator()
+    loader = TemplateLoader()
 
-    invalid_template = """
-    resource "azurerm_storage_account" {
-      # Missing name
-      resource_group_name = 
-      location = "invalid location"
-      account_tier = "InvalidTier"
-    }
-    """
-
+    invalid_template = loader.load_terraform_template("test_invalid_template")
     result = validator.validate_template(invalid_template)
 
     assert isinstance(result, ValidationResult)
@@ -102,23 +78,9 @@ def test_template_validator_malformed_template():
 def test_template_validator_with_variables():
     """Test validator with Terraform variables."""
     validator = TerraformTemplateValidator()
+    loader = TemplateLoader()
 
-    template_with_vars = """
-    variable "storage_name" {
-      description = "Name of the storage account"
-      type        = string
-      default     = "defaultstorage"
-    }
-    
-    resource "azurerm_storage_account" "test" {
-      name                = var.storage_name
-      resource_group_name = "test-rg"
-      location           = "East US"
-      account_tier       = "Standard"
-      account_replication_type = "LRS"
-    }
-    """
-
+    template_with_vars = loader.load_terraform_template("test_with_variables")
     result = validator.validate_template(template_with_vars)
 
     assert isinstance(result, ValidationResult)
@@ -128,22 +90,9 @@ def test_template_validator_with_variables():
 def test_template_validator_with_outputs():
     """Test validator with Terraform outputs."""
     validator = TerraformTemplateValidator()
+    loader = TemplateLoader()
 
-    template_with_outputs = """
-    resource "azurerm_storage_account" "test" {
-      name                = "teststorage"
-      resource_group_name = "test-rg"
-      location           = "East US"
-      account_tier       = "Standard"
-      account_replication_type = "LRS"
-    }
-    
-    output "storage_account_id" {
-      description = "ID of the storage account"
-      value       = azurerm_storage_account.test.id
-    }
-    """
-
+    template_with_outputs = loader.load_terraform_template("test_with_outputs")
     result = validator.validate_template(template_with_outputs)
 
     assert isinstance(result, ValidationResult)

@@ -1,6 +1,7 @@
 """Test Terraform template extraction through end-to-end workflow."""
 
 from src.iac_agents.agents import SupervisorAgent
+from tests.utils import extract_hcl_template_from_response, validate_terraform_template
 
 
 def test_template_extraction_through_workflow():
@@ -12,27 +13,10 @@ def test_template_extraction_through_workflow():
 
     response = supervisor.process_user_request(test_request)
 
-    # Verify response contains HCL template
-    assert "```hcl" in response, "Response should contain HCL code block"
-
-    # Extract template from response
-    start = response.find("```hcl") + 6
-    end = response.find("```", start)
-
-    if end > start:
-        template = response[start:end].strip()
-
-        # Verify template content
-        assert template, "Template should not be empty"
-        assert len(template) > 50, "Template should be substantial"
-        assert (
-            "terraform" in template.lower()
-            or "provider" in template.lower()
-            or "resource" in template.lower()
-        ), "Template should contain Terraform configuration elements"
-        assert (
-            "azurerm" in template.lower() or "azure" in template.lower()
-        ), "Template should reference Azure provider"
+    # Extract and validate template
+    template = extract_hcl_template_from_response(response)
+    assert template is not None, "Response should contain HCL code block"
+    validate_terraform_template(template)
 
 
 def test_workflow_template_generation_stage():

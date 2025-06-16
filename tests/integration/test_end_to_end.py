@@ -3,6 +3,7 @@
 import pytest
 
 from src.iac_agents.agents import SupervisorAgent
+from tests.utils import extract_hcl_template_from_response, validate_terraform_template
 
 
 @pytest.mark.integration
@@ -23,20 +24,10 @@ def test_document_storage_request():
     assert response, "Response should not be empty"
     assert len(response) > 100, "Response should be substantial"
 
-    # Verify HCL template is present
-    assert "```hcl" in response, "Response should contain HCL code block"
-
     # Extract and validate template
-    start = response.find("```hcl") + 6
-    end = response.find("```", start)
-    template = response[start:end].strip()
-
-    assert template, "Template should not be empty"
-    assert len(template) > 50, "Template should be substantial"
-    assert (
-        "terraform" in template.lower()
-    ), "Template should contain terraform configuration"
-    assert "azurerm" in template.lower(), "Template should use Azure provider"
+    template = extract_hcl_template_from_response(response)
+    assert template is not None, "Response should contain HCL code block"
+    validate_terraform_template(template)
 
 
 @pytest.mark.integration
@@ -54,16 +45,11 @@ def test_web_application_request():
 
     # Verify response is generated
     assert response, "Response should not be empty"
-    assert "```hcl" in response, "Response should contain HCL code block"
 
-    # Extract template
-    start = response.find("```hcl") + 6
-    end = response.find("```", start)
-    template = response[start:end].strip()
-
-    assert (
-        "terraform" in template.lower()
-    ), "Template should contain terraform configuration"
+    # Extract and validate template
+    template = extract_hcl_template_from_response(response)
+    assert template is not None, "Response should contain HCL code block"
+    validate_terraform_template(template)
     assert (
         "resource" in template.lower()
     ), "Template should contain resource definitions"
