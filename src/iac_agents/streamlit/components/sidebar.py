@@ -98,29 +98,36 @@ def _display_recent_activity(recent_logs: List[Any]):
 
 def display_workflow_progress(supervisor_agent: SupervisorAgent):
     """Display current workflow progress in sidebar."""
-    if supervisor_agent.current_workflow:
-        workflow = supervisor_agent.current_workflow
-
+    try:
+        workflow_status = supervisor_agent.get_workflow_status()
+    except Exception:
+        # Handle errors gracefully - supervisor might not be ready
+        return
+    
+    if workflow_status and workflow_status.get("status") != "idle":
         st.sidebar.markdown("### 🔄 Workflow Progress")
 
         # Progress bar
-        total_stages = len(workflow.completed_stages) + 1  # Current + completed
-        completed_stages = len(workflow.completed_stages)
-        progress = completed_stages / max(total_stages, 1)
+        completed_stages = workflow_status.get("completed_stages", [])
+        current_stage = workflow_status.get("current_stage", "")
+        total_stages = len(completed_stages) + (1 if current_stage else 0)
+        progress = len(completed_stages) / max(total_stages, 1)
 
         st.sidebar.progress(progress)
-        st.sidebar.markdown(f"**Current Stage:** {workflow.current_stage.value}")
+        if current_stage:
+            st.sidebar.markdown(f"**Current Stage:** {current_stage.replace('_', ' ').title()}")
 
         # Completed stages
-        if workflow.completed_stages:
+        if completed_stages:
             st.sidebar.markdown("**Completed:**")
-            for stage in workflow.completed_stages:
-                st.sidebar.markdown(f"✅ {stage.value}")
+            for stage in completed_stages:
+                st.sidebar.markdown(f"✅ {stage.replace('_', ' ').title()}")
 
         # Issues found
-        if workflow.issues_found:
+        issues_found = workflow_status.get("issues_found", [])
+        if issues_found:
             st.sidebar.markdown("**Issues:**")
-            for issue in workflow.issues_found[-3:]:  # Show last 3 issues
+            for issue in issues_found[-3:]:  # Show last 3 issues
                 st.sidebar.markdown(f"⚠️ {issue}")
 
 

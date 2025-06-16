@@ -2,7 +2,7 @@
 
 import pytest
 
-from src.iac_agents.agents.supervisor_agent import SupervisorAgent
+from src.iac_agents.agents import SupervisorAgent
 
 
 @pytest.mark.integration

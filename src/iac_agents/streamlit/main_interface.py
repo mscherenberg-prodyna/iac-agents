@@ -2,7 +2,7 @@
 
 import streamlit as st
 
-from iac_agents.agents import SupervisorAgent
+from iac_agents.agents import LangGraphSupervisor
 from iac_agents.approval_workflow import TerraformApprovalWorkflow
 from iac_agents.deployment_automation import TerraformDeploymentManager
 
@@ -26,7 +26,7 @@ class StreamlitInterface:
 
     def __init__(self):
         """Initialize the interface components."""
-        self.supervisor_agent = SupervisorAgent()
+        self.supervisor_agent = LangGraphSupervisor()
         self.approval_workflow = TerraformApprovalWorkflow()
         self.deployment_manager = TerraformDeploymentManager()
 

@@ -1,75 +1,7 @@
-"""Test supervisor agent request processing and template extraction capabilities."""
+"""Test supervisor agent request processing capabilities."""
 
-from src.iac_agents.agents.supervisor_agent import SupervisorAgent
+from src.iac_agents.agents import SupervisorAgent
 from src.iac_agents.logging_system import log_user_update
-
-
-def test_terraform_extraction():
-    """Test that supervisor agent correctly extracts Terraform templates from various response formats including HCL code blocks, direct terraform content, empty responses, and non-terraform responses."""
-    supervisor = SupervisorAgent()
-
-    # Test cases for template extraction
-    test_cases = [
-        # Standard HCL format
-        """Here's your infrastructure:
-
-```hcl
-terraform {
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~>3.0"
-    }
-  }
-}
-
-provider "azurerm" {
-  features {}
-}
-
-resource "azurerm_storage_account" "example" {
-  name                     = "examplestorageacct"
-  resource_group_name      = "example"
-  location                 = "West US"
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
-}
-```
-
-This will create a storage account for your documents.
-""",
-        # No code blocks, direct terraform
-        """Based on your requirements, I recommend:
-
-terraform {
-  required_providers {
-    azurerm = {
-      source = "hashicorp/azurerm"
-    }
-  }
-}
-
-resource "azurerm_resource_group" "main" {
-  name     = "example-rg"
-  location = "East US"
-}
-
-This creates a basic resource group.""",
-        # Empty response
-        "",
-        # Response with no terraform
-        "I cannot generate infrastructure for this request.",
-    ]
-
-    for i, test_case in enumerate(test_cases):
-        template = supervisor._extract_template(test_case)
-
-        # Verify extraction behavior
-        if i < 2:  # First two cases should extract templates
-            assert template
-            assert len(template) > 0
-        else:  # Last two cases should not extract templates
-            assert not template or len(template) == 0
 
 
 def test_basic_request_processing():
@@ -97,9 +29,111 @@ def test_basic_request_processing():
         assert False, f"Error processing request: {e}"
 
 
-if __name__ == "__main__":
-    # Test template extraction
-    test_template_extraction()
+def test_workflow_status_progression():
+    """Test that workflow status progresses correctly during request processing."""
+    supervisor = SupervisorAgent()
+    
+    # Initial status should be idle
+    initial_status = supervisor.get_workflow_status()
+    assert initial_status["status"] == "idle"
+    
+    # Process a request
+    request = "Create a simple web application infrastructure"
+    response = supervisor.process_user_request(request)
+    
+    # Should have response
+    assert response
+    assert len(response) > 100
+    
+    # Final status should show completion
+    final_status = supervisor.get_workflow_status()
+    assert final_status["status"] in ["completed", "active"]
+    
+    # Should have completed stages
+    completed_stages = final_status.get("completed_stages", [])
+    assert len(completed_stages) > 0
+    
+    # Should contain essential stages
+    expected_stages = ["requirements_analysis", "template_generation", "validation_and_compliance"]
+    for stage in expected_stages:
+        assert stage in completed_stages, f"Missing essential stage: {stage}"
 
-    # Test simple request
-    test_simple_request()
+
+def test_conversation_history_tracking():
+    """Test that conversation history is properly maintained."""
+    supervisor = SupervisorAgent()
+    
+    # Initial history should be empty
+    history = supervisor.get_conversation_history()
+    assert len(history) == 0
+    
+    # Process first request
+    request1 = "Create a storage account"
+    supervisor.process_user_request(request1)
+    
+    history = supervisor.get_conversation_history()
+    assert len(history) == 2  # user + assistant
+    assert history[0]["role"] == "user"
+    assert history[0]["content"] == request1
+    assert history[1]["role"] == "assistant"
+    
+    # Process second request
+    request2 = "Add backup capabilities"
+    supervisor.process_user_request(request2)
+    
+    history = supervisor.get_conversation_history()
+    assert len(history) == 4  # 2 user + 2 assistant
+    assert history[2]["content"] == request2
+
+
+def test_error_handling_robustness():
+    """Test that supervisor handles various error conditions gracefully."""
+    supervisor = SupervisorAgent()
+    
+    # Test with empty input
+    response = supervisor.process_user_request("")
+    assert response  # Should get some response, not crash
+    
+    # Test with very long input
+    long_input = "Create infrastructure " * 1000
+    response = supervisor.process_user_request(long_input)
+    assert response  # Should handle gracefully
+    
+    # Test with special characters
+    special_input = "Create infrastructure with émojis 🚀 and symbols @#$%"
+    response = supervisor.process_user_request(special_input)
+    assert response
+
+
+def test_compliance_settings_integration():
+    """Test that compliance settings are properly integrated into workflow."""
+    supervisor = SupervisorAgent()
+    
+    compliance_settings = {
+        "enforce_compliance": True,
+        "selected_frameworks": ["GDPR", "PCI DSS"]
+    }
+    
+    request = "Create a database for storing customer information"
+    response = supervisor.process_user_request(request, compliance_settings)
+    
+    assert response
+    assert len(response) > 100
+    
+    # Should mention compliance when enforced
+    response_lower = response.lower()
+    assert "compliance" in response_lower or "validation" in response_lower
+    
+    # Verify workflow status includes compliance information
+    status = supervisor.get_workflow_status()
+    assert "compliance_score" in status or "quality_gate_passed" in status
+
+
+if __name__ == "__main__":
+    # Test basic request
+    test_basic_request_processing()
+    print("✅ Basic request processing test passed")
+    
+    # Test workflow progression
+    test_workflow_status_progression()
+    print("✅ Workflow status progression test passed")

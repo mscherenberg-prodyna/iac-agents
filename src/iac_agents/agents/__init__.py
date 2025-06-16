@@ -1,7 +1,16 @@
-"""Agents module for Infrastructure as Code generation."""
+"""Agent implementation for Infrastructure as Code."""
 
-from .research_agent import TerraformResearchAgent
-from .supervisor_agent import SupervisorAgent
-from .terraform_agent import TerraformAgent
+from .state import InfrastructureState, InfrastructureStateDict
+from .workflow import InfrastructureWorkflow
+from .supervisor import LangGraphSupervisor
 
-__all__ = ["TerraformAgent", "TerraformResearchAgent", "SupervisorAgent"]
+# Maintain backward compatibility
+SupervisorAgent = LangGraphSupervisor
+
+__all__ = [
+    "InfrastructureState", 
+    "InfrastructureStateDict",
+    "InfrastructureWorkflow", 
+    "LangGraphSupervisor",
+    "SupervisorAgent"
+]

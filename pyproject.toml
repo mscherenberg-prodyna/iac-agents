@@ -16,6 +16,10 @@ langchain-openai = "^0.3.17"
 python-dotenv = "^1.0.0"
 duckduckgo-search = "^6.0.0"
 lxml = "^5.4.0"
+beautifulsoup4 = "^4.13.4"
+semantic-kernel = "^1.33.0"
+pydantic = "^2.11.7"
+pydantic-settings = "^2.9.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"
