@@ -23,7 +23,10 @@ def test_langgraph_document_storage_request():
 
     # Verify workflow status
     status = supervisor.get_workflow_status()
-    assert status["status"] in ["completed", "active"], "Workflow should have valid status"
+    assert status["status"] in [
+        "completed",
+        "active",
+    ], "Workflow should have valid status"
     assert len(status["completed_stages"]) > 0, "Should have completed some stages"
 
     # Verify HCL template is present
@@ -65,7 +68,9 @@ def test_langgraph_compliance_validation():
     # Check workflow status
     status = supervisor.get_workflow_status()
     assert "compliance_score" in status, "Should have compliance score"
-    assert isinstance(status["compliance_score"], (int, float)), "Compliance score should be numeric"
+    assert isinstance(
+        status["compliance_score"], (int, float)
+    ), "Compliance score should be numeric"
 
 
 @pytest.mark.integration
@@ -75,16 +80,16 @@ def test_langgraph_workflow_stages():
 
     request = "I need a simple storage account for documents."
 
-    response = supervisor.process_user_request(request)
+    supervisor.process_user_request(request)
     status = supervisor.get_workflow_status()
 
     # Check that essential stages were completed
     completed_stages = status.get("completed_stages", [])
     expected_stages = [
         "requirements_analysis",
-        "template_generation", 
+        "template_generation",
         "validation_and_compliance",
-        "approval_preparation"
+        "approval_preparation",
     ]
 
     for stage in expected_stages:
@@ -92,7 +97,9 @@ def test_langgraph_workflow_stages():
 
     # Check that workflow status includes key information
     assert "quality_gate_passed" in status, "Should have quality gate status"
-    assert isinstance(status["quality_gate_passed"], bool), "Quality gate should be boolean"
+    assert isinstance(
+        status["quality_gate_passed"], bool
+    ), "Quality gate should be boolean"
 
 
 def test_langgraph_error_handling():
@@ -102,11 +109,17 @@ def test_langgraph_error_handling():
     # Test with empty input
     response = supervisor.process_user_request("")
     assert response, "Should get some response even with empty input"
-    assert "error" in response.lower() or len(response) > 10, "Should handle empty input gracefully"
+    assert (
+        "error" in response.lower() or len(response) > 10
+    ), "Should handle empty input gracefully"
 
     # Test workflow status after error
     status = supervisor.get_workflow_status()
-    assert status["status"] in ["idle", "completed", "active"], "Should have valid status after error"
+    assert status["status"] in [
+        "idle",
+        "completed",
+        "active",
+    ], "Should have valid status after error"
 
 
 def test_langgraph_conversation_history():
@@ -120,7 +133,7 @@ def test_langgraph_conversation_history():
     supervisor.process_user_request(request2)
 
     history = supervisor.get_conversation_history()
-    
+
     assert len(history) == 4, "Should have 4 entries (2 user + 2 assistant)"
     assert history[0]["role"] == "user", "First entry should be user"
     assert history[0]["content"] == request1, "First entry should match first request"

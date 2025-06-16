@@ -1,24 +1,14 @@
 """LangGraph workflow implementation for Infrastructure as Code."""
 
-from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.memory import MemorySaver
+from langgraph.graph import END, StateGraph
 
-from .state import InfrastructureStateDict
-from .nodes import (
-    requirements_analysis_node,
-    research_planning_node,
-    template_generation_node,
-    validation_compliance_node,
-    cost_estimation_node,
-    approval_preparation_node,
-)
-from .routing import (
-    should_research,
-    should_estimate_costs,
-    check_quality_gate,
-    workflow_completed,
-)
+from .nodes import (approval_preparation_node, cost_estimation_node,
+                    requirements_analysis_node, research_planning_node,
+                    template_generation_node, validation_compliance_node)
 from .response_compiler import compile_final_response
+from .routing import should_estimate_costs, should_research
+from .state import InfrastructureStateDict
 
 
 class InfrastructureWorkflow:
@@ -52,7 +42,7 @@ class InfrastructureWorkflow:
             {
                 "research_planning": "research_planning",
                 "template_generation": "template_generation",
-            }
+            },
         )
 
         workflow.add_edge("research_planning", "template_generation")
@@ -64,7 +54,7 @@ class InfrastructureWorkflow:
             {
                 "cost_estimation": "cost_estimation",
                 "approval_preparation": "approval_preparation",
-            }
+            },
         )
 
         workflow.add_edge("cost_estimation", "approval_preparation")
@@ -76,20 +66,26 @@ class InfrastructureWorkflow:
     def execute(self, user_input: str, compliance_settings: dict = None) -> dict:
         """Execute the workflow with user input."""
         from .state import ComplianceSettings
-        
+
         # Create Pydantic compliance settings if provided
         pydantic_compliance = None
         if compliance_settings:
             try:
                 pydantic_compliance = ComplianceSettings(**compliance_settings)
-            except Exception as e:
+            except Exception:
                 # Fallback to basic compliance settings
                 pydantic_compliance = ComplianceSettings(
-                    enforce_compliance=compliance_settings.get('enforce_compliance', True),
-                    selected_frameworks=compliance_settings.get('selected_frameworks', [])
+                    enforce_compliance=compliance_settings.get(
+                        "enforce_compliance", True
+                    ),
+                    selected_frameworks=compliance_settings.get(
+                        "selected_frameworks", []
+                    ),
                 )
-        
+
         # Create initial state as Pydantic model
+        from .state import InfrastructureState
+
         try:
             initial_state = InfrastructureState(
                 user_input=user_input,
@@ -97,7 +93,7 @@ class InfrastructureWorkflow:
             )
             # Convert to dict for LangGraph
             initial_state_dict = initial_state.model_dump()
-        except Exception as e:
+        except Exception:
             # Fallback to basic dict if Pydantic validation fails
             initial_state_dict = {
                 "user_input": user_input,

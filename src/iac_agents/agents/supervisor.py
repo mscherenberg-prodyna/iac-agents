@@ -30,8 +30,7 @@ class LangGraphSupervisor:
 
             # Execute the LangGraph workflow
             result = self.workflow.execute(
-                user_input=user_input,
-                compliance_settings=compliance_settings or {}
+                user_input=user_input, compliance_settings=compliance_settings or {}
             )
 
             # Store the workflow state for status queries
@@ -39,12 +38,14 @@ class LangGraphSupervisor:
 
             # Extract the final response
             final_response = result.get("final_response", "")
-            
+
             if not final_response:
                 final_response = "❌ **Error**: No response generated from workflow."
 
             # Add to conversation history
-            self.conversation_history.append({"role": "assistant", "content": final_response})
+            self.conversation_history.append(
+                {"role": "assistant", "content": final_response}
+            )
 
             log_agent_complete(self.name, "User request processed successfully")
             return final_response
@@ -63,20 +64,42 @@ class LangGraphSupervisor:
             return {"status": "idle"}
 
         return {
-            "status": "completed" if self.current_workflow_state.get("final_response") else "active",
-            "current_stage": self.current_workflow_state.get("current_stage", "unknown"),
+            "status": (
+                "completed"
+                if self.current_workflow_state.get("final_response")
+                else "active"
+            ),
+            "current_stage": self.current_workflow_state.get(
+                "current_stage", "unknown"
+            ),
             "completed_stages": self.current_workflow_state.get("completed_stages", []),
             "issues_found": self.current_workflow_state.get("errors", []),
             "stage_results": {
-                "requirements_analysis": self.current_workflow_state.get("requirements_analysis_result"),
-                "research_data": self.current_workflow_state.get("research_data_result"),
-                "template_generation": self.current_workflow_state.get("template_generation_result"),
-                "compliance_validation": self.current_workflow_state.get("compliance_validation_result"),
-                "cost_estimation": self.current_workflow_state.get("cost_estimation_result"),
-                "approval_preparation": self.current_workflow_state.get("approval_preparation_result"),
+                "requirements_analysis": self.current_workflow_state.get(
+                    "requirements_analysis_result"
+                ),
+                "research_data": self.current_workflow_state.get(
+                    "research_data_result"
+                ),
+                "template_generation": self.current_workflow_state.get(
+                    "template_generation_result"
+                ),
+                "compliance_validation": self.current_workflow_state.get(
+                    "compliance_validation_result"
+                ),
+                "cost_estimation": self.current_workflow_state.get(
+                    "cost_estimation_result"
+                ),
+                "approval_preparation": self.current_workflow_state.get(
+                    "approval_preparation_result"
+                ),
             },
-            "quality_gate_passed": self.current_workflow_state.get("quality_gate_passed", False),
-            "compliance_score": self.current_workflow_state.get("compliance_score", 0.0),
+            "quality_gate_passed": self.current_workflow_state.get(
+                "quality_gate_passed", False
+            ),
+            "compliance_score": self.current_workflow_state.get(
+                "compliance_score", 0.0
+            ),
         }
 
     def get_conversation_history(self) -> List[Dict[str, str]]:

@@ -54,15 +54,14 @@ class TemplateManager:
             return self.get_terraform_template("document_storage")
 
         # Web application template
-        elif any(
+        if any(
             keyword in requirements_lower
             for keyword in ["web", "app", "application", "website"]
         ):
             return self.get_terraform_template("web_application")
 
         # Default template
-        else:
-            return self.get_terraform_template("default")
+        return self.get_terraform_template("default")
 
     def list_available_prompts(self) -> List[str]:
         """List all available prompt templates."""

@@ -158,12 +158,11 @@ To request changes, respond with: `CHANGES {request.id} [required changes]`
 
         if action == "APPROVE":
             return self._approve_request(request, reviewer, notes)
-        elif action == "REJECT":
+        if action == "REJECT":
             return self._reject_request(request, reviewer, notes)
-        elif action == "CHANGES":
+        if action == "CHANGES":
             return self._request_changes(request, reviewer, notes)
-        else:
-            return "❌ Invalid action. Use APPROVE, REJECT, or CHANGES"
+        return "❌ Invalid action. Use APPROVE, REJECT, or CHANGES"
 
     def _approve_request(
         self, request: ApprovalRequest, reviewer: str, notes: Optional[str]

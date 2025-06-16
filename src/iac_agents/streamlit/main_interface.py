@@ -6,19 +6,12 @@ from iac_agents.agents import LangGraphSupervisor
 from iac_agents.approval_workflow import TerraformApprovalWorkflow
 from iac_agents.deployment_automation import TerraformDeploymentManager
 
-from .components import (
-    add_message,
-    display_agent_status,
-    display_chat_interface,
-    display_cost_estimation,
-    display_header,
-    display_showcase_scenarios,
-    display_workflow_progress,
-    render_compliance_settings,
-    render_deployment_config,
-    render_system_metrics,
-    setup_page_config,
-)
+from .components import (add_message, display_agent_status,
+                         display_chat_interface, display_cost_estimation,
+                         display_header, display_showcase_scenarios,
+                         display_workflow_progress, render_compliance_settings,
+                         render_deployment_config, render_system_metrics,
+                         setup_page_config)
 
 
 class StreamlitInterface:

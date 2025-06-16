@@ -103,7 +103,7 @@ def display_workflow_progress(supervisor_agent: SupervisorAgent):
     except Exception:
         # Handle errors gracefully - supervisor might not be ready
         return
-    
+
     if workflow_status and workflow_status.get("status") != "idle":
         st.sidebar.markdown("### 🔄 Workflow Progress")
 
@@ -115,7 +115,9 @@ def display_workflow_progress(supervisor_agent: SupervisorAgent):
 
         st.sidebar.progress(progress)
         if current_stage:
-            st.sidebar.markdown(f"**Current Stage:** {current_stage.replace('_', ' ').title()}")
+            st.sidebar.markdown(
+                f"**Current Stage:** {current_stage.replace('_', ' ').title()}"
+            )
 
         # Completed stages
         if completed_stages:

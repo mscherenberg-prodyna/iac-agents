@@ -167,7 +167,10 @@ class ComplianceFramework:
             description="Databases should not allow public internet access",
             level=ComplianceLevel.CRITICAL,
             frameworks=["PCI DSS", "HIPAA", "SOX"],
-            pattern=r'public_network_access_enabled.*=.*false|firewall_rule.*start_ip_address.*=.*"10\.|192\.168\.|172\."',
+            pattern=(
+                r'public_network_access_enabled.*=.*false|'
+                r'firewall_rule.*start_ip_address.*=.*"10\.|192\.168\.|172\."'
+            ),
             negative_pattern=r'public_network_access_enabled.*=.*true|firewall_rule.*start_ip_address.*=.*"0\.0\.0\.0"',
             recommendation="Restrict database access to private networks only",
         )
@@ -378,6 +381,9 @@ class ComplianceFramework:
                 report += f"  - {violation.recommendation}\n\n"
 
         if not violations:
-            report += "## ✅ All Compliance Checks Passed!\n\nYour infrastructure template meets all specified compliance requirements.\n"
+            report += (
+                "## ✅ All Compliance Checks Passed!\n\n"
+                "Your infrastructure template meets all specified compliance requirements.\n"
+            )
 
         return report

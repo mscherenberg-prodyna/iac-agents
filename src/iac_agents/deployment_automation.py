@@ -2,6 +2,7 @@
 
 import json
 import os
+import shutil
 import subprocess
 import tempfile
 from dataclasses import dataclass
@@ -41,20 +42,20 @@ class TerraformDeploymentManager:
 
         # Write main Terraform template
         template_path = os.path.join(workspace_dir, "main.tf")
-        with open(template_path, "w") as f:
+        with open(template_path, "w", encoding="utf-8") as f:
             f.write(template)
 
         # Write variables if provided
         if variables:
             vars_path = os.path.join(workspace_dir, "terraform.tfvars")
-            with open(vars_path, "w") as f:
+            with open(vars_path, "w", encoding="utf-8") as f:
                 for key, value in variables.items():
                     f.write(f'{key} = "{value}"\n')
 
         # Write backend configuration
         backend_config = self._generate_backend_config(deployment_id)
         backend_path = os.path.join(workspace_dir, "backend.tf")
-        with open(backend_path, "w") as f:
+        with open(backend_path, "w", encoding="utf-8") as f:
             f.write(backend_config)
 
         return workspace_dir
@@ -137,7 +138,9 @@ terraform {{
             if auto_approve:
                 apply_args.append("-auto-approve")
 
-            _ = self._run_terraform_command(workspace_dir, apply_args, deployment_status)
+            _ = self._run_terraform_command(
+                workspace_dir, apply_args, deployment_status
+            )
 
             # Get outputs
             output_result = self._run_terraform_command(
@@ -241,8 +244,6 @@ terraform {{
         """Clean up the workspace for a deployment."""
         workspace_dir = os.path.join(self.working_dir, deployment_id)
         if os.path.exists(workspace_dir):
-            import shutil
-
             shutil.rmtree(workspace_dir)
 
     def generate_deployment_summary(self, deployment_id: str) -> str:

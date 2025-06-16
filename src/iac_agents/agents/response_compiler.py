@@ -34,12 +34,16 @@ def compile_final_response(state: InfrastructureStateDict) -> InfrastructureStat
         if quality_gate_passed:
             response_parts.append("## ✅ Quality Validation Passed\n\n")
             response_parts.append(f"**Compliance Score:** {compliance_score:.1f}% ✅\n")
-            response_parts.append(f"**Security Violations:** {violations_count} (within acceptable limits)\n")
+            response_parts.append(
+                f"**Security Violations:** {violations_count} (within acceptable limits)\n"
+            )
             response_parts.append("**Quality Gate:** PASSED ✅\n\n")
         else:
             response_parts.append("## ⚠️ Compliance Review Required\n\n")
             response_parts.append(f"**Compliance Score:** {compliance_score:.1f}% ⚠️\n")
-            response_parts.append(f"**Security Violations:** {violations_count} (requires attention)\n")
+            response_parts.append(
+                f"**Security Violations:** {violations_count} (requires attention)\n"
+            )
             response_parts.append("**Quality Gate:** REVIEW NEEDED ⚠️\n\n")
 
             # Add specific violation details for low-compliance templates
@@ -49,7 +53,9 @@ def compile_final_response(state: InfrastructureStateDict) -> InfrastructureStat
                 for i, violation in enumerate(violations[:3]):  # Show top 3 violations
                     response_parts.append(f"{i + 1}. {violation}\n")
                 if len(violations) > 3:
-                    response_parts.append(f"   ... and {len(violations) - 3} more issues\n")
+                    response_parts.append(
+                        f"   ... and {len(violations) - 3} more issues\n"
+                    )
                 response_parts.append("\n")
 
         # Add framework compliance details
@@ -89,14 +95,18 @@ def compile_final_response(state: InfrastructureStateDict) -> InfrastructureStat
     errors_count = len(state.get("errors", []))
 
     response_parts.append("## 📊 Workflow Summary\n\n")
-    response_parts.append(f"- **Stages Completed:** {completed_stages}/{total_stages} ✅\n")
+    response_parts.append(
+        f"- **Stages Completed:** {completed_stages}/{total_stages} ✅\n"
+    )
 
     if quality_gate_passed:
         response_parts.append("- **Quality Gate Status:** PASSED ✅\n")
         response_parts.append("- **Ready for Production:** ✅ YES\n")
     else:
         response_parts.append("- **Quality Gate Status:** REVIEW NEEDED ⚠️\n")
-        response_parts.append("- **Ready for Production:** ⚠️ REQUIRES COMPLIANCE REVIEW\n")
+        response_parts.append(
+            "- **Ready for Production:** ⚠️ REQUIRES COMPLIANCE REVIEW\n"
+        )
 
     response_parts.append(f"- **Issues Found:** {errors_count}\n")
 
@@ -107,17 +117,37 @@ def compile_final_response(state: InfrastructureStateDict) -> InfrastructureStat
     # Add appropriate next steps based on quality gate status
     response_parts.append("\n## 🚀 Next Steps\n\n")
     if quality_gate_passed:
-        response_parts.append("1. ✅ **Template Quality Verified** - Meets enterprise security standards\n")
-        response_parts.append("2. 🔍 **Review Deployment Plan** - Verify resources match requirements\n")
-        response_parts.append("3. 🧪 **Test in Development** - Deploy to development environment first\n")
-        response_parts.append("4. ⚖️ **Submit for Approval** - Ready for stakeholder review\n")
-        response_parts.append("5. 🚀 **Deploy to Production** - Execute deployment after approval\n")
+        response_parts.append(
+            "1. ✅ **Template Quality Verified** - Meets enterprise security standards\n"
+        )
+        response_parts.append(
+            "2. 🔍 **Review Deployment Plan** - Verify resources match requirements\n"
+        )
+        response_parts.append(
+            "3. 🧪 **Test in Development** - Deploy to development environment first\n"
+        )
+        response_parts.append(
+            "4. ⚖️ **Submit for Approval** - Ready for stakeholder review\n"
+        )
+        response_parts.append(
+            "5. 🚀 **Deploy to Production** - Execute deployment after approval\n"
+        )
     else:
-        response_parts.append("1. ⚠️ **Review Compliance Issues** - Address security violations listed above\n")
-        response_parts.append("2. 🔍 **Security Assessment** - Have security team review template\n")
-        response_parts.append("3. 🧪 **Test in Development** - Deploy to development environment first\n")
-        response_parts.append("4. 🔧 **Template Enhancement** - Consider implementing recommended security measures\n")
-        response_parts.append("5. ⚖️ **Submit for Review** - Requires additional approval due to compliance gaps\n")
+        response_parts.append(
+            "1. ⚠️ **Review Compliance Issues** - Address security violations listed above\n"
+        )
+        response_parts.append(
+            "2. 🔍 **Security Assessment** - Have security team review template\n"
+        )
+        response_parts.append(
+            "3. 🧪 **Test in Development** - Deploy to development environment first\n"
+        )
+        response_parts.append(
+            "4. 🔧 **Template Enhancement** - Consider implementing recommended security measures\n"
+        )
+        response_parts.append(
+            "5. ⚖️ **Submit for Review** - Requires additional approval due to compliance gaps\n"
+        )
 
     final_response = "\n".join(response_parts)
 

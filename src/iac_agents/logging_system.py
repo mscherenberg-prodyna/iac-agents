@@ -48,6 +48,7 @@ class AgentLogger:
 
         # Custom formatter with colors and emojis
         class ColoredFormatter(logging.Formatter):
+            """Custom formatter with colors and emojis for enhanced logging."""
 
             COLORS = {
                 "DEBUG": "\033[36m",  # Cyan
@@ -110,7 +111,7 @@ class AgentLogger:
         self.log_entries.append(entry)
 
         details_str = f" | {details}" if details else ""
-        self.logger.info(f"🤖 {agent_name} STARTING: {activity}{details_str}")
+        self.logger.info("🤖 %s STARTING: %s%s", agent_name, activity, details_str)
 
     def log_agent_complete(
         self, agent_name: str, activity: str, details: Dict[str, Any] = None
@@ -137,7 +138,7 @@ class AgentLogger:
         duration_str = f" ({duration_ms}ms)" if duration_ms > 0 else ""
         details_str = f" | {details}" if details else ""
         self.logger.info(
-            f"✅ {agent_name} COMPLETED: {activity}{duration_str}{details_str}"
+            "✅ %s COMPLETED: %s%s%s", agent_name, activity, duration_str, details_str
         )
 
     def log_user_update(self, message: str, details: Dict[str, Any] = None):
@@ -151,7 +152,7 @@ class AgentLogger:
         )
 
         self.log_entries.append(entry)
-        self.logger.info(f"💬 USER UPDATE: {message}")
+        self.logger.info("💬 USER UPDATE: %s", message)
 
     def log_info(self, agent_name: str, message: str, details: Dict[str, Any] = None):
         """Log general information."""
@@ -164,7 +165,7 @@ class AgentLogger:
         )
 
         self.log_entries.append(entry)
-        self.logger.info(f"ℹ️  {agent_name}: {message}")
+        self.logger.info("ℹ️  %s: %s", agent_name, message)
 
     def log_warning(
         self, agent_name: str, message: str, details: Dict[str, Any] = None
@@ -179,7 +180,7 @@ class AgentLogger:
         )
 
         self.log_entries.append(entry)
-        self.logger.warning(f"⚠️  {agent_name}: {message}")
+        self.logger.warning("⚠️  %s: %s", agent_name, message)
 
     def log_error(self, agent_name: str, message: str, details: Dict[str, Any] = None):
         """Log errors."""
@@ -192,7 +193,7 @@ class AgentLogger:
         )
 
         self.log_entries.append(entry)
-        self.logger.error(f"❌ {agent_name}: {message}")
+        self.logger.error("❌ %s: %s", agent_name, message)
 
     def get_recent_logs(self, limit: int = 10) -> List[AgentLogEntry]:
         """Get recent log entries."""
