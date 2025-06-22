@@ -6,7 +6,7 @@
 
 ## 🎯 Purpose
 
-Transform cloud infrastructure deployment from complex command-line operations to simple conversational requests. This showcase demonstrates how AI agents interpret natural language requirements and automatically provision Azure resources through an intelligent multi-agent system with built-in compliance validation.
+Transform cloud infrastructure deployment from complex command-line operations to simple conversational requests. Demonstrates how AI agents interpret natural language requirements and automatically provision Azure resources through an intelligent multi-agent system with built-in compliance validation.
 
 ## ✨ Key Features
 
