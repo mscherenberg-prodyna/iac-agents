@@ -58,7 +58,7 @@ def display_header():
                 """,
                     unsafe_allow_html=True,
                 )
-    
+
     # Add gap below header
     st.markdown("<div style='margin-bottom: 2rem;'></div>", unsafe_allow_html=True)
 

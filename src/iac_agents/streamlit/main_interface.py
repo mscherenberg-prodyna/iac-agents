@@ -2,16 +2,12 @@
 
 import streamlit as st
 
-from iac_agents.agents import LangGraphSupervisor
-from iac_agents.approval_workflow import TerraformApprovalWorkflow
-from iac_agents.deployment_automation import TerraformDeploymentManager
+from iac_agents.agents import InfrastructureAsPromptsAgent
 
 from .components import (
     add_message,
     display_chat_interface,
-    display_cost_estimation,
     display_header,
-    display_showcase_scenarios,
     render_compliance_settings,
     render_deployment_config,
     render_system_metrics,
@@ -24,9 +20,7 @@ class StreamlitInterface:
 
     def __init__(self):
         """Initialize the interface components."""
-        self.supervisor_agent = LangGraphSupervisor()
-        self.approval_workflow = TerraformApprovalWorkflow()
-        self.deployment_manager = TerraformDeploymentManager()
+        self.agent = InfrastructureAsPromptsAgent().build()
 
     def setup(self):
         """Setup the page configuration and initial state."""
@@ -40,13 +34,8 @@ class StreamlitInterface:
     def render_sidebar(self):
         """Render the sidebar components."""
 
-        # Showcase scenarios
-        scenario_request = display_showcase_scenarios()
-
         # Cost estimation
-        display_cost_estimation(st.session_state.get("cost_data", {}))
-
-        return scenario_request
+        render_system_metrics()
 
     def render_main_content(self):
         """Render the main content area."""
@@ -64,7 +53,6 @@ class StreamlitInterface:
             # Right sidebar with compliance settings and deployment config
             render_compliance_settings()
             render_deployment_config()
-            render_system_metrics()
 
         return user_input
 
@@ -79,20 +67,17 @@ class StreamlitInterface:
         # Show loading indicator
         with st.spinner("🤖 Processing your request..."):
             try:
-                # Process through supervisor agent
-                response = self.supervisor_agent.process_user_request(
-                    user_input,
-                    compliance_settings=st.session_state.get("compliance_settings", {}),
+                # Process through IaP agent
+                compliance_settings = st.session_state.get("compliance_settings", {})
+                approval_required = st.session_state.get("deployment_config", {}).get(
+                    "approval_required", True
+                )
+                response = self.agent.invoke(
+                    f"{user_input}\n\n{compliance_settings}\n\nDeployment approval required: {approval_required}"
                 )
 
                 # Add response to chat
                 add_message("assistant", response)
-
-                # Update cost data if available
-                if hasattr(self.supervisor_agent, "last_cost_estimation"):
-                    st.session_state.cost_data = (
-                        self.supervisor_agent.last_cost_estimation
-                    )
 
             except Exception as e:
                 error_message = f"❌ **Error processing request:** {str(e)}"
@@ -104,16 +89,11 @@ class StreamlitInterface:
         # Setup page configuration
         self.setup()
 
-        # Render sidebar and get scenario request
-        scenario_request = self.render_sidebar()
+        # Render sidebar
+        self.render_sidebar()
 
         # Render main content area and get user input
         user_input = self.render_main_content()
-
-        # Process scenario request if selected
-        if scenario_request:
-            self.process_user_input(scenario_request)
-            st.rerun()
 
         # Process user input from chat
         if user_input:

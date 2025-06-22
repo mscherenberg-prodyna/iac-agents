@@ -1,5 +1,6 @@
 """Agent implementation for Infrastructure as Code."""
 
+from .graph import InfrastructureAsPromptsAgent
 from .state import InfrastructureState, InfrastructureStateDict
 from .supervisor import LangGraphSupervisor
 from .workflow import InfrastructureWorkflow
@@ -13,4 +14,5 @@ __all__ = [
     "InfrastructureWorkflow",
     "LangGraphSupervisor",
     "SupervisorAgent",
+    "InfrastructureAsPromptsAgent",
 ]

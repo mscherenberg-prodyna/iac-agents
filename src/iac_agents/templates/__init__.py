@@ -1,6 +1,5 @@
 """Templates module for IAC Agents."""
 
-from .scenario_loader import ScenarioLoader, scenario_loader
 from .template_loader import TemplateLoader, template_loader
 from .template_manager import TemplateManager, template_manager
 from .ui_loader import UIStyleLoader, ui_loader
@@ -12,6 +11,4 @@ __all__ = [
     "TemplateLoader",
     "ui_loader",
     "UIStyleLoader",
-    "scenario_loader",
-    "ScenarioLoader",
 ]
