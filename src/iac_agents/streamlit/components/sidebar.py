@@ -12,10 +12,6 @@ from ...templates.ui_loader import ui_loader
 
 def display_agent_status():
     """Display real-time agent status in sidebar."""
-    st.sidebar.markdown(
-        ui_loader.format_sidebar_section("🤖 Agent Status", ""),
-        unsafe_allow_html=True,
-    )
 
     # Get active agents from logger
     try:

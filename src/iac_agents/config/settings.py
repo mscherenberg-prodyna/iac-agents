@@ -44,7 +44,7 @@ class UISettings:
     max_chat_messages: int = 50
     activity_log_entries: int = 5
     auto_scroll_delay: int = 200  # milliseconds
-    page_title: str = "Infrastructure as Prompts AI Agent"
+    page_title: str = "Infrastructure as Prompts"
     page_icon: str = "🤖"
 
 

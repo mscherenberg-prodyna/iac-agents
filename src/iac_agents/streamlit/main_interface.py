@@ -8,12 +8,10 @@ from iac_agents.deployment_automation import TerraformDeploymentManager
 
 from .components import (
     add_message,
-    display_agent_status,
     display_chat_interface,
     display_cost_estimation,
     display_header,
     display_showcase_scenarios,
-    display_workflow_progress,
     render_compliance_settings,
     render_deployment_config,
     render_system_metrics,
@@ -41,11 +39,6 @@ class StreamlitInterface:
 
     def render_sidebar(self):
         """Render the sidebar components."""
-        # Agent status
-        display_agent_status()
-
-        # Workflow progress
-        display_workflow_progress(self.supervisor_agent)
 
         # Showcase scenarios
         scenario_request = display_showcase_scenarios()

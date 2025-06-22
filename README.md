@@ -1,5 +1,9 @@
 # 🤖 IaP (Infrastructure as Prompts) Agent
 
+<p align="center">
+    <img src="assets/logo.png" alt="logo" width="300"/>
+</p>
+
 ## 🎯 Purpose
 
 Transform cloud infrastructure deployment from complex command-line operations to simple conversational requests. This showcase demonstrates how AI agents interpret natural language requirements and automatically provision Azure resources through an intelligent multi-agent system with built-in compliance validation.
@@ -34,23 +38,25 @@ Transform cloud infrastructure deployment from complex command-line operations t
 
 ### Multi-Agent Orchestration
 ```
-User Input → Supervisor Agent → Workflow Planning
-    ↓
-Requirements Analysis → Research & Planning
+User Input → Cloud Architect Agent → Workflow and Infrastructure Planning
     ↓  
-Template Generation → Validation & Compliance
+Template Generation → Align with current best practices and documentation
     ↓
-Cost Estimation → Approval Preparation
+Compliance and Cost Estimation → Approval Preparation
     ↓
-Quality Assurance → Deployment Ready Output
+Deployment Approval → Deploy Template to Cloud
 ```
 
+<p align="center">
+    <img src="assets/iap.png" alt="iap" width="500"/>
+</p>
+
 ### Agent Responsibilities
-- **🎯 Supervisor Agent**: Orchestrates workflow, communicates with user
-- **🏗️ Terraform Agent**: Generates infrastructure templates
-- **🔍 Research Agent**: Looks up documentation and estimates costs
-- **⚖️ Compliance Agent**: Validates against security frameworks
-- **👥 Approval Agent**: Manages human approval workflow
+- **🎯 Cloud Architect Agent**: Orchestrates workflow, validates results and communicates with users
+- **🏗️ Cloud Engineer Agent**: Generates infrastructure templates
+- **🔍 Terraform Research Agent**: Looks up documentation and best practices
+- **⚖️ SecOps/FinOps Agent**: Validates against security frameworks and calculates costs
+- **🚀 DevOps Agent**: Deploys templates to the cloud
 
 ## 📊 Performance Metrics
 

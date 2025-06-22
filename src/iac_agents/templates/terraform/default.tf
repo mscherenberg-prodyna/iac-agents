@@ -14,7 +14,7 @@ provider "azurerm" {
 resource "azurerm_resource_group" "main" {
   name     = "secure-infrastructure-rg"
   location = "East US"
-  
+
   tags = {
     Environment = "production"
     Purpose     = "secure-infrastructure"

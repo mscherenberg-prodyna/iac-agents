@@ -60,7 +60,7 @@ def render_system_metrics():
 
     try:
         total_messages = (
-            len(st.session_state.messages) if "messages" in st.session_state else 0
+            len(st.session_state.messages) - 1 if "messages" in st.session_state else 0
         )
 
         active_agents_count = 0
@@ -126,43 +126,20 @@ def render_deployment_config():
     # Initialize deployment settings in session state
     if "deployment_config" not in st.session_state:
         st.session_state.deployment_config = {
-            "auto_deploy": False,
-            "environment": "staging",
             "approval_required": True,
         }
 
-    # Auto-deployment toggle
-    auto_deploy = st.checkbox(
-        "🤖 Enable Auto-Deployment",
-        value=st.session_state.deployment_config["auto_deploy"],
-        help="When enabled, approved templates will be automatically deployed to the selected environment",
-    )
-    st.session_state.deployment_config["auto_deploy"] = auto_deploy
-
-    # Environment selection
-    environment = st.selectbox(
-        "Target Environment",
-        ["development", "staging", "production"],
-        index=["development", "staging", "production"].index(
-            st.session_state.deployment_config["environment"]
-        ),
-        help="Select the target environment for deployments",
-    )
-    st.session_state.deployment_config["environment"] = environment
-
     # Approval requirement
     approval_required = st.checkbox(
-        "✅ Require Manual Approval",
+        "Require Manual Approval",
         value=st.session_state.deployment_config["approval_required"],
         help="When enabled, all deployments require manual approval before execution",
     )
     st.session_state.deployment_config["approval_required"] = approval_required
 
     # Status indicators
-    if auto_deploy and not approval_required:
+    if not approval_required:
         st.warning("⚠️ Auto-deployment without approval enabled")
-    elif auto_deploy and approval_required:
-        st.info("🔄 Auto-deployment with approval workflow")
     else:
         st.success("🛡️ Manual deployment mode (recommended)")
 
@@ -172,8 +149,6 @@ def get_deployment_config() -> Dict[str, any]:
     return st.session_state.get(
         "deployment_config",
         {
-            "auto_deploy": False,
-            "environment": "staging",
             "approval_required": True,
         },
     )

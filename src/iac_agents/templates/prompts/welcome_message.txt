@@ -1,0 +1,18 @@
+👋 **Welcome to the Infrastructure as Prompts AI agent!**
+
+I can help you transform your infrastructure requirements into production-ready Azure deployments. Here's what I can do:
+
+• **🏗️ Generate Terraform templates** from natural language descriptions
+
+• **🔍 Research best Infrastructure as Code practices** using current documentation
+
+• **⚖️ Validate compliance** against industry frameworks and estimate costs
+
+• **👥 Orchestrate approval workflows** for governance
+
+• **🚀 Automatically deploy** infrastructure into the Azure cloud
+
+**To get started:**
+Just type your infrastructure requirements or questions into the chat. For example:
+
+*"I need a secure store for a large number of documents I have to archive for legal purposes."*

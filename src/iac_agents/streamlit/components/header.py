@@ -1,7 +1,7 @@
 """Header components for the Streamlit interface."""
 
 import base64
-from pathlib import Path
+import os
 
 import streamlit as st
 
@@ -35,30 +35,32 @@ def setup_page_config():
 def display_header():
     """Display the application header with branding."""
     # Load company logo
-    assets_path = Path(__file__).parent.parent.parent.parent / "assets"
-    logo_path = assets_path / "logo.png"
+    logo_path = os.path.join(os.getcwd(), "assets", "logo.png")
 
     col1, col2 = st.columns([3, 1])
 
     with col1:
-        st.markdown("# 🤖 Infrastructure as Prompts AI Agent")
+        st.markdown("# 🤖 Infrastructure as Prompts")
         st.markdown(
             "**Transform infrastructure deployment from complex command-line "
-            "operations to simple conversational requests.**"
+            "operations to simple conversational requests through AI agents.**"
         )
 
     with col2:
-        if logo_path.exists():
+        if os.path.exists(logo_path):
             logo_b64 = load_image_as_base64(str(logo_path))
             if logo_b64:
                 st.markdown(
                     f"""
-                <div style="text-align: right;">
+                <div style="text-align: center;">
                     <img src="data:image/png;base64,{logo_b64}" width="150">
                 </div>
                 """,
                     unsafe_allow_html=True,
                 )
+    
+    # Add gap below header
+    st.markdown("<div style='margin-bottom: 2rem;'></div>", unsafe_allow_html=True)
 
 
 def display_navigation():
