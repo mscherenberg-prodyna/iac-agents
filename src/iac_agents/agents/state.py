@@ -171,6 +171,7 @@ class InfrastructureStateDict(TypedDict):
     user_input: str
     conversation_history: Optional[List[str]]
     compliance_settings: Optional[Dict[str, Any]]
+    deployment_config: Optional[Dict[str, Any]]
 
     # Workflow tracking
     current_stage: Optional[str]

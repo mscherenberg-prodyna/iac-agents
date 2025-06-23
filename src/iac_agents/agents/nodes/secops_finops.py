@@ -36,6 +36,10 @@ Compliance Requirements:
         compliance_enforcement = "Enabled" if compliance_settings.get("enforce_compliance", False) else "Disabled"
         compliance_frameworks = ", ".join(compliance_settings.get("selected_frameworks", [])) or "None selected"
 
+        # Check if terraform research is enabled
+        deployment_config = state.get("deployment_config", {})
+        terraform_enabled = deployment_config.get("terraform_research_enabled", True)
+        
         # Load the secops/finops prompt
         system_prompt = template_manager.get_prompt(
             "sec_fin_ops_engineer",
@@ -44,6 +48,7 @@ Compliance Requirements:
             compliance_enforcement=compliance_enforcement,
             compliance_frameworks=compliance_frameworks,
             compliance_requirements=str(compliance_settings),
+            terraform_consultant_available=terraform_enabled,
         )
 
         # Make LLM call for SecOps/FinOps analysis

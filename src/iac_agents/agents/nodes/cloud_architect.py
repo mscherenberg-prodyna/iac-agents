@@ -1,9 +1,65 @@
 """Cloud Architect Agent node for LangGraph workflow."""
 
+import subprocess
+import json
+from typing import Dict, Any
+
 from ...logging_system import log_agent_complete, log_agent_start, log_warning, log_agent_response
 from ...templates.template_manager import template_manager
 from ..state import InfrastructureStateDict
 from ..utils import make_llm_call
+
+
+def _get_azure_subscription_info() -> Dict[str, Any]:
+    """Get Azure subscription information using Azure CLI."""
+    try:
+        # Run az account list command to get subscription information
+        result = subprocess.run(
+            ["az", "account", "list", "--output", "json"],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+        
+        if result.returncode == 0:
+            subscriptions = json.loads(result.stdout)
+            
+            # Find the default subscription
+            default_sub = None
+            for sub in subscriptions:
+                if sub.get("isDefault", False):
+                    default_sub = sub
+                    break
+            
+            if default_sub:
+                return {
+                    "default_subscription_name": default_sub.get("name", "Unknown"),
+                    "default_subscription_id": default_sub.get("id", "Unknown"),
+                    "total_subscriptions": len(subscriptions),
+                    "available_subscriptions": [sub.get("name", "Unknown") for sub in subscriptions]
+                }
+            else:
+                return {
+                    "default_subscription_name": "None (not logged in)",
+                    "default_subscription_id": "Unknown",
+                    "total_subscriptions": 0,
+                    "available_subscriptions": []
+                }
+        else:
+            return {
+                "default_subscription_name": "Azure CLI error",
+                "default_subscription_id": "Unknown", 
+                "total_subscriptions": 0,
+                "available_subscriptions": []
+            }
+            
+    except (subprocess.TimeoutExpired, subprocess.CalledProcessError, json.JSONDecodeError, FileNotFoundError):
+        return {
+            "default_subscription_name": "Azure CLI not available",
+            "default_subscription_id": "Unknown",
+            "total_subscriptions": 0, 
+            "available_subscriptions": []
+        }
 
 
 def cloud_architect_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
@@ -23,6 +79,10 @@ def cloud_architect_agent(state: InfrastructureStateDict) -> InfrastructureState
         compliance_enforcement = "Enabled" if compliance_settings.get("enforce_compliance", False) else "Disabled"
         compliance_frameworks = ", ".join(compliance_settings.get("selected_frameworks", [])) or "None selected"
         approval_required = "Yes" if state.get("requires_approval", True) else "No"
+        
+        # Get Azure subscription information
+        subscription_info = _get_azure_subscription_info()
+        available_subscriptions = ", ".join(subscription_info["available_subscriptions"]) if subscription_info["available_subscriptions"] else "None available"
 
         # Load the cloud architect prompt with variable substitution
         system_prompt = template_manager.get_prompt(
@@ -31,6 +91,8 @@ def cloud_architect_agent(state: InfrastructureStateDict) -> InfrastructureState
             current_stage=state.get("current_stage", "initial"),
             completed_stages=", ".join(state.get("completed_stages", [])),
             agent_context=context_info,
+            default_subscription_name=subscription_info["default_subscription_name"],
+            available_subscriptions=available_subscriptions,
             should_respond_to_user="False",  # Will be determined after response analysis
             compliance_enforcement=compliance_enforcement,
             compliance_frameworks=compliance_frameworks,

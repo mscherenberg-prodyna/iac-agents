@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+from jinja2 import Environment, FileSystemLoader, Template
+
 
 class TemplateLoader:
     """Load templates from various file formats."""
@@ -14,6 +16,13 @@ class TemplateLoader:
             self.base_path = Path(__file__).parent
         else:
             self.base_path = Path(base_path)
+        
+        # Initialize Jinja2 environment
+        self.jinja_env = Environment(
+            loader=FileSystemLoader(str(self.base_path)),
+            trim_blocks=True,
+            lstrip_blocks=True
+        )
 
     def load_text_file(self, file_path: str) -> str:
         """Load content from a text file."""
@@ -30,10 +39,10 @@ class TemplateLoader:
         file_path = f"terraform/{template_name}.tf"
         return self.load_text_file(file_path)
 
-    def load_prompt_template(self, prompt_name: str) -> str:
-        """Load a prompt template file."""
+    def load_prompt_template(self, prompt_name: str) -> Template:
+        """Load a prompt template file as Jinja2 template."""
         file_path = f"prompts/{prompt_name}.txt"
-        return self.load_text_file(file_path)
+        return self.jinja_env.get_template(file_path)
 
     def load_all_terraform_templates(self) -> Dict[str, str]:
         """Load all available Terraform templates."""
@@ -47,7 +56,7 @@ class TemplateLoader:
 
         return templates
 
-    def load_all_prompt_templates(self) -> Dict[str, str]:
+    def load_all_prompt_templates(self) -> Dict[str, Template]:
         """Load all available prompt templates."""
         prompts_dir = self.base_path / "prompts"
         prompts = {}

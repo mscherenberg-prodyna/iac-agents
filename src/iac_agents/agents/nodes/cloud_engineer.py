@@ -22,12 +22,17 @@ def cloud_engineer_agent(state: InfrastructureStateDict) -> InfrastructureStateD
     user_input = state["user_input"]  # For context only
 
     try:
+        # Check if terraform research is enabled
+        deployment_config = state.get("deployment_config", {})
+        terraform_enabled = deployment_config.get("terraform_research_enabled", True)
+        
         # Load the cloud engineer prompt with Cloud Architect's analysis
         system_prompt = template_manager.get_prompt(
             "cloud_engineer",
             user_request=user_input,
             architect_analysis=architect_analysis or "No architect analysis available",
             current_stage=state.get("current_stage", "template_generation"),
+            terraform_consultant_available=terraform_enabled,
         )
 
         # Make LLM call with architect's analysis as primary input

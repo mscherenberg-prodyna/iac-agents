@@ -1,6 +1,8 @@
 """Template manager for prompts and Terraform templates."""
 
-from typing import List
+from typing import Dict, List
+
+from jinja2 import Template
 
 from .template_loader import template_loader
 
@@ -25,15 +27,12 @@ class TemplateManager:
             print(f"Warning: Failed to load templates: {e}")
 
     def get_prompt(self, prompt_name: str, **kwargs) -> str:
-        """Get a prompt template with optional formatting."""
+        """Get a rendered prompt template with optional variables."""
         if prompt_name not in self._prompt_templates:
             raise ValueError(f"Unknown prompt template: {prompt_name}")
 
-        template = self._prompt_templates[prompt_name]
-
-        if kwargs:
-            return template.format(**kwargs)
-        return template
+        template: Template = self._prompt_templates[prompt_name]
+        return template.render(**kwargs)
 
     def get_terraform_template(self, template_type: str) -> str:
         """Get a Terraform template by type."""

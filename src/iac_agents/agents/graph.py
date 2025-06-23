@@ -143,7 +143,15 @@ class InfrastructureAsPromptsAgent:
     def _route_cloud_engineer(self, state: InfrastructureStateDict) -> str:
         """Route from cloud engineer agent."""
         if state.get("needs_terraform_lookup"):
-            return "terraform_consultant"
+            # Check if terraform research is enabled
+            deployment_config = state.get("deployment_config", {})
+            terraform_enabled = deployment_config.get("terraform_research_enabled", True)
+            
+            if terraform_enabled:
+                return "terraform_consultant"
+            else:
+                # Skip terraform consultant if disabled, return to Cloud Architect
+                return "cloud_architect"
         # Always return to Cloud Architect for centralized orchestration
         return "cloud_architect"
 
@@ -163,7 +171,15 @@ class InfrastructureAsPromptsAgent:
     def _route_secops_finops(self, state: InfrastructureStateDict) -> str:
         """Route from secops/finops agent."""
         if state.get("needs_pricing_lookup"):
-            return "terraform_consultant"
+            # Check if terraform research is enabled
+            deployment_config = state.get("deployment_config", {})
+            terraform_enabled = deployment_config.get("terraform_research_enabled", True)
+            
+            if terraform_enabled:
+                return "terraform_consultant"
+            else:
+                # Skip terraform consultant if disabled, return to Cloud Architect
+                return "cloud_architect"
         # Always return to Cloud Architect for centralized orchestration
         return "cloud_architect"
 
