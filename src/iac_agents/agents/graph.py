@@ -99,7 +99,11 @@ class InfrastructureAsPromptsAgent:
         workflow.add_conditional_edges(
             "terraform_consultant",
             self._route_terraform_consultant,
-            {"cloud_engineer": "cloud_engineer", "secops_finops": "secops_finops"},
+            {
+                "cloud_engineer": "cloud_engineer", 
+                "secops_finops": "secops_finops",
+                "cloud_architect": "cloud_architect",
+            },
         )
 
         workflow.add_conditional_edges(
@@ -119,6 +123,10 @@ class InfrastructureAsPromptsAgent:
 
     def _route_cloud_architect(self, state: InfrastructureStateDict) -> str:
         """Route from cloud architect agent."""
+        # Check if Cloud Architect generated a user response - if so, END workflow and wait for user
+        if state.get("final_response"):
+            return END
+            
         workflow_phase = state.get("workflow_phase", "planning")
 
         if workflow_phase == "planning":
@@ -141,17 +149,16 @@ class InfrastructureAsPromptsAgent:
 
     def _route_terraform_consultant(self, state: InfrastructureStateDict) -> str:
         """Route from terraform consultant agent."""
-        # If there are errors, route back to the source that requested consultation
-        if state.get("errors"):
-            if state.get("needs_pricing_lookup"):
-                return "secops_finops"
-            else:
-                return "cloud_engineer"
+        # Always route back to the source that requested consultation
+        caller = state.get("terraform_consultant_caller")
         
-        # Normal routing based on the original request
-        if state.get("needs_pricing_lookup"):
+        if caller == "secops_finops":
             return "secops_finops"
-        return "cloud_engineer"
+        elif caller == "cloud_engineer":
+            return "cloud_engineer"
+        else:
+            # Fallback to Cloud Architect if caller not tracked
+            return "cloud_architect"
 
     def _route_secops_finops(self, state: InfrastructureStateDict) -> str:
         """Route from secops/finops agent."""
@@ -176,9 +183,10 @@ class InfrastructureAsPromptsAgent:
         """Handle human approval workflow."""
         log_agent_start("Human Approval", "Requesting human approval")
 
-        # In a real implementation, this would integrate with approval systems
-        # For now, we'll simulate automatic approval for non-prod environments
-        approval_received = not state.get("requires_approval", True)
+        # Check if manual approval is required from UI settings
+        # If approval is required, set pending; if not required, auto-approve
+        requires_approval = state.get("requires_approval", True)
+        approval_received = not requires_approval  # Auto-approve if approval not required
 
         log_agent_complete(
             "Human Approval",

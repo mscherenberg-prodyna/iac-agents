@@ -30,7 +30,7 @@ def display_chat_messages():
     with message_container:
         # Display chat messages
         for _, message in enumerate(st.session_state.messages):
-            avatar = None
+            avatar = os.path.join(os.getcwd(), "assets", "user_logo.png")
             if message["role"] == "assistant":
                 avatar = os.path.join(os.getcwd(), "assets", "planner_agent_small.png")
 

@@ -223,6 +223,16 @@ agent_logger = AgentLogger()
 def log_agent_start(agent_name: str, activity: str, details: Dict[str, Any] = None):
     """Convenience function for logging agent start."""
     agent_logger.log_agent_start(agent_name, activity, details)
+    
+    # Update Streamlit session state for real-time UI updates
+    try:
+        import streamlit as st
+        if hasattr(st, 'session_state'):
+            st.session_state.current_agent_status = agent_name
+            st.session_state.current_workflow_phase = activity
+    except (ImportError, AttributeError):
+        # Streamlit not available or session_state not initialized
+        pass
 
 
 def log_agent_complete(agent_name: str, activity: str, details: Dict[str, Any] = None):
@@ -248,3 +258,11 @@ def log_warning(agent_name: str, message: str, details: Dict[str, Any] = None):
 def log_error(agent_name: str, message: str, details: Dict[str, Any] = None):
     """Convenience function for logging errors."""
     agent_logger.log_error(agent_name, message, details)
+
+
+def log_agent_response(agent_name: str, response: str, truncate_at: int = 200):
+    """Log agent response content (truncated for readability)."""
+    if response:
+        truncated = response[:truncate_at] + "..." if len(response) > truncate_at else response
+        truncated = truncated.replace('\n', ' ')  # Single line for logs
+        agent_logger.log_info(agent_name, f"Response: {truncated}")

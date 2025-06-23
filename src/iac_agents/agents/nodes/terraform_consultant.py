@@ -66,50 +66,69 @@ def terraform_consultant_agent(
 
         if azure_response:
             log_agent_complete("Terraform Consultant", "Azure AI guidance provided")
-            result_state = {
-                **state,
-                "current_agent": "terraform_consultant",
-                "terraform_guidance": azure_response,
-                "needs_terraform_lookup": False,
-                "needs_pricing_lookup": False,
-            }
             
-            # Clear the specific query fields
-            if "terraform_pricing_query" in result_state:
-                del result_state["terraform_pricing_query"]
+            # Reset flags based on which type of consultation was completed
+            if state.get("needs_pricing_lookup"):
+                # Completed pricing lookup, reset pricing flag
+                result_state = {
+                    **state,
+                    "current_agent": "terraform_consultant",
+                    "terraform_guidance": azure_response,
+                    "needs_pricing_lookup": False,
+                    "terraform_consultant_caller": None,  # Clear caller after completion
+                }
+            else:
+                # Completed terraform consultation, reset terraform flag
+                result_state = {
+                    **state,
+                    "current_agent": "terraform_consultant", 
+                    "terraform_guidance": azure_response,
+                    "needs_terraform_lookup": False,
+                    "terraform_consultant_caller": None,  # Clear caller after completion
+                }
                 
             return result_state
         else:
             log_warning("Terraform Consultant", "Azure AI unavailable")
             errors = state.get("errors", [])
-            result_state = {
-                **state,
-                "current_agent": "terraform_consultant",
-                "errors": errors + ["Terraform Consultant Azure AI integration unavailable"],
-                "needs_terraform_lookup": False,
-                "needs_pricing_lookup": False,
-            }
             
-            # Clear the specific query fields
-            if "terraform_pricing_query" in result_state:
-                del result_state["terraform_pricing_query"]
+            # Reset only the relevant flag based on consultation type
+            if state.get("needs_pricing_lookup"):
+                result_state = {
+                    **state,
+                    "current_agent": "terraform_consultant",
+                    "errors": errors + ["Terraform Consultant Azure AI integration unavailable"],
+                    "needs_pricing_lookup": False,
+                }
+            else:
+                result_state = {
+                    **state,
+                    "current_agent": "terraform_consultant",
+                    "errors": errors + ["Terraform Consultant Azure AI integration unavailable"],
+                    "needs_terraform_lookup": False,
+                }
                 
             return result_state
 
     except Exception as e:
         log_warning("Terraform Consultant", f"Error: {str(e)}")
         errors = state.get("errors", [])
-        result_state = {
-            **state,
-            "current_agent": "terraform_consultant",
-            "errors": errors + [f"Terraform Consultant error: {str(e)}"],
-            "needs_terraform_lookup": False,
-            "needs_pricing_lookup": False,
-        }
         
-        # Clear the specific query fields
-        if "terraform_pricing_query" in result_state:
-            del result_state["terraform_pricing_query"]
+        # Reset only the relevant flag based on consultation type
+        if state.get("needs_pricing_lookup"):
+            result_state = {
+                **state,
+                "current_agent": "terraform_consultant",
+                "errors": errors + [f"Terraform Consultant error: {str(e)}"],
+                "needs_pricing_lookup": False,
+            }
+        else:
+            result_state = {
+                **state,
+                "current_agent": "terraform_consultant",
+                "errors": errors + [f"Terraform Consultant error: {str(e)}"],
+                "needs_terraform_lookup": False,
+            }
             
         return result_state
 

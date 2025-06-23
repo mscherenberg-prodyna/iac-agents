@@ -169,12 +169,14 @@ class InfrastructureStateDict(TypedDict):
 
     # Input
     user_input: str
+    conversation_history: Optional[List[str]]
     compliance_settings: Optional[Dict[str, Any]]
 
     # Workflow tracking
     current_stage: Optional[str]
     completed_stages: List[str]
     workflow_plan: Optional[Dict[str, Any]]
+    phase_iterations: Optional[Dict[str, int]]
 
     # Stage results (as dicts for LangGraph compatibility)
     requirements_analysis_result: Optional[Dict[str, Any]]
@@ -201,7 +203,7 @@ class InfrastructureStateDict(TypedDict):
     requires_approval: bool
     approval_request_id: Optional[str]
     human_feedback: Optional[str]
-    
+
     # Additional workflow fields
     current_agent: Optional[str]
     workflow_phase: Optional[str]
@@ -216,4 +218,6 @@ class InfrastructureStateDict(TypedDict):
     devops_response: Optional[str]
     deployment_status: Optional[str]
     deployment_details: Optional[Dict[str, Any]]
+    resource_deployment_plan: Optional[List[str]]
     terraform_workspace: Optional[str]
+    terraform_consultant_caller: Optional[str]

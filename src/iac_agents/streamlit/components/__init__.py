@@ -17,8 +17,9 @@ from .compliance_panel import (
 )
 from .header import display_header, setup_page_config
 from .sidebar import (
+    display_agent_monitoring,
     display_cost_estimation,
-    display_metrics,
+    display_deployment_plan,
 )
 
 __all__ = [
@@ -39,6 +40,7 @@ __all__ = [
     "display_header",
     "setup_page_config",
     # Sidebar components
-    "display_cost_estimation",
-    "display_metrics",
+    "display_agent_monitoring",
+    "display_cost_estimation", 
+    "display_deployment_plan",
 ]

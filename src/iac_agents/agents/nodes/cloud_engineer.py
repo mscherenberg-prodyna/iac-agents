@@ -1,6 +1,6 @@
 """Cloud Engineer Agent node for LangGraph workflow."""
 
-from ...logging_system import log_agent_complete, log_agent_start, log_warning
+from ...logging_system import log_agent_complete, log_agent_start, log_warning, log_agent_response
 from ...templates.template_manager import template_manager
 from ..state import InfrastructureStateDict, TemplateGenerationResult, WorkflowStage
 from ..utils import (
@@ -57,6 +57,9 @@ def cloud_engineer_agent(state: InfrastructureStateDict) -> InfrastructureStateD
             state, WorkflowStage.TEMPLATE_GENERATION.value
         )
 
+        # Log the response content for debugging
+        log_agent_response("Cloud Engineer", response)
+        
         log_agent_complete(
             "Cloud Engineer",
             f"Response generated {'with template' if template_content else 'without template'}, "
@@ -81,7 +84,7 @@ Specific areas where guidance is needed:
 Please provide best practices, latest resource configurations, and any optimization recommendations.
 """
 
-        return {
+        result_state = {
             **state,
             "current_stage": WorkflowStage.TEMPLATE_GENERATION.value,
             "completed_stages": new_completed_stages,
@@ -90,6 +93,12 @@ Please provide best practices, latest resource configurations, and any optimizat
             "cloud_engineer_response": terraform_query if needs_terraform_lookup else response,
             "needs_terraform_lookup": needs_terraform_lookup,
         }
+        
+        # Set caller info if requesting Terraform consultation
+        if needs_terraform_lookup:
+            result_state["terraform_consultant_caller"] = "cloud_engineer"
+            
+        return result_state
 
     except Exception as e:
         log_warning("Cloud Engineer", f"Template generation failed: {str(e)}")

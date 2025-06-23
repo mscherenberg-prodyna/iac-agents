@@ -25,6 +25,7 @@ graph TD;
 	human_approval -.-> devops;
 	secops_finops -.-> cloud_architect;
 	secops_finops -.-> terraform_consultant;
+	terraform_consultant -.-> cloud_architect;
 	terraform_consultant -.-> cloud_engineer;
 	terraform_consultant -.-> secops_finops;
 	classDef default fill:#f2f0ff,line-height:1.2
