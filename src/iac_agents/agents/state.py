@@ -201,3 +201,19 @@ class InfrastructureStateDict(TypedDict):
     requires_approval: bool
     approval_request_id: Optional[str]
     human_feedback: Optional[str]
+    
+    # Additional workflow fields
+    current_agent: Optional[str]
+    workflow_phase: Optional[str]
+    needs_terraform_lookup: bool
+    needs_pricing_lookup: bool
+    approval_received: bool
+    cloud_architect_analysis: Optional[str]
+    cloud_engineer_response: Optional[str]
+    secops_finops_analysis: Optional[str]
+    terraform_guidance: Optional[str]
+    terraform_pricing_query: Optional[str]
+    devops_response: Optional[str]
+    deployment_status: Optional[str]
+    deployment_details: Optional[Dict[str, Any]]
+    terraform_workspace: Optional[str]

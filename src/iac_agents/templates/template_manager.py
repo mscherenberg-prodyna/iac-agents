@@ -42,26 +42,6 @@ class TemplateManager:
 
         return self._terraform_templates[template_type]
 
-    def get_fallback_template(self, requirements: str) -> str:
-        """Get appropriate fallback template based on requirements."""
-        requirements_lower = requirements.lower()
-
-        # Document storage template
-        if any(
-            keyword in requirements_lower
-            for keyword in ["document", "file", "storage", "legal", "retention"]
-        ):
-            return self.get_terraform_template("document_storage")
-
-        # Web application template
-        if any(
-            keyword in requirements_lower
-            for keyword in ["web", "app", "application", "website"]
-        ):
-            return self.get_terraform_template("web_application")
-
-        # Default template
-        return self.get_terraform_template("default")
 
     def list_available_prompts(self) -> List[str]:
         """List all available prompt templates."""

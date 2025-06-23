@@ -95,6 +95,9 @@ COST_OPTIMIZATION: [Suggestions based on pricing data]
 
 ## VALIDATION OUTPUT
 
+### Pricing Lookup:
+If you need current Azure pricing data to complete your analysis, clearly state "PRICING_LOOKUP_REQUIRED" and specify what pricing information you need.
+
 ### Compliance Report Format:
 Compliance Validation Report
 PCI DSS Compliance

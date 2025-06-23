@@ -16,12 +16,9 @@ from .compliance_panel import (
     set_compliance_settings,
 )
 from .header import display_header, setup_page_config
-from .scenarios import display_scenario_quick_actions, display_showcase_scenarios
 from .sidebar import (
-    display_agent_status,
     display_cost_estimation,
     display_metrics,
-    display_workflow_progress,
 )
 
 __all__ = [
@@ -41,12 +38,7 @@ __all__ = [
     # Header components
     "display_header",
     "setup_page_config",
-    # Scenarios components
-    "display_showcase_scenarios",
-    "display_scenario_quick_actions",
     # Sidebar components
-    "display_agent_status",
     "display_cost_estimation",
     "display_metrics",
-    "display_workflow_progress",
 ]

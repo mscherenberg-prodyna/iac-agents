@@ -34,8 +34,10 @@ class StreamlitInterface:
     def render_sidebar(self):
         """Render the sidebar components."""
 
-        # Cost estimation
-        render_system_metrics()
+        with st.sidebar.container():
+
+            # Cost estimation
+            render_system_metrics()
 
     def render_main_content(self):
         """Render the main content area."""
@@ -72,8 +74,25 @@ class StreamlitInterface:
                 approval_required = st.session_state.get("deployment_config", {}).get(
                     "approval_required", True
                 )
-                response = self.agent.invoke(
-                    f"{user_input}\n\n{compliance_settings}\n\nDeployment approval required: {approval_required}"
+
+                config = {
+                    "configurable": {
+                        "thread_id": f"infrastructure_workflow_{hash(user_input)}"
+                    }
+                }
+
+                result = self.agent.invoke(
+                    {
+                        "user_input": user_input,
+                        "compliance_settings": compliance_settings,
+                        "requires_approval": approval_required,
+                    },
+                    config=config,
+                )
+
+                # Extract response from the result
+                response = result.get(
+                    "final_response", "✅ Infrastructure workflow completed."
                 )
 
                 # Add response to chat

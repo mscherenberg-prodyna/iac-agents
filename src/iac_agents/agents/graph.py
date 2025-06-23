@@ -1,136 +1,200 @@
-from typing import Literal, TypedDict
+"""Infrastructure as Prompts Agent - Main orchestrator class using LangGraph."""
 
+import os
+from typing import Dict, Optional
+
+from azure.ai.projects import AIProjectClient
+from azure.identity import DefaultAzureCredential
+from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph
 
-
-class AgentState(TypedDict):
-    messages: list
-    current_agent: str
-    next_agent: str
-    user_request: str
-    infrastructure_plan: dict
-    terraform_template: str
-    compliance_report: dict
-    cost_estimate: dict
-    deployment_status: dict
-    requires_human_approval: bool
-    approval_received: bool
-    needs_terraform_lookup: bool
-    needs_pricing_lookup: bool
-    workflow_phase: Literal[
-        "planning", "design", "validation", "approval", "deployment", "complete"
-    ]
+from ..logging_system import log_agent_complete, log_agent_start
+from .nodes import (
+    cloud_architect_agent,
+    cloud_engineer_agent,
+    devops_agent,
+    secops_finops_agent,
+    terraform_consultant_agent,
+)
+from .state import InfrastructureStateDict
 
 
-# Define the graph
-workflow = StateGraph(AgentState)
+class InfrastructureAsPromptsAgent:
+    """Main orchestrator for Infrastructure as Prompts using LangGraph multi-agent workflow."""
 
-# Add nodes for each agent
-workflow.add_node("cloud_architect", cloud_architect_agent)
-workflow.add_node("cloud_engineer", cloud_engineer_agent)
-workflow.add_node("terraform_consultant", terraform_consultant_agent)
-workflow.add_node("secops_finops", secops_finops_agent)
-workflow.add_node("devops", devops_agent)
-workflow.add_node("human_approval", human_approval_node)
+    def __init__(self, azure_config: Optional[Dict[str, str]] = None):
+        """Initialize the Infrastructure as Prompts Agent.
 
+        Args:
+            azure_config: Optional Azure AI configuration. If not provided, reads from environment.
+        """
+        self.azure_config = azure_config or {
+            "endpoint": os.getenv("AZURE_PROJECT_ENDPOINT"),
+            "agent_id": os.getenv("AZURE_AGENT_ID"),
+        }
 
-# Define conditional edges based on workflow phase
-def route_next_agent(state: AgentState) -> str:
-    phase = state["workflow_phase"]
-    current = state["current_agent"]
+        self.azure_client = self._initialize_azure_client()
+        self.graph = self._create_workflow_graph()
 
-    # Cloud Architect routing logic
-    if current == "cloud_architect":
-        if phase == "planning":
+    def _initialize_azure_client(self) -> Optional[AIProjectClient]:
+        """Initialize Azure AI client for Terraform Consultant."""
+        if not self.azure_config.get("endpoint"):
+            return None
+
+        try:
+            return AIProjectClient(
+                credential=DefaultAzureCredential(),
+                endpoint=self.azure_config["endpoint"],
+            )
+        except Exception as e:
+            log_agent_start(
+                "InfrastructureAsPromptsAgent",
+                f"Azure client initialization failed: {e}",
+            )
+            return None
+
+    def _create_workflow_graph(self) -> StateGraph:
+        """Create the LangGraph workflow with all agents."""
+        workflow = StateGraph(InfrastructureStateDict)
+
+        # Add agent nodes
+        workflow.add_node("cloud_architect", cloud_architect_agent)
+        workflow.add_node("cloud_engineer", cloud_engineer_agent)
+        workflow.add_node("terraform_consultant", terraform_consultant_agent)
+        workflow.add_node("secops_finops", secops_finops_agent)
+        workflow.add_node("devops", devops_agent)
+        workflow.add_node("human_approval", self._human_approval_node)
+
+        # Add routing
+        self._add_workflow_edges(workflow)
+        workflow.set_entry_point("cloud_architect")
+
+        return workflow
+
+    def _add_workflow_edges(self, workflow: StateGraph) -> None:
+        """Add all workflow edges and routing logic."""
+
+        # Add conditional edges with specific routing functions
+        workflow.add_conditional_edges(
+            "cloud_architect",
+            self._route_cloud_architect,
+            {
+                "cloud_engineer": "cloud_engineer",
+                "secops_finops": "secops_finops",
+                "human_approval": "human_approval",
+                "devops": "devops",
+                END: END,
+            },
+        )
+
+        workflow.add_conditional_edges(
+            "cloud_engineer",
+            self._route_cloud_engineer,
+            {
+                "terraform_consultant": "terraform_consultant",
+                "cloud_architect": "cloud_architect",
+            },
+        )
+
+        workflow.add_conditional_edges(
+            "terraform_consultant",
+            self._route_terraform_consultant,
+            {"cloud_engineer": "cloud_engineer", "secops_finops": "secops_finops"},
+        )
+
+        workflow.add_conditional_edges(
+            "secops_finops",
+            self._route_secops_finops,
+            {
+                "terraform_consultant": "terraform_consultant",
+                "cloud_architect": "cloud_architect",
+            },
+        )
+
+        workflow.add_conditional_edges(
+            "human_approval", self._route_human_approval, {"devops": "devops", END: END}
+        )
+
+        workflow.add_edge("devops", "cloud_architect")
+
+    def _route_cloud_architect(self, state: InfrastructureStateDict) -> str:
+        """Route from cloud architect agent."""
+        workflow_phase = state.get("workflow_phase", "planning")
+
+        if workflow_phase == "planning":
             return "cloud_engineer"
-        elif phase == "validation":
+        if workflow_phase == "validation":
             return "secops_finops"
-        elif phase == "approval" and state["requires_human_approval"]:
+        if workflow_phase == "approval" and state.get("requires_approval"):
             return "human_approval"
-        elif phase == "deployment":
+        if workflow_phase == "deployment":
             return "devops"
 
-    # Cloud Engineer routing logic
-    elif current == "cloud_engineer":
+        return END
+
+    def _route_cloud_engineer(self, state: InfrastructureStateDict) -> str:
+        """Route from cloud engineer agent."""
         if state.get("needs_terraform_lookup"):
             return "terraform_consultant"
-        else:
-            return "cloud_architect"
-
-    # Terraform Consultant routing logic
-    elif current == "terraform_consultant":
-        # Return to whoever called it
-        if state.get("needs_pricing_lookup"):
-            return "secops_finops"
-        else:
-            return "cloud_engineer"
-
-    # SecOps/FinOps routing logic
-    elif current == "secops_finops":
-        if state.get("needs_pricing_lookup"):
-            return "terraform_consultant"
-        else:
-            return "cloud_architect"
-
-    # Human approval continues to DevOps
-    elif current == "human_approval":
-        if state["approval_received"]:
-            return "devops"
-        else:
-            return END
-
-    # DevOps returns to Cloud Architect for final summary
-    elif current == "devops":
+        # Always return to Cloud Architect for centralized orchestration
         return "cloud_architect"
 
-    return END
+    def _route_terraform_consultant(self, state: InfrastructureStateDict) -> str:
+        """Route from terraform consultant agent."""
+        # If there are errors, route back to the source that requested consultation
+        if state.get("errors"):
+            if state.get("needs_pricing_lookup"):
+                return "secops_finops"
+            else:
+                return "cloud_engineer"
+        
+        # Normal routing based on the original request
+        if state.get("needs_pricing_lookup"):
+            return "secops_finops"
+        return "cloud_engineer"
 
+    def _route_secops_finops(self, state: InfrastructureStateDict) -> str:
+        """Route from secops/finops agent."""
+        if state.get("needs_pricing_lookup"):
+            return "terraform_consultant"
+        # Always return to Cloud Architect for centralized orchestration
+        return "cloud_architect"
 
-# Add conditional edges
-workflow.add_conditional_edges(
-    "cloud_architect",
-    route_next_agent,
-    {
-        "cloud_engineer": "cloud_engineer",
-        "secops_finops": "secops_finops",
-        "human_approval": "human_approval",
-        "devops": "devops",
-        END: END,
-    },
-)
+    def _route_human_approval(self, state: InfrastructureStateDict) -> str:
+        """Route from human approval node."""
+        if state.get("approval_received"):
+            return "devops"
+        return END
 
-workflow.add_conditional_edges(
-    "cloud_engineer",
-    route_next_agent,
-    {
-        "terraform_consultant": "terraform_consultant",
-        "cloud_architect": "cloud_architect",
-    },
-)
+    def _route_devops(self, state: InfrastructureStateDict) -> str:
+        """Route from devops agent."""
+        return "cloud_architect"
 
-workflow.add_conditional_edges(
-    "terraform_consultant",
-    route_next_agent,
-    {"cloud_engineer": "cloud_engineer", "secops_finops": "secops_finops"},
-)
+    def _human_approval_node(
+        self, state: InfrastructureStateDict
+    ) -> InfrastructureStateDict:
+        """Handle human approval workflow."""
+        log_agent_start("Human Approval", "Requesting human approval")
 
-workflow.add_conditional_edges(
-    "secops_finops",
-    route_next_agent,
-    {
-        "terraform_consultant": "terraform_consultant",
-        "cloud_architect": "cloud_architect",
-    },
-)
+        # In a real implementation, this would integrate with approval systems
+        # For now, we'll simulate automatic approval for non-prod environments
+        approval_received = not state.get("requires_approval", True)
 
-workflow.add_conditional_edges(
-    "human_approval", route_next_agent, {"devops": "devops", END: END}
-)
+        log_agent_complete(
+            "Human Approval",
+            f"Approval {'granted' if approval_received else 'pending'}",
+        )
 
-workflow.add_edge("devops", "cloud_architect")
+        return {
+            **state,
+            "current_agent": "human_approval",
+            "approval_received": approval_received,
+        }
 
-# Set entry point
-workflow.set_entry_point("cloud_architect")
+    def build(self):
+        """Build and compile the LangGraph workflow.
 
-# Compile the graph
-app = workflow.compile()
+        Returns:
+            Compiled LangGraph application ready for invocation
+        """
+        return self.graph.compile(checkpointer=MemorySaver())

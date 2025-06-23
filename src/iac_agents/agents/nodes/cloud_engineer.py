@@ -1,74 +1,101 @@
-"""Template generation node for LangGraph workflow."""
+"""Cloud Engineer Agent node for LangGraph workflow."""
 
-# Legacy agent imports removed
 from ...logging_system import log_agent_complete, log_agent_start, log_warning
 from ...templates.template_manager import template_manager
 from ..state import InfrastructureStateDict, TemplateGenerationResult, WorkflowStage
+from ..utils import (
+    add_error_to_state,
+    extract_terraform_template,
+    make_llm_call,
+    mark_stage_completed,
+)
 
 
-def template_generation_node(state: InfrastructureStateDict) -> InfrastructureStateDict:
-    """Generate Terraform template."""
-    log_agent_start("Template Generation Node", "Generating infrastructure template")
+def cloud_engineer_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
+    """Generate infrastructure templates based on Cloud Architect requirements."""
+    log_agent_start(
+        "Cloud Engineer", "Processing requirements and generating templates"
+    )
 
-    # LangGraph always passes state as dict
-    user_input = state["user_input"]
-    completed_stages = state.get("completed_stages", [])
-    errors = state.get("errors", [])
+    # Get inputs from Cloud Architect analysis, not raw user input
+    architect_analysis = state.get("cloud_architect_analysis", "")
+    user_input = state["user_input"]  # For context only
 
     try:
-        # Generate template using template manager instead of legacy agent
-        template = template_manager.get_fallback_template(user_input)
-        template_response = (
-            f"Generated template for: {user_input}\n\n```hcl\n{template}\n```"
+        # Load the cloud engineer prompt with Cloud Architect's analysis
+        system_prompt = template_manager.get_prompt(
+            "cloud_engineer",
+            user_request=user_input,
+            architect_analysis=architect_analysis or "No architect analysis available",
+            current_stage=state.get("current_stage", "template_generation"),
         )
 
-        if not template:
-            log_warning(
-                "Template Generation Node", "No template extracted, using fallback"
-            )
-            template = template_manager.get_fallback_template(user_input)
+        # Make LLM call with architect's analysis as primary input
+        response = make_llm_call(system_prompt, architect_analysis or user_input)
 
-        # Create proper TemplateGenerationResult
+        # Extract Terraform template (needed for deployment)
+        template_content = extract_terraform_template(response)
+        
+        # Simple consultation detection - let LLM be explicit
+        needs_terraform_consultation = "TERRAFORM_CONSULTATION_NEEDED" in response
+        
+        # Create result with extracted template
         result = TemplateGenerationResult(
             status="completed",
             data={
-                "full_response": template_response,
-                "extraction_method": (
-                    "hcl_blocks" if "```hcl" in template_response else "fallback"
-                ),
+                "full_response": response,
+                "has_template": bool(template_content),
+                "needs_terraform_consultation": needs_terraform_consultation,
             },
-            template_content=template,
-            provider="azure",
-            resources_count=template.count("resource ") if template else 0,
+            template_content=template_content,
+            provider="azure" if template_content else None,
+            resources_count=template_content.count("resource ") if template_content else 0,
+        )
+
+        # Mark stage as completed
+        new_completed_stages = mark_stage_completed(
+            state, WorkflowStage.TEMPLATE_GENERATION.value
         )
 
         log_agent_complete(
-            "Template Generation Node",
-            "Template generated",
-            {"template_lines": len(template.split("\n")) if template else 0},
+            "Cloud Engineer",
+            f"Response generated {'with template' if template_content else 'without template'}, "
+            f"consultation {'required' if needs_terraform_consultation else 'not required'}",
         )
 
-        # Update completed stages
-        new_completed_stages = completed_stages.copy() if completed_stages else []
-        if WorkflowStage.TEMPLATE_GENERATION.value not in new_completed_stages:
-            new_completed_stages.append(WorkflowStage.TEMPLATE_GENERATION.value)
+        # Determine if we need Terraform consultation
+        needs_terraform_lookup = needs_terraform_consultation
+
+        # If consultation is needed, prepare specific query for Terraform Consultant
+        terraform_query = ""
+        if needs_terraform_lookup:
+            terraform_query = f"""
+Cloud Engineer needs Terraform guidance for the following request:
+
+Original Request: {user_input}
+Cloud Architect Analysis: {architect_analysis}
+
+Specific areas where guidance is needed:
+{response}
+
+Please provide best practices, latest resource configurations, and any optimization recommendations.
+"""
 
         return {
             **state,
             "current_stage": WorkflowStage.TEMPLATE_GENERATION.value,
             "completed_stages": new_completed_stages,
             "template_generation_result": result.model_dump(),
-            "final_template": template,
+            "final_template": template_content,
+            "cloud_engineer_response": terraform_query if needs_terraform_lookup else response,
+            "needs_terraform_lookup": needs_terraform_lookup,
         }
 
     except Exception as e:
-        log_warning("Template Generation Node", f"Template generation failed: {str(e)}")
+        log_warning("Cloud Engineer", f"Template generation failed: {str(e)}")
 
         # Update errors
-        new_errors = errors.copy() if errors else []
-        error_msg = f"Template generation failed: {str(e)}"
-        if error_msg not in new_errors:
-            new_errors.append(error_msg)
+        new_errors = add_error_to_state(state, f"Cloud Engineer failed: {str(e)}")
 
         return {
             **state,
@@ -186,3 +213,5 @@ def _is_valid_terraform_content(content: str) -> bool:
     has_hcl_syntax = any(char in content for char in ["{", "}", "="])
 
     return has_terraform_keywords and has_hcl_syntax
+
+

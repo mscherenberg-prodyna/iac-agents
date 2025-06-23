@@ -1,0 +1,32 @@
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	cloud_architect(cloud_architect)
+	cloud_engineer(cloud_engineer)
+	terraform_consultant(terraform_consultant)
+	secops_finops(secops_finops)
+	devops(devops)
+	human_approval(human_approval)
+	__end__([<p>__end__</p>]):::last
+	__start__ --> cloud_architect;
+	cloud_architect -.-> __end__;
+	cloud_architect -.-> cloud_engineer;
+	cloud_architect -.-> devops;
+	cloud_architect -.-> human_approval;
+	cloud_architect -.-> secops_finops;
+	cloud_engineer -.-> cloud_architect;
+	cloud_engineer -.-> terraform_consultant;
+	devops --> cloud_architect;
+	human_approval -.-> __end__;
+	human_approval -.-> devops;
+	secops_finops -.-> cloud_architect;
+	secops_finops -.-> terraform_consultant;
+	terraform_consultant -.-> cloud_engineer;
+	terraform_consultant -.-> secops_finops;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc

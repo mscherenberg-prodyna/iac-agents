@@ -20,6 +20,7 @@ pydantic = "^2.11.7"
 pydantic-settings = "^2.9.1"
 azure-ai-projects = "^1.0.0b11"
 azure-identity = "^1.23.0"
+graphviz = "^0.21"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"

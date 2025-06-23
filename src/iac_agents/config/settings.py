@@ -1,5 +1,6 @@
 """Configuration settings for the IAC Agents system."""
 
+import os
 from dataclasses import dataclass
 from typing import Dict
 
@@ -25,6 +26,40 @@ class ComplianceSettings:
                 "ISO 27001": "Information Security Management",
                 "SOC 2": "Service Organization Control 2",
             }
+
+
+@dataclass
+class AzureOpenAISettings:
+    """Azure OpenAI configuration settings."""
+    
+    endpoint: str = None
+    api_key: str = None
+    deployment: str = None
+    api_version: str = "2024-02-15-preview"
+    
+    def __post_init__(self):
+        if self.endpoint is None:
+            self.endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
+        if self.api_key is None:
+            self.api_key = os.getenv("AZURE_OPENAI_API_KEY")
+        if self.deployment is None:
+            self.deployment = os.getenv("AZURE_OPENAI_DEPLOYMENT")
+        if api_version_env := os.getenv("AZURE_OPENAI_API_VERSION"):
+            self.api_version = api_version_env
+
+
+@dataclass
+class AzureAISettings:
+    """Azure AI Project configuration settings."""
+    
+    project_endpoint: str = None
+    agent_id: str = None
+    
+    def __post_init__(self):
+        if self.project_endpoint is None:
+            self.project_endpoint = os.getenv("AZURE_PROJECT_ENDPOINT")
+        if self.agent_id is None:
+            self.agent_id = os.getenv("AZURE_AGENT_ID")
 
 
 @dataclass
@@ -72,6 +107,8 @@ class Config:
 
     def __init__(self):
         self.compliance = ComplianceSettings()
+        self.azure_openai = AzureOpenAISettings()
+        self.azure_ai = AzureAISettings()
         self.agents = AgentSettings()
         self.ui = UISettings()
         self.logging = LoggingSettings()
