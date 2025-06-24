@@ -141,20 +141,28 @@ def render_deployment_config():
 
     # Terraform Research toggle
     terraform_credentials_available = _check_terraform_credentials()
-    
+
     if terraform_credentials_available:
         terraform_research_enabled = st.checkbox(
             "Enable Terraform Research",
-            value=st.session_state.deployment_config.get("terraform_research_enabled", True),
+            value=st.session_state.deployment_config.get(
+                "terraform_research_enabled", True
+            ),
             help="When enabled, agents can query Azure AI Project for Terraform guidance",
         )
-        st.session_state.deployment_config["terraform_research_enabled"] = terraform_research_enabled
-        
+        st.session_state.deployment_config["terraform_research_enabled"] = (
+            terraform_research_enabled
+        )
+
         if not terraform_research_enabled:
-            st.info("ℹ️ Terraform Research disabled - agents will use built-in knowledge only")
+            st.info(
+                "ℹ️ Terraform Research disabled - agents will use built-in knowledge only"
+            )
     else:
         st.session_state.deployment_config["terraform_research_enabled"] = False
-        st.warning("⚠️ Terraform Research unavailable - missing Azure AI Project credentials")
+        st.warning(
+            "⚠️ Terraform Research unavailable - missing Azure AI Project credentials"
+        )
 
     # Status indicators
     if not approval_required:
@@ -165,11 +173,8 @@ def render_deployment_config():
 
 def _check_terraform_credentials() -> bool:
     """Check if required environment variables for Terraform Consultant are available."""
-    required_vars = [
-        "AZURE_PROJECT_ENDPOINT",
-        "AZURE_AGENT_ID"
-    ]
-    
+    required_vars = ["AZURE_PROJECT_ENDPOINT", "AZURE_AGENT_ID"]
+
     return all(os.getenv(var) for var in required_vars)
 
 

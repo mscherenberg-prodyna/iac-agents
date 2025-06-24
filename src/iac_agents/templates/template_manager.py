@@ -1,6 +1,6 @@
 """Template manager for prompts and Terraform templates."""
 
-from typing import Dict, List
+from typing import List
 
 from jinja2 import Template
 
@@ -40,7 +40,6 @@ class TemplateManager:
             return self._terraform_templates["default"]
 
         return self._terraform_templates[template_type]
-
 
     def list_available_prompts(self) -> List[str]:
         """List all available prompt templates."""

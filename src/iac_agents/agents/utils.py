@@ -1,11 +1,14 @@
 """Utility functions for agent operations."""
 
+import json
 import re
-from typing import Optional
+import subprocess
+from typing import Any, Dict, Optional
 
 from langchain_openai import AzureChatOpenAI
 
 from ..config.settings import config
+from .terraform_utils import is_valid_terraform_content
 
 
 def create_llm_client(temperature: Optional[float] = None) -> AzureChatOpenAI:
@@ -48,7 +51,7 @@ def extract_terraform_template(response: str) -> str:
     code_matches = re.findall(code_pattern, response, re.DOTALL)
 
     for match in code_matches:
-        if _is_valid_terraform_content(match):
+        if is_valid_terraform_content(match, strict_validation=True):
             return match.strip()
 
     # Look for terraform blocks without code fences
@@ -58,8 +61,11 @@ def extract_terraform_template(response: str) -> str:
         in_terraform_block = False
 
         for line in lines:
+            line_lower = line.lower().strip()
+
+            # Start collecting when we find terraform keywords
             if any(
-                keyword in line.lower()
+                keyword in line_lower
                 for keyword in [
                     "terraform {",
                     "provider ",
@@ -69,31 +75,37 @@ def extract_terraform_template(response: str) -> str:
                 ]
             ):
                 in_terraform_block = True
+                terraform_lines.append(line)
+                continue
 
+            # Stop collecting when we hit non-terraform content
             if in_terraform_block:
+                # Stop if we hit explanatory text or sentences
+                if (
+                    line.strip()
+                    and not line_lower.startswith("#")
+                    and not any(char in line for char in ["{", "}", "=", '"', "[", "]"])
+                    and any(
+                        word in line_lower
+                        for word in [
+                            "if you",
+                            "this template",
+                            "please",
+                            "note:",
+                            "important",
+                        ]
+                    )
+                ):
+                    break
+                # Continue collecting terraform content
                 terraform_lines.append(line)
 
         if terraform_lines:
             content = "\n".join(terraform_lines).strip()
-            if _is_valid_terraform_content(content):
+            if is_valid_terraform_content(content, strict_validation=True):
                 return content
 
     return ""
-
-
-def _is_valid_terraform_content(content: str) -> bool:
-    """Check if content looks like valid Terraform code."""
-    if not content:
-        return False
-
-    content_lower = content.lower()
-    terraform_keywords = ["terraform", "provider", "resource", "variable", "output"]
-    has_terraform_keywords = any(
-        keyword in content_lower for keyword in terraform_keywords
-    )
-    has_hcl_syntax = any(char in content for char in ["{", "}", "="])
-
-    return has_terraform_keywords and has_hcl_syntax
 
 
 def add_error_to_state(state: dict, error_message: str) -> list:
@@ -110,3 +122,61 @@ def mark_stage_completed(state: dict, stage: str) -> list:
     if stage not in completed_stages:
         completed_stages.append(stage)
     return completed_stages
+
+
+def get_azure_subscription_info() -> Dict[str, Any]:
+    """Get Azure subscription information using Azure CLI."""
+    try:
+        # Run az account list command to get subscription information
+        result = subprocess.run(
+            ["az", "account", "list", "--output", "json"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+
+        if result.returncode == 0:
+            subscriptions = json.loads(result.stdout)
+
+            # Find the default subscription
+            default_sub = None
+            for sub in subscriptions:
+                if sub.get("isDefault", False):
+                    default_sub = sub
+                    break
+
+            if default_sub:
+                return {
+                    "default_subscription_name": default_sub.get("name", "Unknown"),
+                    "default_subscription_id": default_sub.get("id", "Unknown"),
+                    "total_subscriptions": len(subscriptions),
+                    "available_subscriptions": [
+                        sub.get("name", "Unknown") for sub in subscriptions
+                    ],
+                }
+            return {
+                "default_subscription_name": "None (not logged in)",
+                "default_subscription_id": "Unknown",
+                "total_subscriptions": 0,
+                "available_subscriptions": [],
+            }
+        return {
+            "default_subscription_name": "Azure CLI error",
+            "default_subscription_id": "Unknown",
+            "total_subscriptions": 0,
+            "available_subscriptions": [],
+        }
+
+    except (
+        subprocess.TimeoutExpired,
+        subprocess.CalledProcessError,
+        json.JSONDecodeError,
+        FileNotFoundError,
+    ):
+        return {
+            "default_subscription_name": "Azure CLI not available",
+            "default_subscription_id": "Unknown",
+            "total_subscriptions": 0,
+            "available_subscriptions": [],
+        }

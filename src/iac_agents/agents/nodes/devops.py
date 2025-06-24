@@ -5,9 +5,13 @@ import os
 import subprocess
 from pathlib import Path
 
-from ...logging_system import log_agent_complete, log_agent_start, log_warning
+from ...logging_system import log_agent_complete, log_agent_start, log_info, log_warning
 from ..state import InfrastructureStateDict
-from ..utils import add_error_to_state
+from ..terraform_utils import (
+    TerraformVariableManager,
+    enhance_terraform_template,
+    run_terraform_command,
+)
 
 
 def devops_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
@@ -29,20 +33,33 @@ def devops_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
 
         if not template_content or not template_content.strip():
             log_warning("DevOps", "No infrastructure template available for deployment")
-            return add_error_to_state(
-                state, "DevOps deployment failed: No infrastructure template provided"
-            )
+            return {
+                **state,
+                "current_agent": "devops",
+                "devops_response": "❌ **Deployment Failed**\n\nNo infrastructure template was provided for deployment. Please ensure the Cloud Engineer has generated a valid Terraform template.",
+                "deployment_status": "failed",
+                "workflow_phase": "complete",
+                "errors": state.get("errors", [])
+                + ["No infrastructure template provided"],
+            }
 
         # Verify Azure CLI authentication
-        # TODO: Add option to configure different authentication methods later
         if not _verify_azure_auth():
-            return add_error_to_state(
-                state,
-                "DevOps deployment failed: Azure CLI authentication required (run 'az login')",
-            )
+            return {
+                **state,
+                "current_agent": "devops",
+                "devops_response": "❌ **Deployment Failed**\n\nAzure CLI authentication is required. Please run `az login` to authenticate with Azure before attempting deployment.",
+                "deployment_status": "failed",
+                "workflow_phase": "complete",
+                "errors": state.get("errors", [])
+                + ["Azure CLI authentication required"],
+            }
 
-        # Create deployment workspace
-        deployment_result = _deploy_infrastructure(template_content)
+        # Get user requirements for variable inference
+        user_requirements = state.get("user_input", "")
+
+        # Create deployment workspace with variable management
+        deployment_result = _deploy_infrastructure(template_content, user_requirements)
 
         if deployment_result["success"]:
             log_agent_complete(
@@ -59,14 +76,43 @@ def devops_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
                 "workflow_phase": "complete",
             }
         else:
-            log_warning("DevOps", f"Deployment failed: {deployment_result['error']}")
-            return add_error_to_state(
-                state, f"DevOps deployment failed: {deployment_result['error']}"
-            )
+            error_message = deployment_result["error"]
+            # Clean up ANSI color codes for better display
+            clean_error = _clean_terraform_error(error_message)
+            log_warning("DevOps", f"Deployment failed: {error_message}")
+            return {
+                **state,
+                "current_agent": "devops",
+                "devops_response": f"❌ **Deployment Failed**\n\nTerraform deployment encountered errors:\n\n```\n{clean_error}\n```\n\nPlease review the template and correct the issues before retrying deployment.",
+                "deployment_status": "failed",
+                "workflow_phase": "complete",
+                "errors": state.get("errors", []) + [clean_error],
+            }
 
     except Exception as e:
         log_warning("DevOps", f"Deployment failed with exception: {str(e)}")
-        return add_error_to_state(state, f"DevOps deployment error: {str(e)}")
+        return {
+            **state,
+            "current_agent": "devops",
+            "devops_response": f"❌ **Deployment Failed**\n\nAn unexpected error occurred during deployment:\n\n```\n{str(e)}\n```",
+            "deployment_status": "failed",
+            "workflow_phase": "complete",
+            "errors": state.get("errors", []) + [str(e)],
+        }
+
+
+def _clean_terraform_error(error_message: str) -> str:
+    """Clean ANSI color codes and format terraform error messages."""
+    import re
+
+    # Remove ANSI color codes
+    ansi_escape = re.compile(r"\x1b\[[0-9;]*m")
+    clean_message = ansi_escape.sub("", error_message)
+
+    # Remove extra whitespace and normalize line breaks
+    clean_message = re.sub(r"\n\s*\n", "\n\n", clean_message.strip())
+
+    return clean_message
 
 
 def _verify_azure_auth() -> bool:
@@ -74,7 +120,11 @@ def _verify_azure_auth() -> bool:
     try:
         # Check if Azure CLI is installed and authenticated
         result = subprocess.run(
-            ["az", "account", "show"], capture_output=True, text=True, timeout=30
+            ["az", "account", "show"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
         )
 
         if result.returncode == 0:
@@ -95,27 +145,58 @@ def _verify_azure_auth() -> bool:
         return False
 
 
-def _deploy_infrastructure(template_content: str) -> dict:
+def _deploy_infrastructure(template_content: str, user_requirements: str = "") -> dict:
     """Deploy infrastructure using Terraform with Azure CLI authentication."""
     try:
         # Create deployment workspace
-        # TODO: Add proper state management with Azure Storage backend later
         deployment_dir = (
             Path.cwd() / "terraform_deployments" / f"deployment_{os.getpid()}"
         )
         deployment_dir.mkdir(parents=True, exist_ok=True)
 
-        log_agent_start("DevOps", f"Created deployment workspace: {deployment_dir}")
+        log_info("DevOps", f"Created deployment workspace: {deployment_dir}")
 
-        # Enhance template with standard tags and provider configuration
-        enhanced_template = _enhance_terraform_template(template_content)
+        # Validate and enhance template with variable management
+        is_valid, issues = TerraformVariableManager.validate_template_variables(
+            template_content
+        )
+
+        if not is_valid:
+            log_info("DevOps", f"Template validation issues found: {issues}")
+            # Infer variable values from user requirements
+            inferred_values = (
+                TerraformVariableManager.infer_variable_values_from_requirements(
+                    user_requirements
+                )
+            )
+            log_info("DevOps", f"Inferred variable values: {inferred_values}")
+
+            # Enhance template with inferred defaults
+            enhanced_template = TerraformVariableManager.enhance_template_with_defaults(
+                template_content, inferred_values
+            )
+            log_info("DevOps", "Template enhanced with inferred variable defaults")
+        else:
+            enhanced_template = template_content
+            log_info("DevOps", "Template validation passed, using original template")
+
+        # Apply standard enhancements (provider config, etc.)
+        enhanced_template = enhance_terraform_template(
+            enhanced_template,
+            context="deployment",
+            project_name="iap-agent",
+            default_location="East US",
+        )
 
         # Write Terraform configuration
         main_tf_path = deployment_dir / "main.tf"
         with open(main_tf_path, "w", encoding="utf-8") as f:
             f.write(enhanced_template)
 
-        log_agent_start("DevOps", "Terraform configuration written")
+        log_info("DevOps", "Terraform configuration written")
+
+        # Log the template being deployed for debugging
+        log_info("DevOps", f"Template content:\n{enhanced_template}")
 
         # Execute Terraform commands
         deployment_result = {
@@ -127,8 +208,14 @@ def _deploy_infrastructure(template_content: str) -> dict:
         }
 
         # Terraform init
-        log_agent_start("DevOps", "Running terraform init...")
-        init_result = _run_terraform_command(deployment_dir, ["terraform", "init"])
+        log_info("DevOps", "Running terraform init...")
+        init_result = run_terraform_command(
+            deployment_dir, ["terraform", "init"], timeout=300, context="Deployment"
+        )
+        log_info(
+            "DevOps",
+            f"Terraform init output:\nSTDOUT:\n{init_result['stdout']}\nSTDERR:\n{init_result['stderr']}",
+        )
         if not init_result["success"]:
             deployment_result["error"] = (
                 f"Terraform init failed: {init_result['stderr']}"
@@ -136,9 +223,16 @@ def _deploy_infrastructure(template_content: str) -> dict:
             return deployment_result
 
         # Terraform plan
-        log_agent_start("DevOps", "Running terraform plan...")
-        plan_result = _run_terraform_command(
-            deployment_dir, ["terraform", "plan", "-out=tfplan"]
+        log_info("DevOps", "Running terraform plan...")
+        plan_result = run_terraform_command(
+            deployment_dir,
+            ["terraform", "plan", "-out=tfplan"],
+            timeout=300,
+            context="Deployment",
+        )
+        log_info(
+            "DevOps",
+            f"Terraform plan output:\nSTDOUT:\n{plan_result['stdout']}\nSTDERR:\n{plan_result['stderr']}",
         )
         if not plan_result["success"]:
             deployment_result["error"] = (
@@ -147,9 +241,16 @@ def _deploy_infrastructure(template_content: str) -> dict:
             return deployment_result
 
         # Terraform apply
-        log_agent_start("DevOps", "Running terraform apply...")
-        apply_result = _run_terraform_command(
-            deployment_dir, ["terraform", "apply", "-auto-approve", "tfplan"]
+        log_info("DevOps", "Running terraform apply...")
+        apply_result = run_terraform_command(
+            deployment_dir,
+            ["terraform", "apply", "-auto-approve", "tfplan"],
+            timeout=300,
+            context="Deployment",
+        )
+        log_info(
+            "DevOps",
+            f"Terraform apply output:\nSTDOUT:\n{apply_result['stdout']}\nSTDERR:\n{apply_result['stderr']}",
         )
         if not apply_result["success"]:
             deployment_result["error"] = (
@@ -158,8 +259,11 @@ def _deploy_infrastructure(template_content: str) -> dict:
             return deployment_result
 
         # Get output values
-        output_result = _run_terraform_command(
-            deployment_dir, ["terraform", "output", "-json"]
+        output_result = run_terraform_command(
+            deployment_dir,
+            ["terraform", "output", "-json"],
+            timeout=300,
+            context="Deployment",
         )
         terraform_outputs = {}
         if output_result["success"]:
@@ -189,91 +293,4 @@ def _deploy_infrastructure(template_content: str) -> dict:
             "output": "",
             "details": {},
             "workspace_path": "",
-        }
-
-
-def _enhance_terraform_template(template_content: str) -> str:
-    """Enhance Terraform template with provider configuration and standard tags."""
-
-    # Check if template already has proper provider configuration
-    if "terraform {" not in template_content:
-        provider_config = """
-terraform {
-  required_version = ">= 1.0"
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~> 3.0"
-    }
-  }
-  # TODO: Add Azure Storage backend for state management
-}
-
-provider "azurerm" {
-  features {}
-  # Uses active Azure CLI session authentication
-  # TODO: Add option to configure different authentication methods
-}
-
-"""
-        template_content = provider_config + template_content
-
-    # Add common variables if not present
-    if 'variable "environment"' not in template_content:
-        common_vars = """
-variable "environment" {
-  description = "Deployment environment"
-  type        = string
-  default     = "dev"
-}
-
-variable "project_name" {
-  description = "Project name for resource naming"
-  type        = string
-  default     = "iap-agent"
-}
-
-variable "location" {
-  description = "Azure region for resources"
-  type        = string
-  default     = "East US"
-}
-
-"""
-        template_content = template_content + "\n" + common_vars
-
-    return template_content
-
-
-def _run_terraform_command(working_dir: Path, command: list) -> dict:
-    """Run a Terraform command in the specified directory."""
-    try:
-        result = subprocess.run(
-            command,
-            cwd=working_dir,
-            capture_output=True,
-            text=True,
-            timeout=300,  # 5 minute timeout
-        )
-
-        return {
-            "success": result.returncode == 0,
-            "stdout": result.stdout,
-            "stderr": result.stderr,
-            "returncode": result.returncode,
-        }
-
-    except subprocess.TimeoutExpired:
-        return {
-            "success": False,
-            "stdout": "",
-            "stderr": "Command timed out after 5 minutes",
-            "returncode": -1,
-        }
-    except Exception as e:
-        return {
-            "success": False,
-            "stdout": "",
-            "stderr": f"Command execution failed: {str(e)}",
-            "returncode": -1,
         }

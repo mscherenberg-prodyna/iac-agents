@@ -102,7 +102,7 @@ class InfrastructureAsPromptsAgent:
             "terraform_consultant",
             self._route_terraform_consultant,
             {
-                "cloud_engineer": "cloud_engineer", 
+                "cloud_engineer": "cloud_engineer",
                 "secops_finops": "secops_finops",
                 "cloud_architect": "cloud_architect",
             },
@@ -129,13 +129,16 @@ class InfrastructureAsPromptsAgent:
         approval_received = state.get("approval_received", False)
         workflow_phase = state.get("workflow_phase", "planning")
         requires_approval = state.get("requires_approval", True)
-        
-        log_info("Cloud Architect Router", f"approval_received={approval_received}, workflow_phase={workflow_phase}, requires_approval={requires_approval}")
-        
+
+        log_info(
+            "Cloud Architect Router",
+            f"approval_received={approval_received}, workflow_phase={workflow_phase}, requires_approval={requires_approval}",
+        )
+
         # Check if Cloud Architect generated a user response - if so, END workflow and wait for user
         if state.get("final_response"):
             return END
-            
+
         # Check if approval was received - if so, proceed to deployment
         if approval_received:
             log_info("Cloud Architect Router", "Approval received, routing to devops")
@@ -157,8 +160,10 @@ class InfrastructureAsPromptsAgent:
         if state.get("needs_terraform_lookup"):
             # Check if terraform research is enabled
             deployment_config = state.get("deployment_config", {})
-            terraform_enabled = deployment_config.get("terraform_research_enabled", True)
-            
+            terraform_enabled = deployment_config.get(
+                "terraform_research_enabled", True
+            )
+
             if terraform_enabled:
                 return "terraform_consultant"
             else:
@@ -171,7 +176,13 @@ class InfrastructureAsPromptsAgent:
         """Route from terraform consultant agent."""
         # Always route back to the source that requested consultation
         caller = state.get("terraform_consultant_caller")
-        
+
+        # Debug logging
+        log_info(
+            "Terraform Consultant Router",
+            f"caller={caller}, routing_to={'secops_finops' if caller == 'secops_finops' else 'cloud_engineer' if caller == 'cloud_engineer' else 'cloud_architect (fallback)'}",
+        )
+
         if caller == "secops_finops":
             return "secops_finops"
         elif caller == "cloud_engineer":
@@ -185,8 +196,10 @@ class InfrastructureAsPromptsAgent:
         if state.get("needs_pricing_lookup"):
             # Check if terraform research is enabled
             deployment_config = state.get("deployment_config", {})
-            terraform_enabled = deployment_config.get("terraform_research_enabled", True)
-            
+            terraform_enabled = deployment_config.get(
+                "terraform_research_enabled", True
+            )
+
             if terraform_enabled:
                 return "terraform_consultant"
             else:
@@ -199,7 +212,7 @@ class InfrastructureAsPromptsAgent:
         """Route from human approval node."""
         approval_received = state.get("approval_received", False)
         log_info("Human Approval Router", f"approval_received={approval_received}")
-        
+
         if approval_received:
             log_info("Human Approval Router", "Approval received, routing to devops")
             return "devops"
@@ -216,7 +229,7 @@ class InfrastructureAsPromptsAgent:
     ) -> InfrastructureStateDict:
         """Handle human approval workflow using LangGraph interrupt."""
         log_agent_start("Human Approval", "Requesting human approval")
-        
+
         # Check if manual approval is required from UI settings
         requires_approval = state.get("requires_approval", True)
         log_info("Human Approval Node", f"requires_approval={requires_approval}")
@@ -228,25 +241,35 @@ class InfrastructureAsPromptsAgent:
         else:
             # Use LangGraph interrupt to pause and wait for human input
             log_info("Human Approval Node", "Interrupting workflow for human approval")
-            
+
             # Create approval request data for the UI
             approval_request = {
                 "type": "approval_request",
                 "message": "Please review the deployment plan above and provide approval.",
                 "current_agent": "human_approval",
                 "workflow_phase": "approval",
-                "deployment_summary": state.get("deployment_summary", "Infrastructure deployment ready"),
+                "deployment_summary": state.get(
+                    "deployment_summary", "Infrastructure deployment ready"
+                ),
             }
-            
+
             # This will pause the workflow and wait for human input
-            log_info("Human Approval Node", "Calling interrupt() - will pause or return resume value")
+            log_info(
+                "Human Approval Node",
+                "Calling interrupt() - will pause or return resume value",
+            )
             approval_response = interrupt(approval_request)
-            log_info("Human Approval Node", f"interrupt() returned: {approval_response}")
-            
+            log_info(
+                "Human Approval Node", f"interrupt() returned: {approval_response}"
+            )
+
             # Use LLM to analyze the human response for approval
             approval_received = self._analyze_approval_response(approval_response)
-            
-            log_info("Human Approval Node", f"Human response: {approval_response}, approval_received: {approval_received}")
+
+            log_info(
+                "Human Approval Node",
+                f"Human response: {approval_response}, approval_received: {approval_received}",
+            )
 
         log_agent_complete(
             "Human Approval",
@@ -262,33 +285,40 @@ class InfrastructureAsPromptsAgent:
     def _analyze_approval_response(self, approval_response) -> bool:
         """Analyze human approval response using LLM."""
         from .utils import make_llm_call
-        
+
         # Handle different response types
         if isinstance(approval_response, dict):
             # If it's a structured response, check for explicit approval flag
             if "approved" in approval_response:
                 return approval_response.get("approved", False)
             # Otherwise, analyze any text content
-            response_text = str(approval_response.get("message", approval_response.get("text", str(approval_response))))
+            response_text = str(
+                approval_response.get(
+                    "message", approval_response.get("text", str(approval_response))
+                )
+            )
         elif isinstance(approval_response, bool):
             # Direct boolean response
             return approval_response
         else:
             # String or other response - convert to string
             response_text = str(approval_response)
-        
+
         # Use LLM to analyze the response
         try:
             approval_prompt = template_manager.get_prompt(
                 "approval_detection",
-                conversation_context=f"User response: {response_text}"
+                conversation_context=f"User response: {response_text}",
             )
-            
+
             llm_response = make_llm_call(approval_prompt, response_text)
             llm_response_clean = llm_response.strip().upper()
-            
-            log_info("Approval Analysis", f"LLM response: '{llm_response}' -> cleaned: '{llm_response_clean}'")
-            
+
+            log_info(
+                "Approval Analysis",
+                f"LLM response: '{llm_response}' -> cleaned: '{llm_response_clean}'",
+            )
+
             if "APPROVED" in llm_response_clean:
                 log_info("Approval Analysis", "LLM detected approval")
                 return True
@@ -297,11 +327,17 @@ class InfrastructureAsPromptsAgent:
                 return False
             else:
                 # UNCLEAR or any other response - default to no approval for safety
-                log_info("Approval Analysis", "LLM response unclear, defaulting to no approval")
+                log_info(
+                    "Approval Analysis",
+                    "LLM response unclear, defaulting to no approval",
+                )
                 return False
-                
+
         except Exception as e:
-            log_info("Approval Analysis", f"LLM analysis failed: {e}, defaulting to no approval")
+            log_info(
+                "Approval Analysis",
+                f"LLM analysis failed: {e}, defaulting to no approval",
+            )
             return False
 
     def build(self):

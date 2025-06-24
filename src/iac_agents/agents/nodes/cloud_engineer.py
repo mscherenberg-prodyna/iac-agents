@@ -1,6 +1,12 @@
 """Cloud Engineer Agent node for LangGraph workflow."""
 
-from ...logging_system import log_agent_complete, log_agent_start, log_warning, log_agent_response
+from ...logging_system import (
+    log_agent_complete,
+    log_agent_response,
+    log_agent_start,
+    log_info,
+    log_warning,
+)
 from ...templates.template_manager import template_manager
 from ..state import InfrastructureStateDict, TemplateGenerationResult, WorkflowStage
 from ..utils import (
@@ -9,6 +15,7 @@ from ..utils import (
     make_llm_call,
     mark_stage_completed,
 )
+from ..terraform_utils import is_valid_terraform_content
 
 
 def cloud_engineer_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
@@ -25,7 +32,20 @@ def cloud_engineer_agent(state: InfrastructureStateDict) -> InfrastructureStateD
         # Check if terraform research is enabled
         deployment_config = state.get("deployment_config", {})
         terraform_enabled = deployment_config.get("terraform_research_enabled", True)
-        
+
+        # Check for validation failures from previous attempts
+        validation_result = state.get("template_validation_result", {})
+        has_validation_failure = validation_result and not validation_result.get(
+            "valid", True
+        )
+        validation_error = (
+            validation_result.get("error", "") if has_validation_failure else ""
+        )
+        log_info(
+            "Cloud Engineer",
+            f"Validation check: has_failure={has_validation_failure}, error_length={len(validation_error) if validation_error else 0}",
+        )
+
         # Load the cloud engineer prompt with Cloud Architect's analysis
         system_prompt = template_manager.get_prompt(
             "cloud_engineer",
@@ -33,6 +53,7 @@ def cloud_engineer_agent(state: InfrastructureStateDict) -> InfrastructureStateD
             architect_analysis=architect_analysis or "No architect analysis available",
             current_stage=state.get("current_stage", "template_generation"),
             terraform_consultant_available=terraform_enabled,
+            validation_error=validation_error,
         )
 
         # Make LLM call with architect's analysis as primary input
@@ -40,10 +61,18 @@ def cloud_engineer_agent(state: InfrastructureStateDict) -> InfrastructureStateD
 
         # Extract Terraform template (needed for deployment)
         template_content = extract_terraform_template(response)
-        
-        # Simple consultation detection - let LLM be explicit
-        needs_terraform_consultation = "TERRAFORM_CONSULTATION_NEEDED" in response
-        
+
+        # Automatic consultation for validation failures or explicit requests
+        needs_terraform_consultation = (
+            "TERRAFORM_CONSULTATION_NEEDED" in response or has_validation_failure
+        )
+
+        # Debug logging
+        log_info(
+            "Cloud Engineer",
+            f"Consultation decision: explicit_request={'TERRAFORM_CONSULTATION_NEEDED' in response}, validation_failure={has_validation_failure}, final_decision={needs_terraform_consultation}",
+        )
+
         # Create result with extracted template
         result = TemplateGenerationResult(
             status="completed",
@@ -54,7 +83,9 @@ def cloud_engineer_agent(state: InfrastructureStateDict) -> InfrastructureStateD
             },
             template_content=template_content,
             provider="azure" if template_content else None,
-            resources_count=template_content.count("resource ") if template_content else 0,
+            resources_count=(
+                template_content.count("resource ") if template_content else 0
+            ),
         )
 
         # Mark stage as completed
@@ -64,7 +95,7 @@ def cloud_engineer_agent(state: InfrastructureStateDict) -> InfrastructureStateD
 
         # Log the response content for debugging
         log_agent_response("Cloud Engineer", response)
-        
+
         log_agent_complete(
             "Cloud Engineer",
             f"Response generated {'with template' if template_content else 'without template'}, "
@@ -95,14 +126,25 @@ Please provide best practices, latest resource configurations, and any optimizat
             "completed_stages": new_completed_stages,
             "template_generation_result": result.model_dump(),
             "final_template": template_content,
-            "cloud_engineer_response": terraform_query if needs_terraform_lookup else response,
+            "cloud_engineer_response": (
+                terraform_query if needs_terraform_lookup else response
+            ),
             "needs_terraform_lookup": needs_terraform_lookup,
+            # Clear caller if we were called back from Terraform Consultant
+            "terraform_consultant_caller": (
+                None
+                if state.get("terraform_consultant_caller") == "cloud_engineer"
+                else state.get("terraform_consultant_caller")
+            ),
         }
-        
+
         # Set caller info if requesting Terraform consultation
         if needs_terraform_lookup:
             result_state["terraform_consultant_caller"] = "cloud_engineer"
-            
+            # Clear validation failure after triggering consultation to prevent loops
+            if has_validation_failure:
+                result_state["template_validation_result"] = None
+
         return result_state
 
     except Exception as e:
@@ -171,7 +213,7 @@ def _extract_template_from_response(response: str) -> str:
     best_score = 0
 
     for _, content in all_code_blocks:
-        if _is_valid_terraform_content(content):
+        if is_valid_terraform_content(content):
             # Score based on content quality
             score = len(content)  # Longer templates generally better
             if "terraform" in content.lower():
@@ -214,18 +256,3 @@ def _extract_template_from_response(response: str) -> str:
             return "\n".join(template_lines).strip()
 
     return ""
-
-
-def _is_valid_terraform_content(content: str) -> bool:
-    """Check if content looks like actual Terraform code."""
-    content_lower = content.lower()
-
-    terraform_keywords = ["terraform", "provider", "resource", "variable", "output"]
-    has_terraform_keywords = any(
-        keyword in content_lower for keyword in terraform_keywords
-    )
-    has_hcl_syntax = any(char in content for char in ["{", "}", "="])
-
-    return has_terraform_keywords and has_hcl_syntax
-
-

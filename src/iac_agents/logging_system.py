@@ -2,6 +2,8 @@
 
 import logging
 import sys
+import threading
+from pathlib import Path
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
@@ -37,6 +39,7 @@ class AgentLogger:
 
     def __init__(self):
         self.setup_console_logging()
+        self.setup_file_logging()
         self.log_entries: List[AgentLogEntry] = []
         self.active_agents: Dict[str, datetime] = {}
 
@@ -85,14 +88,57 @@ class AgentLogger:
 
         # Get or create logger
         self.logger = logging.getLogger("agent_system")
-        self.logger.setLevel(logging.INFO)
+        self.logger.setLevel(logging.DEBUG)  # Set to DEBUG to capture all levels
 
         # Clear existing handlers to avoid duplicates
         self.logger.handlers.clear()
-        self.logger.addHandler(console_handler)
+
+        # Store console handler reference
+        self.console_handler = console_handler
 
         # Prevent propagation to root logger
         self.logger.propagate = False
+
+    def setup_file_logging(self):
+        """Setup file-based logging indexed by thread ID."""
+        # Get current thread ID
+        thread_id = threading.current_thread().ident
+
+        # Create logs directory if it doesn't exist
+        log_dir = Path("logs")
+        log_dir.mkdir(exist_ok=True)
+
+        # Create log file path indexed by thread ID
+        log_file_path = log_dir / f"agent_workflow_{thread_id}.log"
+
+        # Create file handler
+        file_handler = logging.FileHandler(log_file_path, mode="a", encoding="utf-8")
+        file_handler.setLevel(logging.DEBUG)  # Capture all levels in file
+
+        # File formatter (without colors, more detailed)
+        class FileFormatter(logging.Formatter):
+            """Detailed formatter for file logging without ANSI codes."""
+
+            def format(self, record):
+                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                thread_id = threading.current_thread().ident
+                level = record.levelname
+
+                formatted = f"[{timestamp}] [Thread-{thread_id}] [{level}] {record.getMessage()}"
+                return formatted
+
+        file_handler.setFormatter(FileFormatter())
+
+        # Add both console and file handlers to logger
+        self.logger.addHandler(self.console_handler)
+        self.logger.addHandler(file_handler)
+
+        # Store file handler reference for potential cleanup
+        self.file_handler = file_handler
+        self.log_file_path = log_file_path
+
+        # Log the initialization
+        self.logger.info("🗂️ LOGGING: File logging initialized - %s", log_file_path)
 
     def log_agent_start(
         self, agent_name: str, activity: str, details: Dict[str, Any] = None
@@ -215,6 +261,20 @@ class AgentLogger:
         self.log_entries.clear()
         self.active_agents.clear()
 
+    def get_log_file_path(self) -> str:
+        """Get the current log file path."""
+        return str(self.log_file_path) if hasattr(self, "log_file_path") else ""
+
+    def get_thread_id(self) -> int:
+        """Get the current thread ID."""
+        return threading.current_thread().ident
+
+    def close_file_handler(self):
+        """Close the file handler to ensure logs are written."""
+        if hasattr(self, "file_handler"):
+            self.file_handler.close()
+            self.logger.removeHandler(self.file_handler)
+
 
 # Global logger instance
 agent_logger = AgentLogger()
@@ -223,11 +283,14 @@ agent_logger = AgentLogger()
 def log_agent_start(agent_name: str, activity: str, details: Dict[str, Any] = None):
     """Convenience function for logging agent start."""
     agent_logger.log_agent_start(agent_name, activity, details)
-    
+
     # Update Streamlit session state for real-time UI updates
     try:
         import streamlit as st
-        if hasattr(st, 'session_state') and hasattr(st.session_state, 'workflow_active'):
+
+        if hasattr(st, "session_state") and hasattr(
+            st.session_state, "workflow_active"
+        ):
             st.session_state.current_agent_status = agent_name
             st.session_state.current_workflow_phase = activity
             st.session_state.workflow_status = f"{agent_name} - {activity}"
@@ -264,6 +327,23 @@ def log_error(agent_name: str, message: str, details: Dict[str, Any] = None):
 def log_agent_response(agent_name: str, response: str, truncate_at: int = 200):
     """Log agent response content (truncated for readability)."""
     if response:
-        truncated = response[:truncate_at] + "..." if len(response) > truncate_at else response
-        truncated = truncated.replace('\n', ' ')  # Single line for logs
+        truncated = (
+            response[:truncate_at] + "..." if len(response) > truncate_at else response
+        )
+        truncated = truncated.replace("\n", " ")  # Single line for logs
         agent_logger.log_info(agent_name, f"Response: {truncated}")
+
+
+def get_log_file_path() -> str:
+    """Get the current log file path."""
+    return agent_logger.get_log_file_path()
+
+
+def get_thread_id() -> int:
+    """Get the current thread ID."""
+    return agent_logger.get_thread_id()
+
+
+def close_file_handler():
+    """Close the file handler to ensure logs are written."""
+    agent_logger.close_file_handler()

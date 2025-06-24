@@ -16,12 +16,12 @@ class TemplateLoader:
             self.base_path = Path(__file__).parent
         else:
             self.base_path = Path(base_path)
-        
+
         # Initialize Jinja2 environment
         self.jinja_env = Environment(
             loader=FileSystemLoader(str(self.base_path)),
             trim_blocks=True,
-            lstrip_blocks=True
+            lstrip_blocks=True,
         )
 
     def load_text_file(self, file_path: str) -> str:

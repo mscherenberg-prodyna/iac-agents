@@ -31,12 +31,12 @@ class ComplianceSettings:
 @dataclass
 class AzureOpenAISettings:
     """Azure OpenAI configuration settings."""
-    
+
     endpoint: str = None
     api_key: str = None
     deployment: str = None
     api_version: str = "2024-02-15-preview"
-    
+
     def __post_init__(self):
         if self.endpoint is None:
             self.endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
@@ -51,10 +51,10 @@ class AzureOpenAISettings:
 @dataclass
 class AzureAISettings:
     """Azure AI Project configuration settings."""
-    
+
     project_endpoint: str = None
     agent_id: str = None
-    
+
     def __post_init__(self):
         if self.project_endpoint is None:
             self.project_endpoint = os.getenv("AZURE_PROJECT_ENDPOINT")
