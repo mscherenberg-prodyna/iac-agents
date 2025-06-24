@@ -1,5 +1,8 @@
 """Streamlit UI components."""
 
+from .approval_handler import (
+    is_approval_message,
+)
 from .chat import (
     add_message,
     clear_chat_history,
@@ -23,6 +26,8 @@ from .sidebar import (
 )
 
 __all__ = [
+    # Approval handler components
+    "is_approval_message",
     # Chat components
     "add_message",
     "clear_chat_history",

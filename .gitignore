@@ -84,3 +84,4 @@ logs/
 terraform.tfstate*
 terraform.tfvars
 .terraform/
+terraform_deployments/*

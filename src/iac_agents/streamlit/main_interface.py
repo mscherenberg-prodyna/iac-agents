@@ -2,18 +2,22 @@
 
 import streamlit as st
 import time
+import uuid
 from typing import List
 
 from iac_agents.agents import InfrastructureAsPromptsAgent
 from iac_agents.logging_system import agent_logger
+from langgraph.types import Command
 
 from .components import (
     add_message,
+    clear_chat_history,
     display_agent_monitoring,
     display_chat_interface,
     display_cost_estimation,
     display_deployment_plan,
     display_header,
+    is_approval_message,
     render_compliance_settings,
     render_deployment_config,
     setup_page_config,
@@ -25,7 +29,39 @@ class StreamlitInterface:
 
     def __init__(self):
         """Initialize the interface components."""
-        self.agent = InfrastructureAsPromptsAgent().build()
+        # Use session-based agent to maintain checkpointer state
+        if "workflow_agent" not in st.session_state:
+            st.session_state.workflow_agent = InfrastructureAsPromptsAgent().build()
+            agent_logger.log_info("Session", "Created new workflow agent instance")
+        
+        self.agent = st.session_state.workflow_agent
+        self._initialize_session()
+
+    def _initialize_session(self):
+        """Initialize session-specific variables."""
+        if "session_thread_id" not in st.session_state:
+            st.session_state.session_thread_id = str(uuid.uuid4())
+            agent_logger.log_info("Session", f"New session initialized with thread_id: {st.session_state.session_thread_id}")
+
+    def _reset_session(self):
+        """Reset the session and create a new thread ID."""
+        # Clear workflow state
+        st.session_state.workflow_active = False
+        st.session_state.workflow_interrupted = False
+        st.session_state.workflow_result = {}
+        st.session_state.workflow_error = None
+        st.session_state.resuming_approval = False
+        
+        # Clear agent to reset checkpointer state
+        if "workflow_agent" in st.session_state:
+            del st.session_state.workflow_agent
+        
+        # Generate new thread ID
+        st.session_state.session_thread_id = str(uuid.uuid4())
+        agent_logger.log_info("Session", f"Session reset with new thread_id: {st.session_state.session_thread_id}")
+        
+        # Clear chat history using the proper function
+        clear_chat_history()
 
     def setup(self):
         """Setup the page configuration and initial state."""
@@ -138,6 +174,13 @@ class StreamlitInterface:
             user_input = display_chat_interface()
 
         with col2:
+            # Reset Session button
+            if st.button("🔄 Reset Session", help="Reset the session and start fresh", use_container_width=True):
+                self._reset_session()
+                st.rerun()
+            
+            st.markdown("---")  # Separator line
+            
             # Right sidebar with compliance settings and deployment config
             render_compliance_settings()
             render_deployment_config()
@@ -152,13 +195,29 @@ class StreamlitInterface:
         # Add user message to chat immediately  
         add_message("user", user_input)
         
-        # Initialize workflow state immediately
-        st.session_state.workflow_active = True
-        st.session_state.workflow_status = "Starting workflow..."
-        st.session_state.current_agent_status = "Cloud Architect"
-        st.session_state.current_workflow_phase = "Planning"
-        st.session_state.workflow_result = {}
-        st.session_state.workflow_error = None
+        # Check if we have an interrupted workflow waiting for approval
+        workflow_interrupted = st.session_state.get("workflow_interrupted", False)
+        is_approval = is_approval_message(user_input)
+        
+        agent_logger.log_info("Process Input", f"workflow_interrupted={workflow_interrupted}, is_approval={is_approval}, user_input='{user_input[:50]}...'")
+        
+        if workflow_interrupted and is_approval:
+            # Resume interrupted workflow with user's approval response
+            agent_logger.log_info("Process Input", "Resuming interrupted workflow")
+            st.session_state.workflow_active = True
+            st.session_state.workflow_status = "Processing approval..."
+            st.session_state.resuming_approval = True
+            st.session_state.approval_response = user_input
+        else:
+            # Start new workflow
+            agent_logger.log_info("Process Input", "Starting new workflow")
+            st.session_state.workflow_active = True
+            st.session_state.workflow_status = "Starting workflow..."
+            st.session_state.current_agent_status = "Cloud Architect"
+            st.session_state.current_workflow_phase = "Planning"
+            st.session_state.workflow_result = {}
+            st.session_state.workflow_error = None
+            st.session_state.workflow_interrupted = False
         
         # Force immediate UI refresh to show user message and workflow start
         st.rerun()
@@ -173,18 +232,46 @@ class StreamlitInterface:
         
         # Show loading with status - non-blocking approach
         try:
-            # Process through IaP agent
-            compliance_settings = st.session_state.get("compliance_settings", {})
-            deployment_config = st.session_state.get("deployment_config", {})
-            approval_required = deployment_config.get("approval_required", True)
+            # Check if we're resuming an interrupted workflow
+            resuming_approval = st.session_state.get("resuming_approval", False)
+            
+            agent_logger.log_info("Workflow Execution", f"resuming_approval={resuming_approval}")
+            
+            if resuming_approval:
+                # Resume interrupted workflow with approval response
+                approval_response = st.session_state.get("approval_response", "")
+                config = st.session_state.get("workflow_config", {})
+                
+                agent_logger.log_info("Workflow Execution", f"Resuming with approval_response='{approval_response}', thread_id={config.get('configurable', {}).get('thread_id', 'None')}")
+                
+                # Get the current state to check interrupts
+                try:
+                    current_state = self.agent.get_state(config)
+                    agent_logger.log_info("Workflow Execution", f"Current state interrupts: {len(current_state.interrupts) if hasattr(current_state, 'interrupts') else 'No interrupts'}")
+                    agent_logger.log_info("Workflow Execution", f"Current state next: {current_state.next if hasattr(current_state, 'next') else 'No next'}")
+                    agent_logger.log_info("Workflow Execution", f"Current state values keys: {list(current_state.values.keys()) if hasattr(current_state, 'values') and current_state.values else 'No values'}")
+                except Exception as e:
+                    agent_logger.log_info("Workflow Execution", f"Could not get state: {e}")
+                
+                # Resume with the actual user response (the LLM will analyze it)
+                result = self.agent.invoke(Command(resume=approval_response), config=config)
+                
+                # Clear resumption flags
+                st.session_state.resuming_approval = False
+                st.session_state.workflow_interrupted = False
+            else:
+                # Start new workflow
+                compliance_settings = st.session_state.get("compliance_settings", {})
+                deployment_config = st.session_state.get("deployment_config", {})
+                approval_required = deployment_config.get("approval_required", True)
 
-            config = {
-                "configurable": {
-                    "thread_id": f"infrastructure_workflow_{hash(user_input)}"
+                config = {
+                    "configurable": {
+                        "thread_id": f"infrastructure_workflow_{st.session_state.session_thread_id}"
+                    }
                 }
-            }
 
-            result = self.agent.invoke(
+                result = self.agent.invoke(
                 {
                     "user_input": conversation_context,
                     "conversation_history": self._get_conversation_history(),
@@ -203,6 +290,20 @@ class StreamlitInterface:
                 },
                 config=config,
             )
+
+            # Check if workflow was interrupted for human approval
+            if "__interrupt__" in result:
+                st.session_state.workflow_interrupted = True
+                st.session_state.workflow_interrupt_data = result["__interrupt__"]
+                st.session_state.workflow_config = config
+                st.session_state.workflow_status = "Waiting for approval..."
+                
+                # Add the approval request message to chat
+                interrupt_data = result["__interrupt__"][0].value if result["__interrupt__"] else {}
+                approval_message = interrupt_data.get("message", "Please approve the deployment plan above.")
+                add_message("assistant", approval_message)
+            else:
+                st.session_state.workflow_interrupted = False
 
             # Store results
             st.session_state.workflow_result = result

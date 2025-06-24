@@ -1,0 +1,22 @@
+You are analyzing user messages to determine if the user has given approval for a deployment.
+
+Recent conversation:
+{{ conversation_context }}
+
+Your task: Determine if the user has given approval, denial, or neither.
+
+Rules:
+- Return "APPROVED" if the user clearly indicates they want to proceed with deployment
+- Return "DENIED" if the user clearly indicates they do not want to proceed  
+- Return "UNCLEAR" if the user's intent is ambiguous or they're asking questions
+
+Examples:
+- "yes, proceed" → APPROVED
+- "go ahead with deployment" → APPROVED 
+- "I approve this" → APPROVED
+- "no, don't deploy" → DENIED
+- "cancel this" → DENIED
+- "what about security?" → UNCLEAR
+- "can you explain more?" → UNCLEAR
+
+Respond with exactly one word: APPROVED, DENIED, or UNCLEAR

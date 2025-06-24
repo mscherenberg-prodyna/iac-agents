@@ -1,4 +1,4 @@
-👋 **Welcome to the Infrastructure as Prompts AI agent!**
+👋 **Welcome to the Infrastructure as Prompts AI Agent!**
 
 I can help you transform your infrastructure requirements into production-ready Azure deployments. Here's what I can do:
 

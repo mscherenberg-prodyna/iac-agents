@@ -6,6 +6,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 from ...templates.template_loader import template_loader
+from ...templates.template_manager import template_manager
 
 
 def initialize_chat_messages():
@@ -13,7 +14,7 @@ def initialize_chat_messages():
     if "messages" not in st.session_state:
         st.session_state.messages = []
         # Add welcome message
-        welcome_content = template_loader.load_prompt_template("welcome_message")
+        welcome_content = template_manager.get_prompt("welcome_message")
         st.session_state.messages.append(
             {
                 "role": "assistant",
