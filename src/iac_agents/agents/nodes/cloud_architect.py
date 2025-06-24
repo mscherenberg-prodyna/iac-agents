@@ -27,12 +27,9 @@ def cloud_architect_agent(state: InfrastructureStateDict) -> InfrastructureState
         "Cloud Architect", "Analyzing requirements and orchestrating workflow"
     )
 
-    user_input = state["user_input"]
+    conversation_history = state["conversation_history"]
 
     try:
-        # Prepare context for the Cloud Architect
-        context_info = _prepare_agent_context(state)
-
         # Extract configuration settings from state
         compliance_settings = state.get("compliance_settings", {})
         compliance_enforcement = (
@@ -58,24 +55,6 @@ def cloud_architect_agent(state: InfrastructureStateDict) -> InfrastructureState
             else "None available"
         )
 
-        # Load the cloud architect prompt with variable substitution
-        system_prompt = template_manager.get_prompt(
-            "cloud_architect",
-            user_request=user_input,
-            current_stage=state.get("current_stage", "initial"),
-            completed_stages=", ".join(state.get("completed_stages", [])),
-            agent_context=context_info,
-            default_subscription_name=subscription_info["default_subscription_name"],
-            available_subscriptions=available_subscriptions,
-            should_respond_to_user="False",  # Will be determined after response analysis
-            compliance_enforcement=compliance_enforcement,
-            compliance_frameworks=compliance_frameworks,
-            approval_required=approval_required,
-        )
-
-        # Make LLM call using utility function
-        response_content = make_llm_call(system_prompt, user_input)
-
         # Determine workflow phase based on current state
         workflow_phase = _determine_workflow_phase(state)
 
@@ -86,6 +65,7 @@ def cloud_architect_agent(state: InfrastructureStateDict) -> InfrastructureState
 
         # Validate terraform template if available and in validation phase
         template_validation_result = None
+        template_validation_failed = False
         if workflow_phase == "validation" and state.get("final_template"):
             # Always run validation when in validation phase, regardless of previous results
             log_info(
@@ -104,6 +84,7 @@ def cloud_architect_agent(state: InfrastructureStateDict) -> InfrastructureState
                 workflow_phase = (
                     "planning"  # Force back to planning to regenerate template
                 )
+                template_validation_failed = True
         elif workflow_phase == "validation" and not state.get("final_template"):
             # If we're in validation phase but no template exists, go back to planning
             log_warning(
@@ -112,8 +93,44 @@ def cloud_architect_agent(state: InfrastructureStateDict) -> InfrastructureState
             )
             workflow_phase = "planning"
 
-        # Determine if this should be a user-facing response based on state AND response content
-        should_respond_to_user = _should_generate_user_response(state, response_content)
+        if template_validation_failed:
+
+            response_content = (
+                f"Template validation failed: {template_validation_result['error']}"
+            )
+            conversation_history.append(
+                f"Cloud Architect: {response_content}"
+            )  # Append response to conversation history
+            should_respond_to_user = False
+
+        else:
+
+            # Load the cloud architect prompt with variable substitution
+            system_prompt = template_manager.get_prompt(
+                "cloud_architect",
+                current_stage=state.get("current_stage", "initial"),
+                completed_stages=", ".join(state.get("completed_stages", [])),
+                default_subscription_name=subscription_info[
+                    "default_subscription_name"
+                ],
+                available_subscriptions=available_subscriptions,
+                compliance_enforcement=compliance_enforcement,
+                compliance_frameworks=compliance_frameworks,
+                approval_required=approval_required,
+            )
+
+            # Make LLM call using utility function
+            response_content = make_llm_call(
+                system_prompt, "\n\n###\n\n".join(conversation_history)
+            )
+            conversation_history.append(
+                f"Cloud Architect: {response_content}"
+            )  # Append response to conversation history
+
+            # Determine if this should be a user-facing response based on state AND response content
+            should_respond_to_user = _should_generate_user_response(
+                state, response_content
+            )
 
         # Log the response content for debugging
         log_agent_response("Cloud Architect", response_content)
@@ -131,6 +148,7 @@ def cloud_architect_agent(state: InfrastructureStateDict) -> InfrastructureState
         result_state = {
             **state,
             "current_agent": "cloud_architect",
+            "conversation_history": conversation_history,
             "workflow_phase": workflow_phase,
             "subscription_info": subscription_info,
             "phase_iterations": phase_iterations,
@@ -144,6 +162,7 @@ def cloud_architect_agent(state: InfrastructureStateDict) -> InfrastructureState
             result_state["final_response"] = response_content
             log_agent_complete("Cloud Architect", "Generated user response")
         else:
+            result_state["final_response"] = None
             log_agent_complete("Cloud Architect", "Internal coordination only")
 
         return result_state
@@ -205,62 +224,31 @@ def _should_generate_user_response(
 
     # 1. ERROR NOTIFICATION - if there are errors
     if errors:
+        log_warning("Cloud Architect", f"Routing to User because of: {errors}")
         return True
 
     # 2. APPROVAL REQUEST - if validation is complete and approval workflow reached
     if workflow_phase == "approval":
+        log_info("Cloud Architect", "Routing to User for approval request")
         return True
 
     # 3. DEPLOYMENT COMPLETE - if deployment is finished
     if workflow_phase == "deployment" and state.get("deployment_status") == "completed":
+        log_info("Cloud Architect", "Routing to User for completed deployment")
         return True
 
     # 4. WORKFLOW COMPLETE - if workflow has reached completion
     if workflow_phase == "complete":
+        log_info("Cloud Architect", "Routing to User for completed workflow")
         return True
 
     # 5. CLARIFICATION NEEDED - if LLM explicitly requests clarification
     if "CLARIFICATION_REQUIRED" in response_content:
+        log_info("Cloud Architect", "Routing to User for clarification request")
         return True
 
     # All other cases: internal coordination only
     return False
-
-
-def _prepare_agent_context(state: InfrastructureStateDict) -> str:
-    """Prepare context information from other agents for Cloud Architect."""
-    context_parts = []
-
-    # Cloud Engineer Response
-    cloud_engineer_response = state.get("cloud_engineer_response", "")
-    if cloud_engineer_response:
-        context_parts.append(f"Cloud Engineer Analysis: {cloud_engineer_response}")
-
-    # SecOps/FinOps Analysis
-    secops_analysis = state.get("secops_finops_analysis", "")
-    if secops_analysis:
-        context_parts.append(f"Security & Cost Analysis: {secops_analysis}")
-
-    # Terraform Guidance
-    terraform_guidance = state.get("terraform_guidance", "")
-    if terraform_guidance:
-        context_parts.append(f"Terraform Best Practices: {terraform_guidance}")
-
-    # DevOps Response
-    devops_response = state.get("devops_response", "")
-    if devops_response:
-        context_parts.append(f"Deployment Status: {devops_response}")
-
-    # Errors
-    errors = state.get("errors", [])
-    if errors:
-        context_parts.append(f"Errors Encountered: {'; '.join(errors)}")
-
-    return (
-        "\n\n".join(context_parts)
-        if context_parts
-        else "No specialist agent context available yet."
-    )
 
 
 def _validate_terraform_template(

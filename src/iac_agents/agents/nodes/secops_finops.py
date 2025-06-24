@@ -15,28 +15,11 @@ def secops_finops_agent(state: InfrastructureStateDict) -> InfrastructureStateDi
     """SecOps/FinOps Agent - Compliance validation and cost estimation."""
     log_agent_start("SecOps/FinOps", "Validating compliance and estimating costs")
 
-    user_input = state["user_input"]
+    conversation_history = state["conversation_history"]
     template_content = state.get("final_template", "")
     compliance_settings = state.get("compliance_settings", {})
-    cloud_architect_analysis = state.get("cloud_architect_analysis", "")
-    cloud_engineer_response = state.get("cloud_engineer_response", "")
 
     try:
-        # Prepare context for SecOps/FinOps analysis
-        analysis_context = f"""
-Infrastructure Template:
-{template_content}
-
-Cloud Architect Analysis:
-{cloud_architect_analysis}
-
-Cloud Engineer Response:
-{cloud_engineer_response}
-
-Compliance Requirements:
-{compliance_settings}
-"""
-
         # Extract compliance configuration
         compliance_enforcement = (
             "Enabled"
@@ -58,7 +41,6 @@ Compliance Requirements:
         # Load the secops/finops prompt
         system_prompt = template_manager.get_prompt(
             "sec_fin_ops_engineer",
-            user_request=user_input,
             template_content=template_content,
             compliance_enforcement=compliance_enforcement,
             compliance_frameworks=compliance_frameworks,
@@ -68,7 +50,12 @@ Compliance Requirements:
         )
 
         # Make LLM call for SecOps/FinOps analysis
-        response = make_llm_call(system_prompt, analysis_context)
+        response = make_llm_call(
+            system_prompt, "\n\n###\n\n".join(conversation_history)
+        )
+        conversation_history.append(
+            f"SecOps/FinOps: {response}"
+        )  # Append response to conversation history
 
         # Simple pricing lookup detection - let LLM be explicit
         needs_pricing_lookup = "PRICING_LOOKUP_REQUIRED" in response
@@ -89,6 +76,7 @@ Compliance Requirements:
         result_state = {
             **state,
             "current_agent": "secops_finops",
+            "conversation_history": conversation_history,
             "current_stage": WorkflowStage.VALIDATION_AND_COMPLIANCE.value,
             "completed_stages": new_completed_stages,
             "secops_finops_analysis": response,

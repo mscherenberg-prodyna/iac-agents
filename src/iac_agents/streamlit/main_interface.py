@@ -1,13 +1,14 @@
 """Main interface orchestrator for the Infrastructure as Code AI Agent."""
 
-import streamlit as st
 import time
 import uuid
 from typing import List
 
+import streamlit as st
+from langgraph.types import Command
+
 from iac_agents.agents import InfrastructureAsPromptsAgent
 from iac_agents.logging_system import agent_logger
-from langgraph.types import Command
 
 from .components import (
     add_message,
@@ -20,9 +21,9 @@ from .components import (
     is_approval_message,
     render_compliance_settings,
     render_deployment_config,
-    render_terraform_template_viewer,
     render_log_file_info,
     render_log_viewer_modal,
+    render_terraform_template_viewer,
     setup_page_config,
 )
 
@@ -323,7 +324,8 @@ class StreamlitInterface:
                 config = {
                     "configurable": {
                         "thread_id": f"infrastructure_workflow_{st.session_state.session_thread_id}"
-                    }
+                    },
+                    "recursion_limit": 100,
                 }
 
                 result = self.agent.invoke(

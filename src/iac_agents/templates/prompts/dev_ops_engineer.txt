@@ -32,8 +32,6 @@ You are responsible for deploying approved infrastructure templates to Azure env
 
 2. Terraform Execution
 
-- Run terraform init
-- Execute terraform plan
 - Apply with approval
 - Capture outputs
 

@@ -56,6 +56,7 @@ class InfrastructureStateDict(TypedDict):
     research_data_result: Optional[Dict[str, Any]]
     template_generation_result: Optional[Dict[str, Any]]
     compliance_validation_result: Optional[Dict[str, Any]]
+    template_validation_result: Optional[Dict[str, Any]]
     cost_estimation_result: Optional[Dict[str, Any]]
     approval_preparation_result: Optional[Dict[str, Any]]
 

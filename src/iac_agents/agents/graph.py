@@ -19,6 +19,7 @@ from .nodes import (
     terraform_consultant_agent,
 )
 from .state import InfrastructureStateDict
+from .utils import make_llm_call
 
 
 class InfrastructureAsPromptsAgent:
@@ -118,7 +119,9 @@ class InfrastructureAsPromptsAgent:
         )
 
         workflow.add_conditional_edges(
-            "human_approval", self._route_human_approval, {"devops": "devops", END: END}
+            "human_approval",
+            self._route_human_approval,
+            {"devops": "devops", "cloud_architect": "cloud_architect"},
         )
 
         workflow.add_edge("devops", "cloud_architect")
@@ -157,25 +160,17 @@ class InfrastructureAsPromptsAgent:
 
     def _route_cloud_engineer(self, state: InfrastructureStateDict) -> str:
         """Route from cloud engineer agent."""
-        if state.get("needs_terraform_lookup"):
-            # Check if terraform research is enabled
-            deployment_config = state.get("deployment_config", {})
-            terraform_enabled = deployment_config.get(
-                "terraform_research_enabled", True
-            )
-
-            if terraform_enabled:
-                return "terraform_consultant"
-            else:
-                # Skip terraform consultant if disabled, return to Cloud Architect
-                return "cloud_architect"
-        # Always return to Cloud Architect for centralized orchestration
+        deployment_config = state.get("deployment_config", {})
+        terraform_enabled = deployment_config.get("terraform_research_enabled", True)
+        if state.get("needs_terraform_lookup") and terraform_enabled:
+            return "terraform_consultant"
+        # Skip terraform consultant if disabled, return to Cloud Architect
         return "cloud_architect"
 
     def _route_terraform_consultant(self, state: InfrastructureStateDict) -> str:
         """Route from terraform consultant agent."""
         # Always route back to the source that requested consultation
-        caller = state.get("terraform_consultant_caller")
+        caller = state.get("terraform_consultant_caller", None)
 
         # Debug logging
         log_info(
@@ -183,29 +178,18 @@ class InfrastructureAsPromptsAgent:
             f"caller={caller}, routing_to={'secops_finops' if caller == 'secops_finops' else 'cloud_engineer' if caller == 'cloud_engineer' else 'cloud_architect (fallback)'}",
         )
 
-        if caller == "secops_finops":
-            return "secops_finops"
-        elif caller == "cloud_engineer":
-            return "cloud_engineer"
-        else:
-            # Fallback to Cloud Architect if caller not tracked
-            return "cloud_architect"
+        if caller:
+            return caller
+        # Fallback to Cloud Architect if caller not tracked
+        return "cloud_architect"
 
     def _route_secops_finops(self, state: InfrastructureStateDict) -> str:
         """Route from secops/finops agent."""
-        if state.get("needs_pricing_lookup"):
-            # Check if terraform research is enabled
-            deployment_config = state.get("deployment_config", {})
-            terraform_enabled = deployment_config.get(
-                "terraform_research_enabled", True
-            )
-
-            if terraform_enabled:
-                return "terraform_consultant"
-            else:
-                # Skip terraform consultant if disabled, return to Cloud Architect
-                return "cloud_architect"
-        # Always return to Cloud Architect for centralized orchestration
+        deployment_config = state.get("deployment_config", {})
+        terraform_enabled = deployment_config.get("terraform_research_enabled", True)
+        if state.get("needs_pricing_lookup") and terraform_enabled:
+            return "terraform_consultant"
+        # Skip terraform consultant if disabled, return to Cloud Architect
         return "cloud_architect"
 
     def _route_human_approval(self, state: InfrastructureStateDict) -> str:
@@ -216,12 +200,7 @@ class InfrastructureAsPromptsAgent:
         if approval_received:
             log_info("Human Approval Router", "Approval received, routing to devops")
             return "devops"
-        else:
-            log_info("Human Approval Router", "No approval, ending workflow")
-            return END
-
-    def _route_devops(self, state: InfrastructureStateDict) -> str:
-        """Route from devops agent."""
+        log_info("Human Approval Router", "No approval, going back to Cloud Architect")
         return "cloud_architect"
 
     def _human_approval_node(
@@ -284,7 +263,6 @@ class InfrastructureAsPromptsAgent:
 
     def _analyze_approval_response(self, approval_response) -> bool:
         """Analyze human approval response using LLM."""
-        from .utils import make_llm_call
 
         # Handle different response types
         if isinstance(approval_response, dict):
@@ -322,16 +300,15 @@ class InfrastructureAsPromptsAgent:
             if "APPROVED" in llm_response_clean:
                 log_info("Approval Analysis", "LLM detected approval")
                 return True
-            elif "DENIED" in llm_response_clean:
+            if "DENIED" in llm_response_clean:
                 log_info("Approval Analysis", "LLM detected denial")
                 return False
-            else:
-                # UNCLEAR or any other response - default to no approval for safety
-                log_info(
-                    "Approval Analysis",
-                    "LLM response unclear, defaulting to no approval",
-                )
-                return False
+            # UNCLEAR or any other response - default to no approval for safety
+            log_info(
+                "Approval Analysis",
+                "LLM response unclear, defaulting to no approval",
+            )
+            return False
 
         except Exception as e:
             log_info(

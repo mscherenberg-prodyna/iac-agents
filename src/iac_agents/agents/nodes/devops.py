@@ -2,6 +2,7 @@
 
 import json
 import os
+import re
 import subprocess
 from pathlib import Path
 
@@ -20,23 +21,33 @@ def devops_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
 
     template_content = state.get("final_template", "")
     approval_received = state.get("approval_received", False)
+    conversation_history = state["conversation_history"]
 
     try:
         if not approval_received:
             log_warning("DevOps", "Deployment cancelled - no approval received")
+            devops_response = (
+                "❌ **Deployment Cancelled**\n\nNo approval received for deployment."
+            )
+            conversation_history.append(f"DevOps Engineer: {devops_response}")
             return {
                 **state,
                 "current_agent": "devops",
+                "conversation_history": conversation_history,
+                "devops_response": devops_response,
                 "deployment_status": "cancelled_no_approval",
                 "workflow_phase": "complete",
             }
 
         if not template_content or not template_content.strip():
             log_warning("DevOps", "No infrastructure template available for deployment")
+            devops_response = "❌ **Deployment Failed**\n\nNo infrastructure template was provided for deployment. Please ensure the Cloud Engineer has generated a valid Terraform template."
+            conversation_history.append(f"DevOps Engineer: {devops_response}")
             return {
                 **state,
                 "current_agent": "devops",
-                "devops_response": "❌ **Deployment Failed**\n\nNo infrastructure template was provided for deployment. Please ensure the Cloud Engineer has generated a valid Terraform template.",
+                "conversation_history": conversation_history,
+                "devops_response": devops_response,
                 "deployment_status": "failed",
                 "workflow_phase": "complete",
                 "errors": state.get("errors", [])
@@ -45,10 +56,13 @@ def devops_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
 
         # Verify Azure CLI authentication
         if not _verify_azure_auth():
+            devops_response = "❌ **Deployment Failed**\n\nAzure CLI authentication is required. Please run `az login` to authenticate with Azure before attempting deployment."
+            conversation_history.append(f"DevOps Engineer: {devops_response}")
             return {
                 **state,
                 "current_agent": "devops",
-                "devops_response": "❌ **Deployment Failed**\n\nAzure CLI authentication is required. Please run `az login` to authenticate with Azure before attempting deployment.",
+                "conversation_history": conversation_history,
+                "devops_response": devops_response,
                 "deployment_status": "failed",
                 "workflow_phase": "complete",
                 "errors": state.get("errors", [])
@@ -65,11 +79,13 @@ def devops_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
             log_agent_complete(
                 "DevOps", "Infrastructure deployed successfully to Azure"
             )
-
+            devops_response = deployment_result["output"]
+            conversation_history.append(f"DevOps Engineer: {devops_response}")
             return {
                 **state,
                 "current_agent": "devops",
-                "devops_response": deployment_result["output"],
+                "conversation_history": conversation_history,
+                "devops_response": devops_response,
                 "deployment_status": "deployed",
                 "deployment_details": deployment_result["details"],
                 "terraform_workspace": deployment_result["workspace_path"],
@@ -80,10 +96,13 @@ def devops_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
             # Clean up ANSI color codes for better display
             clean_error = _clean_terraform_error(error_message)
             log_warning("DevOps", f"Deployment failed: {error_message}")
+            devops_response = f"❌ **Deployment Failed**\n\nTerraform deployment encountered errors:\n\n```\n{clean_error}\n```\n\nPlease review the template and correct the issues before retrying deployment."
+            conversation_history.append(f"DevOps Engineer: {devops_response}")
             return {
                 **state,
                 "current_agent": "devops",
-                "devops_response": f"❌ **Deployment Failed**\n\nTerraform deployment encountered errors:\n\n```\n{clean_error}\n```\n\nPlease review the template and correct the issues before retrying deployment.",
+                "conversation_history": conversation_history,
+                "devops_response": devops_response,
                 "deployment_status": "failed",
                 "workflow_phase": "complete",
                 "errors": state.get("errors", []) + [clean_error],
@@ -91,10 +110,13 @@ def devops_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
 
     except Exception as e:
         log_warning("DevOps", f"Deployment failed with exception: {str(e)}")
+        devops_response = f"❌ **Deployment Failed**\n\nAn unexpected error occurred during deployment:\n\n```\n{str(e)}\n```"
+        conversation_history.append(f"DevOps Engineer: {devops_response}")
         return {
             **state,
             "current_agent": "devops",
-            "devops_response": f"❌ **Deployment Failed**\n\nAn unexpected error occurred during deployment:\n\n```\n{str(e)}\n```",
+            "conversation_history": conversation_history,
+            "devops_response": devops_response,
             "deployment_status": "failed",
             "workflow_phase": "complete",
             "errors": state.get("errors", []) + [str(e)],
@@ -103,7 +125,6 @@ def devops_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
 
 def _clean_terraform_error(error_message: str) -> str:
     """Clean ANSI color codes and format terraform error messages."""
-    import re
 
     # Remove ANSI color codes
     ansi_escape = re.compile(r"\x1b\[[0-9;]*m")
