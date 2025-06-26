@@ -14,10 +14,12 @@ from ..terraform_utils import (
     run_terraform_command,
 )
 
+AGENT_NAME = "DevOps Engineer"
+
 
 def devops_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
     """DevOps Agent - Deployment automation and Azure infrastructure deployment."""
-    log_agent_start("DevOps", "Starting Azure infrastructure deployment")
+    log_agent_start(AGENT_NAME, "Starting Azure infrastructure deployment")
 
     template_content = state.get("final_template", "")
     approval_received = state.get("approval_received", False)
@@ -25,7 +27,7 @@ def devops_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
 
     try:
         if not approval_received:
-            log_warning("DevOps", "Deployment cancelled - no approval received")
+            log_warning(AGENT_NAME, "Deployment cancelled - no approval received")
             devops_response = (
                 "❌ **Deployment Cancelled**\n\nNo approval received for deployment."
             )
@@ -40,7 +42,9 @@ def devops_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
             }
 
         if not template_content or not template_content.strip():
-            log_warning("DevOps", "No infrastructure template available for deployment")
+            log_warning(
+                AGENT_NAME, "No infrastructure template available for deployment"
+            )
             devops_response = "❌ **Deployment Failed**\n\nNo infrastructure template was provided for deployment. Please ensure the Cloud Engineer has generated a valid Terraform template."
             conversation_history.append(f"DevOps Engineer: {devops_response}")
             return {
@@ -77,7 +81,7 @@ def devops_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
 
         if deployment_result["success"]:
             log_agent_complete(
-                "DevOps", "Infrastructure deployed successfully to Azure"
+                AGENT_NAME, "Infrastructure deployed successfully to Azure"
             )
             devops_response = deployment_result["output"]
             conversation_history.append(f"DevOps Engineer: {devops_response}")
@@ -91,25 +95,24 @@ def devops_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
                 "terraform_workspace": deployment_result["workspace_path"],
                 "workflow_phase": "complete",
             }
-        else:
-            error_message = deployment_result["error"]
-            # Clean up ANSI color codes for better display
-            clean_error = _clean_terraform_error(error_message)
-            log_warning("DevOps", f"Deployment failed: {error_message}")
-            devops_response = f"❌ **Deployment Failed**\n\nTerraform deployment encountered errors:\n\n```\n{clean_error}\n```\n\nPlease review the template and correct the issues before retrying deployment."
-            conversation_history.append(f"DevOps Engineer: {devops_response}")
-            return {
-                **state,
-                "current_agent": "devops",
-                "conversation_history": conversation_history,
-                "devops_response": devops_response,
-                "deployment_status": "failed",
-                "workflow_phase": "complete",
-                "errors": state.get("errors", []) + [clean_error],
-            }
+        error_message = deployment_result["error"]
+        # Clean up ANSI color codes for better display
+        clean_error = _clean_terraform_error(error_message)
+        log_warning(AGENT_NAME, f"Deployment failed: {error_message}")
+        devops_response = f"❌ **Deployment Failed**\n\nTerraform deployment encountered errors:\n\n```\n{clean_error}\n```\n\nPlease review the template and correct the issues before retrying deployment."
+        conversation_history.append(f"DevOps Engineer: {devops_response}")
+        return {
+            **state,
+            "current_agent": "devops",
+            "conversation_history": conversation_history,
+            "devops_response": devops_response,
+            "deployment_status": "failed",
+            "workflow_phase": "complete",
+            "errors": state.get("errors", []) + [clean_error],
+        }
 
     except Exception as e:
-        log_warning("DevOps", f"Deployment failed with exception: {str(e)}")
+        log_warning(AGENT_NAME, f"Deployment failed with exception: {str(e)}")
         devops_response = f"❌ **Deployment Failed**\n\nAn unexpected error occurred during deployment:\n\n```\n{str(e)}\n```"
         conversation_history.append(f"DevOps Engineer: {devops_response}")
         return {
@@ -149,20 +152,19 @@ def _verify_azure_auth() -> bool:
         )
 
         if result.returncode == 0:
-            log_agent_start("DevOps", "Azure CLI authentication verified")
+            log_agent_start(AGENT_NAME, "Azure CLI authentication verified")
             return True
-        else:
-            log_warning("DevOps", f"Azure CLI authentication failed: {result.stderr}")
-            return False
+        log_warning(AGENT_NAME, f"Azure CLI authentication failed: {result.stderr}")
+        return False
 
     except subprocess.TimeoutExpired:
-        log_warning("DevOps", "Azure CLI authentication check timed out")
+        log_warning(AGENT_NAME, "Azure CLI authentication check timed out")
         return False
     except FileNotFoundError:
-        log_warning("DevOps", "Azure CLI not found - please install Azure CLI")
+        log_warning(AGENT_NAME, "Azure CLI not found - please install Azure CLI")
         return False
     except Exception as e:
-        log_warning("DevOps", f"Azure authentication verification failed: {str(e)}")
+        log_warning(AGENT_NAME, f"Azure authentication verification failed: {str(e)}")
         return False
 
 
@@ -175,7 +177,7 @@ def _deploy_infrastructure(template_content: str, user_requirements: str = "") -
         )
         deployment_dir.mkdir(parents=True, exist_ok=True)
 
-        log_info("DevOps", f"Created deployment workspace: {deployment_dir}")
+        log_info(AGENT_NAME, f"Created deployment workspace: {deployment_dir}")
 
         # Validate and enhance template with variable management
         is_valid, issues = TerraformVariableManager.validate_template_variables(
@@ -183,30 +185,29 @@ def _deploy_infrastructure(template_content: str, user_requirements: str = "") -
         )
 
         if not is_valid:
-            log_info("DevOps", f"Template validation issues found: {issues}")
+            log_info(AGENT_NAME, f"Template validation issues found: {issues}")
             # Infer variable values from user requirements
             inferred_values = (
                 TerraformVariableManager.infer_variable_values_from_requirements(
                     user_requirements
                 )
             )
-            log_info("DevOps", f"Inferred variable values: {inferred_values}")
+            log_info(AGENT_NAME, f"Inferred variable values: {inferred_values}")
 
             # Enhance template with inferred defaults
             enhanced_template = TerraformVariableManager.enhance_template_with_defaults(
                 template_content, inferred_values
             )
-            log_info("DevOps", "Template enhanced with inferred variable defaults")
+            log_info(AGENT_NAME, "Template enhanced with inferred variable defaults")
         else:
             enhanced_template = template_content
-            log_info("DevOps", "Template validation passed, using original template")
+            log_info(AGENT_NAME, "Template validation passed, using original template")
 
         # Apply standard enhancements (provider config, etc.)
         enhanced_template = enhance_terraform_template(
             enhanced_template,
-            context="deployment",
             project_name="iap-agent",
-            default_location="East US",
+            default_location="West Europe",
         )
 
         # Write Terraform configuration
@@ -214,10 +215,10 @@ def _deploy_infrastructure(template_content: str, user_requirements: str = "") -
         with open(main_tf_path, "w", encoding="utf-8") as f:
             f.write(enhanced_template)
 
-        log_info("DevOps", "Terraform configuration written")
+        log_info(AGENT_NAME, "Terraform configuration written")
 
         # Log the template being deployed for debugging
-        log_info("DevOps", f"Template content:\n{enhanced_template}")
+        log_info(AGENT_NAME, f"Template content:\n{enhanced_template}")
 
         # Execute Terraform commands
         deployment_result = {
@@ -229,12 +230,12 @@ def _deploy_infrastructure(template_content: str, user_requirements: str = "") -
         }
 
         # Terraform init
-        log_info("DevOps", "Running terraform init...")
+        log_info(AGENT_NAME, "Running terraform init...")
         init_result = run_terraform_command(
             deployment_dir, ["terraform", "init"], timeout=300, context="Deployment"
         )
         log_info(
-            "DevOps",
+            AGENT_NAME,
             f"Terraform init output:\nSTDOUT:\n{init_result['stdout']}\nSTDERR:\n{init_result['stderr']}",
         )
         if not init_result["success"]:
@@ -244,7 +245,7 @@ def _deploy_infrastructure(template_content: str, user_requirements: str = "") -
             return deployment_result
 
         # Terraform plan
-        log_info("DevOps", "Running terraform plan...")
+        log_info(AGENT_NAME, "Running terraform plan...")
         plan_result = run_terraform_command(
             deployment_dir,
             ["terraform", "plan", "-out=tfplan"],
@@ -252,7 +253,7 @@ def _deploy_infrastructure(template_content: str, user_requirements: str = "") -
             context="Deployment",
         )
         log_info(
-            "DevOps",
+            AGENT_NAME,
             f"Terraform plan output:\nSTDOUT:\n{plan_result['stdout']}\nSTDERR:\n{plan_result['stderr']}",
         )
         if not plan_result["success"]:
@@ -262,7 +263,7 @@ def _deploy_infrastructure(template_content: str, user_requirements: str = "") -
             return deployment_result
 
         # Terraform apply
-        log_info("DevOps", "Running terraform apply...")
+        log_info(AGENT_NAME, "Running terraform apply...")
         apply_result = run_terraform_command(
             deployment_dir,
             ["terraform", "apply", "-auto-approve", "tfplan"],
@@ -270,7 +271,7 @@ def _deploy_infrastructure(template_content: str, user_requirements: str = "") -
             context="Deployment",
         )
         log_info(
-            "DevOps",
+            AGENT_NAME,
             f"Terraform apply output:\nSTDOUT:\n{apply_result['stdout']}\nSTDERR:\n{apply_result['stderr']}",
         )
         if not apply_result["success"]:

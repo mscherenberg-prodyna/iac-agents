@@ -51,6 +51,7 @@ VERSION: [Provider version if specific]
 
 - **Integration**: Incorporate returned best practices immediately
 - **LOW CONSULTATION THRESHOLD**: Consult for any non-trivial resource configuration, complex patterns, or when uncertain about best practices
+- You are encouraged to seek consultation if your information is significantly out of date, the current date is { current_date }}
 
 ## TEMPLATE STRUCTURE
 

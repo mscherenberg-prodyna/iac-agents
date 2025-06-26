@@ -4,7 +4,7 @@
     <img src="assets/logo.png" alt="logo" width="300"/>
 </p>
 
-## 🎯 Purpose
+## 🎯 Goal
 
 Transform cloud infrastructure deployment from complex command-line operations to simple conversational requests. Demonstrates how AI agents interpret natural language requirements and automatically provision Azure resources through an intelligent multi-agent system with built-in compliance validation.
 
@@ -24,10 +24,13 @@ Transform cloud infrastructure deployment from complex command-line operations t
    poetry install
    ```
 
-2. **Configure Azure OpenAI** (Create `.env` file in the base directory):
-   - Endpoint: **AZURE_OPENAI_ENDPOINT**
-   - Deployment: **AZURE_OPENAI_DEPLOYMENT**
+2. **Configure Azure AI Foundry Connections** (Create `.env` file in the base directory):
+   - OpenAI Endpoint: **AZURE_OPENAI_ENDPOINT**
+   - OpenAI Deployment: **AZURE_OPENAI_DEPLOYMENT**
    - API key: **AZURE_OPENAI_API_KEY**
+   - API version: **AZURE_OPENAI_API_VERSION**
+   - Foundry Project Endpoint: **AZURE_PROJECT_ENDPOINT**
+   - Agent ID for Cloud Agent: **AZURE_AGENT_ID**
 
 3. **Run Streamlit Web Interface**:
    ```bash
@@ -36,19 +39,12 @@ Transform cloud infrastructure deployment from complex command-line operations t
 
 ## 🏗️ Architecture
 
-### Multi-Agent Orchestration
-```
-User Input → Cloud Architect Agent → Workflow and Infrastructure Planning
-    ↓  
-Template Generation → Align with current best practices and documentation
-    ↓
-Compliance and Cost Estimation → Approval Preparation
-    ↓
-Deployment Approval → Deploy Template to Cloud
-```
-
 <p align="center">
     <img src="assets/iap.png" alt="iap" width="500"/>
+</p>
+
+<p align="center">
+    <img src="assets/workflow.png" alt="iap" width="500"/>
 </p>
 
 ### Agent Responsibilities
@@ -62,7 +58,7 @@ Deployment Approval → Deploy Template to Cloud
 
 | Feature | Traditional | AI-Powered | Improvement |
 |---------|-------------|------------|-------------|
-| **Time to Deploy** | 2-4 weeks | 5-10 minutes | 99% faster |
+| **Time to Deploy** | 2-3 days | 5-10 minutes | 99% faster |
 | **Compliance Coverage** | 60-70% | 95%+ | 40% improvement |
 | **Configuration Errors** | 20-30% | <5% | 85% reduction |
 | **Cost Optimization** | Manual research | Automated analysis | 10x faster |

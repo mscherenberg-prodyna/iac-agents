@@ -20,12 +20,12 @@ from ..terraform_utils import (
 )
 from ..utils import get_azure_subscription_info, make_llm_call
 
+AGENT_NAME = "Cloud Architect"
+
 
 def cloud_architect_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
     """Cloud Architect Agent - Main orchestrator and requirements analyzer."""
-    log_agent_start(
-        "Cloud Architect", "Analyzing requirements and orchestrating workflow"
-    )
+    log_agent_start(AGENT_NAME, "Analyzing requirements and orchestrating workflow")
 
     conversation_history = state["conversation_history"]
 
@@ -68,9 +68,7 @@ def cloud_architect_agent(state: InfrastructureStateDict) -> InfrastructureState
         template_validation_failed = False
         if workflow_phase == "validation" and state.get("final_template"):
             # Always run validation when in validation phase, regardless of previous results
-            log_info(
-                "Cloud Architect", "Validating terraform template with terraform plan"
-            )
+            log_info(AGENT_NAME, "Validating terraform template with terraform plan")
             template_validation_result = _validate_terraform_template(
                 state.get("final_template"), state.get("user_input", "")
             )
@@ -78,7 +76,7 @@ def cloud_architect_agent(state: InfrastructureStateDict) -> InfrastructureState
             # If template validation fails, route back to Cloud Engineer
             if not template_validation_result["valid"]:
                 log_warning(
-                    "Cloud Architect",
+                    AGENT_NAME,
                     f"Template validation failed: {template_validation_result['error']}",
                 )
                 workflow_phase = (
@@ -88,7 +86,7 @@ def cloud_architect_agent(state: InfrastructureStateDict) -> InfrastructureState
         elif workflow_phase == "validation" and not state.get("final_template"):
             # If we're in validation phase but no template exists, go back to planning
             log_warning(
-                "Cloud Architect",
+                AGENT_NAME,
                 "In validation phase but no template found, returning to planning",
             )
             workflow_phase = "planning"
@@ -133,8 +131,8 @@ def cloud_architect_agent(state: InfrastructureStateDict) -> InfrastructureState
             )
 
         # Log the response content for debugging
-        log_agent_response("Cloud Architect", response_content)
-        log_agent_complete("Cloud Architect", f"Workflow phase: {workflow_phase}")
+        log_agent_response(AGENT_NAME, response_content)
+        log_agent_complete(AGENT_NAME, f"Workflow phase: {workflow_phase}")
 
         # Mark validation_and_compliance as completed only when template validation passes
         completed_stages = state.get("completed_stages", [])
@@ -160,15 +158,15 @@ def cloud_architect_agent(state: InfrastructureStateDict) -> InfrastructureState
         # Set final_response only when we should communicate with user
         if should_respond_to_user:
             result_state["final_response"] = response_content
-            log_agent_complete("Cloud Architect", "Generated user response")
+            log_agent_complete(AGENT_NAME, "Generated user response")
         else:
             result_state["final_response"] = None
-            log_agent_complete("Cloud Architect", "Internal coordination only")
+            log_agent_complete(AGENT_NAME, "Internal coordination only")
 
         return result_state
 
     except Exception as e:
-        log_warning("Cloud Architect", f"Orchestration failed: {str(e)}")
+        log_warning(AGENT_NAME, f"Orchestration failed: {str(e)}")
 
         errors = state.get("errors", [])
         return {
@@ -192,7 +190,7 @@ def _determine_workflow_phase(state: InfrastructureStateDict) -> str:
         if current_phase == "validation":
             # Force completion of validation if stuck
             return "approval" if state.get("requires_approval") else "complete"
-        elif current_phase == "planning":
+        if current_phase == "planning":
             return "validation"
 
     if not completed_stages:
@@ -224,27 +222,27 @@ def _should_generate_user_response(
 
     # 1. ERROR NOTIFICATION - if there are errors
     if errors:
-        log_warning("Cloud Architect", f"Routing to User because of: {errors}")
+        log_warning(AGENT_NAME, f"Routing to User because of: {errors}")
         return True
 
     # 2. APPROVAL REQUEST - if validation is complete and approval workflow reached
     if workflow_phase == "approval":
-        log_info("Cloud Architect", "Routing to User for approval request")
+        log_info(AGENT_NAME, "Routing to User for approval request")
         return True
 
     # 3. DEPLOYMENT COMPLETE - if deployment is finished
     if workflow_phase == "deployment" and state.get("deployment_status") == "completed":
-        log_info("Cloud Architect", "Routing to User for completed deployment")
+        log_info(AGENT_NAME, "Routing to User for completed deployment")
         return True
 
     # 4. WORKFLOW COMPLETE - if workflow has reached completion
     if workflow_phase == "complete":
-        log_info("Cloud Architect", "Routing to User for completed workflow")
+        log_info(AGENT_NAME, "Routing to User for completed workflow")
         return True
 
     # 5. CLARIFICATION NEEDED - if LLM explicitly requests clarification
     if "CLARIFICATION_REQUIRED" in response_content:
-        log_info("Cloud Architect", "Routing to User for clarification request")
+        log_info(AGENT_NAME, "Routing to User for clarification request")
         return True
 
     # All other cases: internal coordination only
@@ -267,9 +265,7 @@ def _validate_terraform_template(
         # Create temporary directory for validation
         with tempfile.TemporaryDirectory(prefix="terraform_validation_") as temp_dir:
             validation_dir = Path(temp_dir)
-            log_info(
-                "Cloud Architect", f"Created validation workspace: {validation_dir}"
-            )
+            log_info(AGENT_NAME, f"Created validation workspace: {validation_dir}")
 
             # Enhance template with variable management
             is_valid, issues = TerraformVariableManager.validate_template_variables(
@@ -277,18 +273,14 @@ def _validate_terraform_template(
             )
 
             if not is_valid:
-                log_info(
-                    "Cloud Architect", f"Template validation issues found: {issues}"
-                )
+                log_info(AGENT_NAME, f"Template validation issues found: {issues}")
                 # Infer variable values from user requirements
                 inferred_values = (
                     TerraformVariableManager.infer_variable_values_from_requirements(
                         user_requirements
                     )
                 )
-                log_info(
-                    "Cloud Architect", f"Inferred variable values: {inferred_values}"
-                )
+                log_info(AGENT_NAME, f"Inferred variable values: {inferred_values}")
 
                 # Enhance template with inferred defaults
                 enhanced_template = (
@@ -297,32 +289,28 @@ def _validate_terraform_template(
                     )
                 )
                 log_info(
-                    "Cloud Architect",
+                    AGENT_NAME,
                     "Template enhanced with inferred variable defaults",
                 )
             else:
                 enhanced_template = template_content
                 log_info(
-                    "Cloud Architect",
+                    AGENT_NAME,
                     "Template validation passed, using original template",
                 )
 
             # Add standard provider configuration if not present
-            enhanced_template = enhance_terraform_template(
-                enhanced_template, context="validation"
-            )
+            enhanced_template = enhance_terraform_template(enhanced_template)
 
             # Write terraform configuration
             main_tf_path = validation_dir / "main.tf"
             with open(main_tf_path, "w", encoding="utf-8") as f:
                 f.write(enhanced_template)
 
-            log_info(
-                "Cloud Architect", "Terraform configuration written for validation"
-            )
+            log_info(AGENT_NAME, "Terraform configuration written for validation")
 
             # Run terraform init
-            log_info("Cloud Architect", "Running terraform init for validation...")
+            log_info(AGENT_NAME, "Running terraform init for validation...")
             init_result = run_terraform_command(
                 validation_dir, ["terraform", "init"], timeout=120, context="Validation"
             )
@@ -339,13 +327,13 @@ def _validate_terraform_template(
                 }
 
             # Run terraform plan for validation
-            log_info("Cloud Architect", "Running terraform plan for validation...")
+            log_info(AGENT_NAME, "Running terraform plan for validation...")
             plan_result = run_terraform_command(
                 validation_dir, ["terraform", "plan"], timeout=120, context="Validation"
             )
 
             if plan_result["success"]:
-                log_info("Cloud Architect", "Template validation successful!")
+                log_info(AGENT_NAME, "Template validation successful!")
                 return {
                     "valid": True,
                     "error": None,
@@ -355,23 +343,22 @@ def _validate_terraform_template(
                         "returncode": plan_result["returncode"],
                     },
                 }
-            else:
-                log_warning(
-                    "Cloud Architect",
-                    f"Template validation failed: {plan_result['stderr']}",
-                )
-                return {
-                    "valid": False,
-                    "error": f"Terraform plan validation failed: {plan_result['stderr']}",
-                    "output": plan_result["stdout"],
-                    "details": {
-                        "phase": "plan",
-                        "returncode": plan_result["returncode"],
-                    },
-                }
+            log_warning(
+                AGENT_NAME,
+                f"Template validation failed: {plan_result['stderr']}",
+            )
+            return {
+                "valid": False,
+                "error": f"Terraform plan validation failed: {plan_result['stderr']}",
+                "output": plan_result["stdout"],
+                "details": {
+                    "phase": "plan",
+                    "returncode": plan_result["returncode"],
+                },
+            }
 
     except Exception as e:
-        log_warning("Cloud Architect", f"Template validation exception: {str(e)}")
+        log_warning(AGENT_NAME, f"Template validation exception: {str(e)}")
         return {
             "valid": False,
             "error": f"Validation process failed: {str(e)}",

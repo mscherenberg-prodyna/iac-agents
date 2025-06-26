@@ -15,12 +15,14 @@ from ...logging_system import (
 )
 from ..state import InfrastructureStateDict
 
+AGENT_NAME = "Terraform Consultant"
+
 
 def terraform_consultant_agent(
     state: InfrastructureStateDict,
 ) -> InfrastructureStateDict:
     """Terraform Consultant Agent - Documentation lookup and best practices via Azure AI."""
-    log_agent_start("Terraform Consultant", "Providing Terraform guidance")
+    log_agent_start(AGENT_NAME, "Providing Terraform guidance")
 
     conversation_history = state["conversation_history"]
 
@@ -32,8 +34,8 @@ def terraform_consultant_agent(
         )  # Append response to conversation history
 
         if azure_response:
-            log_agent_response("Terraform Consultant", azure_response)
-            log_agent_complete("Terraform Consultant", "Azure AI guidance provided")
+            log_agent_response(AGENT_NAME, azure_response)
+            log_agent_complete(AGENT_NAME, "Azure AI guidance provided")
 
             # Always clear both lookup flags to prevent infinite loops
             result_state = {
@@ -46,24 +48,24 @@ def terraform_consultant_agent(
             }
 
             return result_state
-        else:
-            log_warning("Terraform Consultant", "Azure AI unavailable")
-            errors = state.get("errors", [])
 
-            # Clear both flags to prevent infinite loops
-            result_state = {
-                **state,
-                "current_agent": "terraform_consultant",
-                "errors": errors
-                + ["Terraform Consultant Azure AI integration unavailable"],
-                "needs_pricing_lookup": False,
-                "needs_terraform_lookup": False,
-            }
+        log_warning(AGENT_NAME, "Azure AI unavailable")
+        errors = state.get("errors", [])
 
-            return result_state
+        # Clear both flags to prevent infinite loops
+        result_state = {
+            **state,
+            "current_agent": "terraform_consultant",
+            "errors": errors
+            + ["Terraform Consultant Azure AI integration unavailable"],
+            "needs_pricing_lookup": False,
+            "needs_terraform_lookup": False,
+        }
+
+        return result_state
 
     except Exception as e:
-        log_warning("Terraform Consultant", f"Error: {str(e)}")
+        log_warning(AGENT_NAME, f"Error: {str(e)}")
         errors = state.get("errors", [])
 
         # Clear both flags to prevent infinite loops
@@ -85,11 +87,11 @@ def _query_azure_agent(terraform_query: str) -> Optional[str]:
         agent_id = config.azure_ai.agent_id
 
         if not endpoint or not agent_id:
-            log_warning("Terraform Consultant", "Azure AI configuration missing")
+            log_warning(AGENT_NAME, "Azure AI configuration missing")
             return None
 
         if not terraform_query or not terraform_query.strip():
-            log_warning("Terraform Consultant", "Empty query provided")
+            log_warning(AGENT_NAME, "Empty query provided")
             return None
 
         project = AIProjectClient(
@@ -111,9 +113,7 @@ def _query_azure_agent(terraform_query: str) -> Optional[str]:
         )
 
         if run.status == "failed":
-            log_warning(
-                "Terraform Consultant", f"Azure AI run failed: {run.last_error}"
-            )
+            log_warning(AGENT_NAME, f"Azure AI run failed: {run.last_error}")
             return None
 
         messages = project.agents.messages.list(
@@ -127,7 +127,7 @@ def _query_azure_agent(terraform_query: str) -> Optional[str]:
         return None
 
     except Exception as e:
-        log_warning("Terraform Consultant", f"Azure AI query failed: {str(e)}")
+        log_warning(AGENT_NAME, f"Azure AI query failed: {str(e)}")
         return None
 
 
@@ -140,7 +140,7 @@ def _query_azure_agent(terraform_query: str) -> Optional[str]:
 
 #         if not endpoint or not agent_id:
 #             log_warning(
-#                 "Terraform Consultant",
+#                 AGENT_NAME,
 #                 "Azure AI configuration missing for prompt update",
 #             )
 #             return False
@@ -169,16 +169,16 @@ def _query_azure_agent(terraform_query: str) -> Optional[str]:
 
 #         if updated_agent:
 #             log_agent_complete(
-#                 "Terraform Consultant",
+#                 AGENT_NAME,
 #                 "Azure AI agent instructions updated successfully",
 #             )
 #             return True
 #         else:
 #             log_warning(
-#                 "Terraform Consultant", "Failed to update Azure AI agent instructions"
+#                 AGENT_NAME, "Failed to update Azure AI agent instructions"
 #             )
 #             return False
 
 #     except Exception as e:
-#         log_warning("Terraform Consultant", f"Prompt update failed: {str(e)}")
+#         log_warning(AGENT_NAME, f"Prompt update failed: {str(e)}")
 #         return False

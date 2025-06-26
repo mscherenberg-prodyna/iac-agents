@@ -10,10 +10,12 @@ from ...templates.template_manager import template_manager
 from ..state import InfrastructureStateDict, WorkflowStage
 from ..utils import add_error_to_state, make_llm_call
 
+AGENT_NAME = "SecOps/FinOps Consultant"
+
 
 def secops_finops_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
     """SecOps/FinOps Agent - Compliance validation and cost estimation."""
-    log_agent_start("SecOps/FinOps", "Validating compliance and estimating costs")
+    log_agent_start(AGENT_NAME, "Validating compliance and estimating costs")
 
     conversation_history = state["conversation_history"]
     template_content = state.get("final_template", "")
@@ -61,10 +63,10 @@ def secops_finops_agent(state: InfrastructureStateDict) -> InfrastructureStateDi
         needs_pricing_lookup = "PRICING_LOOKUP_REQUIRED" in response
 
         # Log the response content for debugging
-        log_agent_response("SecOps/FinOps", response)
+        log_agent_response(AGENT_NAME, response)
 
         log_agent_complete(
-            "SecOps/FinOps",
+            AGENT_NAME,
             f"Analysis completed, pricing lookup {'required' if needs_pricing_lookup else 'not required'}",
         )
 
@@ -96,5 +98,5 @@ def secops_finops_agent(state: InfrastructureStateDict) -> InfrastructureStateDi
         return result_state
 
     except Exception as e:
-        log_warning("SecOps/FinOps", f"Validation failed: {str(e)}")
+        log_warning(AGENT_NAME, f"Validation failed: {str(e)}")
         return add_error_to_state(state, f"SecOps/FinOps error: {str(e)}")

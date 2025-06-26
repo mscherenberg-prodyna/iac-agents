@@ -1,5 +1,7 @@
 """Cloud Engineer Agent node for LangGraph workflow."""
 
+from datetime import date
+
 from ...logging_system import (
     log_agent_complete,
     log_agent_response,
@@ -16,12 +18,12 @@ from ..utils import (
     mark_stage_completed,
 )
 
+AGENT_NAME = "Cloud Engineer"
+
 
 def cloud_engineer_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
     """Generate infrastructure templates based on Cloud Architect requirements."""
-    log_agent_start(
-        "Cloud Engineer", "Processing requirements and generating templates"
-    )
+    log_agent_start(AGENT_NAME, "Processing requirements and generating templates")
 
     conversation_history = state["conversation_history"]
 
@@ -39,11 +41,12 @@ def cloud_engineer_agent(state: InfrastructureStateDict) -> InfrastructureStateD
             validation_result.get("error", "") if has_validation_failure else ""
         )
         log_info(
-            "Cloud Engineer",
+            AGENT_NAME,
             f"Validation check: has_failure={has_validation_failure}, error_length={len(validation_error) if validation_error else 0}",
         )
 
         subscription_info = state["subscription_info"]
+        current_date = str(date.today())
 
         # Load the cloud engineer prompt with Cloud Architect's analysis
         system_prompt = template_manager.get_prompt(
@@ -51,6 +54,7 @@ def cloud_engineer_agent(state: InfrastructureStateDict) -> InfrastructureStateD
             current_stage=state.get("current_stage", "template_generation"),
             terraform_consultant_available=terraform_enabled,
             validation_error=validation_error,
+            current_date=current_date,
             default_subscription_name=subscription_info.get(
                 "default_subscription_name"
             ),
@@ -72,7 +76,7 @@ def cloud_engineer_agent(state: InfrastructureStateDict) -> InfrastructureStateD
 
         # Debug logging
         log_info(
-            "Cloud Engineer",
+            AGENT_NAME,
             f"Consultation decision: explicit_request={'TERRAFORM_CONSULTATION_NEEDED' in response}, validation_failure={has_validation_failure}, final_decision={needs_terraform_consultation}",
         )
 
@@ -97,10 +101,10 @@ def cloud_engineer_agent(state: InfrastructureStateDict) -> InfrastructureStateD
         )
 
         # Log the response content for debugging
-        log_agent_response("Cloud Engineer", response)
+        log_agent_response(AGENT_NAME, response)
 
         log_agent_complete(
-            "Cloud Engineer",
+            AGENT_NAME,
             f"Response generated {'with template' if template_content else 'without template'}, "
             f"consultation {'required' if needs_terraform_consultation else 'not required'}",
         )
@@ -135,7 +139,7 @@ def cloud_engineer_agent(state: InfrastructureStateDict) -> InfrastructureStateD
         return result_state
 
     except Exception as e:
-        log_warning("Cloud Engineer", f"Template generation failed: {str(e)}")
+        log_warning(AGENT_NAME, f"Template generation failed: {str(e)}")
 
         # Update errors
         new_errors = add_error_to_state(state, f"Cloud Engineer failed: {str(e)}")

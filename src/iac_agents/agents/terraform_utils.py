@@ -198,7 +198,6 @@ class TerraformVariableManager:
 
 def enhance_terraform_template(
     template_content: str,
-    context: str = "deployment",
     project_name: str = "iac-agent",
     default_location: str = "West Europe",
 ) -> str:
