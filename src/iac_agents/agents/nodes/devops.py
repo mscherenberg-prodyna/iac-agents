@@ -248,7 +248,7 @@ def _deploy_infrastructure(template_content: str, user_requirements: str = "") -
         log_info(AGENT_NAME, "Running terraform plan...")
         plan_result = run_terraform_command(
             deployment_dir,
-            ["terraform", "plan", "-out=tfplan"],
+            ["terraform", "plan", "-out=tfplan", "-no-color"],
             timeout=300,
             context="Deployment",
         )
@@ -266,7 +266,7 @@ def _deploy_infrastructure(template_content: str, user_requirements: str = "") -
         log_info(AGENT_NAME, "Running terraform apply...")
         apply_result = run_terraform_command(
             deployment_dir,
-            ["terraform", "apply", "-auto-approve", "tfplan"],
+            ["terraform", "apply", "-no-color", "-auto-approve", "tfplan"],
             timeout=300,
             context="Deployment",
         )

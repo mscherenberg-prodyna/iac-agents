@@ -19,20 +19,17 @@ from .compliance_panel import (
     set_compliance_settings,
 )
 from .header import display_header, setup_page_config
-from .sidebar import (
-    display_agent_monitoring,
-    display_cost_estimation,
-    display_deployment_plan,
-)
-from .terraform_viewer import (
-    render_terraform_template_viewer,
-    show_terraform_template_modal,
-)
 from .log_viewer import (
     render_log_file_info,
     render_log_viewer_modal,
     show_log_viewer,
 )
+from .sidebar import (
+    display_agent_monitoring,
+    display_cost_estimation,
+    display_deployment_plan,
+)
+from .terraform_viewer import render_terraform_template_viewer
 
 __all__ = [
     # Approval handler components
@@ -59,7 +56,6 @@ __all__ = [
     "display_deployment_plan",
     # Terraform viewer components
     "render_terraform_template_viewer",
-    "show_terraform_template_modal",
     # Log viewer components
     "render_log_file_info",
     "render_log_viewer_modal",

@@ -34,7 +34,7 @@ Transform cloud infrastructure deployment from complex command-line operations t
 
 3. **Run Streamlit Web Interface**:
    ```bash
-   poetry run streamlit run src/iac_agents/streamlit/gui.py
+   poetry run python run_app.py
    ```
 
 ## 🏗️ Architecture

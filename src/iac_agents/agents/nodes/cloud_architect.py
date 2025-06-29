@@ -329,7 +329,10 @@ def _validate_terraform_template(
             # Run terraform plan for validation
             log_info(AGENT_NAME, "Running terraform plan for validation...")
             plan_result = run_terraform_command(
-                validation_dir, ["terraform", "plan"], timeout=120, context="Validation"
+                validation_dir,
+                ["terraform", "plan", "-no-color"],
+                timeout=120,
+                context="Validation",
             )
 
             if plan_result["success"]:

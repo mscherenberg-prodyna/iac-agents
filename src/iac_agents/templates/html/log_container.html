@@ -1,0 +1,23 @@
+<div style="
+    background-color: #0e1117;
+    color: #fafafa;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.875rem;
+    line-height: 1.25;
+    height: 600px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    border: 1px solid #262730;
+" id="log-container">{{ log_content }}</div>
+<script>
+// Auto-scroll to bottom
+setTimeout(function() {
+    const logContainer = document.getElementById('log-container');
+    if (logContainer) {
+        logContainer.scrollTop = logContainer.scrollHeight;
+    }
+}, 100);
+</script>

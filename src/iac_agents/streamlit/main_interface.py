@@ -1,6 +1,5 @@
 """Main interface orchestrator for the Infrastructure as Code AI Agent."""
 
-import time
 import uuid
 from typing import List
 
@@ -13,16 +12,11 @@ from iac_agents.logging_system import agent_logger
 from .components import (
     add_message,
     clear_chat_history,
-    display_agent_monitoring,
     display_chat_interface,
-    display_cost_estimation,
-    display_deployment_plan,
     display_header,
     is_approval_message,
     render_compliance_settings,
     render_deployment_config,
-    render_log_file_info,
-    render_log_viewer_modal,
     render_terraform_template_viewer,
     setup_page_config,
 )
@@ -84,66 +78,41 @@ class StreamlitInterface:
             st.session_state.workflow_result = {}
 
     def render_sidebar(self):
-        """Render the sidebar components with real-time updates."""
+        """Render the sidebar with configuration and monitoring components."""
         with st.sidebar.container():
-            # Check workflow status
-            workflow_active = st.session_state.get("workflow_active", False)
-            agent_state = st.session_state.get("workflow_result", {})
-
-            if workflow_active:
-                # Get real-time status from logging system
-                current_agent = st.session_state.get("current_agent_status", "Starting")
-                current_phase = st.session_state.get(
-                    "current_workflow_phase", "Initializing"
-                )
-                active_agents = agent_logger.get_active_agents()
-                recent_logs = agent_logger.get_recent_logs(5)
-
-                st.sidebar.markdown("### 🔄 Workflow Active")
-                st.sidebar.info(f"**Agent:** {current_agent}")
-                st.sidebar.info(f"**Phase:** {current_phase}")
-
-                # Show active agents
-                if active_agents:
-                    st.sidebar.success(f"**Active:** {', '.join(active_agents)}")
-
-                # Show recent activity from logs
-                if recent_logs:
-                    st.sidebar.markdown("**Recent Activity:**")
-                    for log_entry in recent_logs[-3:]:  # Show last 3 activities
-                        timestamp = log_entry.timestamp.strftime("%H:%M:%S")
-                        activity = (
-                            log_entry.activity[:50] + "..."
-                            if len(log_entry.activity) > 50
-                            else log_entry.activity
-                        )
-                        st.sidebar.text(
-                            f"[{timestamp}] {log_entry.agent_name}: {activity}"
-                        )
-
-                # Progress indicator
-                st.sidebar.progress(0.5, "Processing...")
-
-            elif agent_state:
-                # Show completed workflow results
-                st.sidebar.markdown("### ✅ Workflow Complete")
-                display_agent_monitoring(agent_state)
-                display_deployment_plan(agent_state)
-                display_cost_estimation(agent_state)
-
-            else:
-                st.sidebar.info("💤 No active workflow")
-
-            # Show error if workflow failed
-            workflow_error = st.session_state.get("workflow_error")
-            if workflow_error:
-                st.sidebar.error(f"❌ Error: {workflow_error}")
-
-            # Real-time auto-refresh when workflow is active
-            if workflow_active:
-                # Use a short polling interval for real-time updates
-                time.sleep(0.8)  # Slightly less than 1 second for responsiveness
+            # Reset Session button at the top
+            if st.button(
+                "🔄 Reset Session",
+                help="Reset the session and start fresh",
+                use_container_width=True,
+            ):
+                self._reset_session()
                 st.rerun()
+
+            st.markdown("---")
+
+            # Configuration sections
+            render_compliance_settings()
+            st.markdown("---")
+            render_deployment_config()
+            st.markdown("---")
+
+            # Terraform template viewer
+            render_terraform_template_viewer()
+            st.markdown("---")
+
+            # Live logs button
+            st.subheader("📋 Live Logs")
+            from iac_agents.templates.template_loader import template_loader
+            live_logs_button = template_loader.load_html_template("live_logs_button")
+            st.markdown(live_logs_button, unsafe_allow_html=True)
+
+
+            workflow_error = st.session_state.get("workflow_error")
+
+            if workflow_error:
+                st.markdown("---")
+                st.error(f"❌ Error: {workflow_error}")
 
     def _prepare_conversation_context(self, user_input: str) -> str:
         """Prepare full conversation context by concatenating all messages."""
@@ -184,41 +153,8 @@ class StreamlitInterface:
         # Header
         display_header()
 
-        # Create two-column layout: chat + right sidebar
-        col1, col2 = st.columns([3, 1])
-
-        with col1:
-            # Chat interface
-            user_input = display_chat_interface()
-
-        with col2:
-            # Reset Session button
-            if st.button(
-                "🔄 Reset Session",
-                help="Reset the session and start fresh",
-                use_container_width=True,
-            ):
-                self._reset_session()
-                st.rerun()
-
-            st.markdown("---")  # Separator line
-
-            # Right sidebar with compliance settings and deployment config
-            render_compliance_settings()
-            render_deployment_config()
-
-            st.markdown("---")  # Separator line
-
-            # Terraform template viewer
-            render_terraform_template_viewer()
-
-            st.markdown("---")  # Separator line
-
-            # Log file viewer
-            render_log_file_info()
-
-            # Log viewer modal
-            render_log_viewer_modal()
+        # Main chat interface (full width)
+        user_input = display_chat_interface()
 
         return user_input
 
@@ -396,18 +332,15 @@ class StreamlitInterface:
             # Mark workflow as complete
             st.session_state.workflow_active = False
             st.session_state.workflow_status = "Idle"
+            # Force UI refresh to show the assistant response
+            st.rerun()
 
     def run(self):
-        """Main application loop with immediate workflow execution."""
+        """Main application loop with non-blocking workflow execution."""
         # Setup page configuration
         self.setup()
 
-        # Check if we need to execute workflow after user message was displayed
-        if st.session_state.get("pending_workflow_input"):
-            pending_input = st.session_state.pending_workflow_input
-            del st.session_state.pending_workflow_input
-            self._execute_workflow(pending_input)
-
+        # Always render UI first to ensure responsiveness
         # Render sidebar with real-time updates
         self.render_sidebar()
 
@@ -419,6 +352,12 @@ class StreamlitInterface:
             # Store input for next cycle and show user message immediately
             st.session_state.pending_workflow_input = user_input
             self.process_user_input(user_input)
+
+        # Check if we need to execute workflow (after UI is rendered)
+        if st.session_state.get("pending_workflow_input"):
+            pending_input = st.session_state.pending_workflow_input
+            del st.session_state.pending_workflow_input
+            self._execute_workflow(pending_input)
 
 
 def main():

@@ -7,23 +7,16 @@ import streamlit as st
 
 
 def display_agent_monitoring(state: Dict[str, Any]):
-    """Display real-time agent monitoring information."""
+    """Display agent monitoring information."""
     st.sidebar.markdown("### 🤖 Agent Monitoring")
 
     # Current Agent Status
-    current_agent = state.get("current_agent", "None")
     workflow_phase = state.get("workflow_phase", "idle")
-
-    st.sidebar.markdown("**Current Status:**")
-    st.sidebar.markdown(f"🔄 **Agent:** {current_agent}")
-    st.sidebar.markdown(f"📋 **Phase:** {workflow_phase}")
-
-    # Workflow Progress
     completed_stages = state.get("completed_stages", [])
-    if completed_stages:
-        st.sidebar.markdown("**Completed Stages:**")
-        for stage in completed_stages:
-            st.sidebar.markdown(f"✅ {stage}")
+
+    st.sidebar.markdown("**Stage Information:**")
+    st.sidebar.markdown(f"📋 **Phase:** {workflow_phase}")
+    st.sidebar.markdown(f"**Completed Stages: {completed_stages}**")
 
     # Error Status
     errors = state.get("errors", [])

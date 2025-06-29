@@ -5,6 +5,7 @@ from pathlib import Path
 import streamlit as st
 
 from iac_agents.logging_system import get_log_file_path, get_thread_id
+from iac_agents.templates.template_loader import template_loader
 
 
 def render_log_file_info():
@@ -26,20 +27,29 @@ def render_log_file_info():
             size_kb = file_size / 1024
             st.write(f"**Size:** {size_kb:.1f} KB")
 
-            # Download button for log file
-            try:
-                with open(log_path, "r", encoding="utf-8") as f:
-                    log_content = f.read()
+            # Button row for actions
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                # Download button for log file
+                try:
+                    with open(log_path, "r", encoding="utf-8") as f:
+                        log_content = f.read()
 
-                st.download_button(
-                    label="📥 Download Logs",
-                    data=log_content,
-                    file_name=f"agent_workflow_{thread_id}.log",
-                    mime="text/plain",
-                    use_container_width=True,
-                )
-            except Exception as e:
-                st.error(f"Could not read log file: {e}")
+                    st.download_button(
+                        label="📥 Download",
+                        data=log_content,
+                        file_name=f"agent_workflow_{thread_id}.log",
+                        mime="text/plain",
+                        use_container_width=True,
+                    )
+                except Exception as e:
+                    st.error(f"Could not read log file: {e}")
+            
+            with col2:
+                # Link to standalone log viewer
+                live_logs_button = template_loader.load_html_template("live_logs_button")
+                st.markdown(live_logs_button, unsafe_allow_html=True)
         else:
             st.warning("Log file not found")
     else:
@@ -47,7 +57,7 @@ def render_log_file_info():
 
 
 def render_log_viewer_modal():
-    """Render a modal to view recent log entries."""
+    """Render a modal to view recent log entries (static view)."""
     if st.session_state.get("show_log_modal", False):
         log_file_path = get_log_file_path()
 
@@ -82,6 +92,8 @@ def render_log_viewer_modal():
                     st.error(f"Error reading log file: {e}")
         else:
             st.error("Log file not available")
+
+
 
 
 def show_log_viewer():
