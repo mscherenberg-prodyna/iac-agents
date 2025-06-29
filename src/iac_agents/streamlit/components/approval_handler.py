@@ -26,8 +26,4 @@ def is_approval_message(user_input: str) -> bool:
         if keyword in user_input_lower:
             return True
 
-    # Check if it's a short affirmative response
-    if user_input_lower in ["y", "yes", "ok", "okay", "sure", "go", "proceed"]:
-        return True
-
     return False

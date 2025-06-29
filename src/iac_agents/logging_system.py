@@ -3,11 +3,13 @@
 import logging
 import sys
 import threading
-from pathlib import Path
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
+from pathlib import Path
 from typing import Any, Dict, List
+
+import streamlit as st
 
 
 class LogLevel(Enum):
@@ -286,8 +288,6 @@ def log_agent_start(agent_name: str, activity: str, details: Dict[str, Any] = No
 
     # Update Streamlit session state for real-time UI updates
     try:
-        import streamlit as st
-
         if hasattr(st, "session_state") and hasattr(
             st.session_state, "workflow_active"
         ):

@@ -83,22 +83,8 @@ def terraform_consultant_agent(
 def _query_azure_agent(terraform_query: str) -> Optional[str]:
     """Query the Azure AI Foundry Terraform Consultant agent."""
     try:
-        endpoint = config.azure_ai.project_endpoint
-        agent_id = config.azure_ai.agent_id
+        agent, project = get_azure_agent()
 
-        if not endpoint or not agent_id:
-            log_warning(AGENT_NAME, "Azure AI configuration missing")
-            return None
-
-        if not terraform_query or not terraform_query.strip():
-            log_warning(AGENT_NAME, "Empty query provided")
-            return None
-
-        project = AIProjectClient(
-            credential=DefaultAzureCredential(), endpoint=endpoint
-        )
-
-        agent = project.agents.get_agent(agent_id)
         thread = project.agents.threads.create()
 
         # Send terraform query to the agent
@@ -131,54 +117,68 @@ def _query_azure_agent(terraform_query: str) -> Optional[str]:
         return None
 
 
-# TODO: Use this function to update the Azure AI agent prompt dynamically
-# def update_azure_agent_prompt(prompt_content: str) -> bool:
-#     """Update the remote Azure AI agent with current prompt content."""
-#     try:
-#         endpoint = config.azure_ai.project_endpoint
-#         agent_id = config.azure_ai.agent_id
+def get_azure_agent(prompt_content: str) -> bool:
+    """Update the remote Azure AI agent with current prompt content."""
+    try:
+        endpoint = config.azure_ai.project_endpoint
+        agent_id = config.azure_ai.agent_id
 
-#         if not endpoint or not agent_id:
-#             log_warning(
-#                 AGENT_NAME,
-#                 "Azure AI configuration missing for prompt update",
-#             )
-#             return False
+        if not endpoint or not agent_id:
+            log_warning(AGENT_NAME, "Azure AI configuration missing")
+            return None
 
-#         project = AIProjectClient(
-#             credential=DefaultAzureCredential(), endpoint=endpoint
-#         )
+        if not terraform_query or not terraform_query.strip():
+            log_warning(AGENT_NAME, "Empty query provided")
+            return None
 
-#         # Get current agent to preserve other settings
-#         current_agent = project.agents.get_agent(agent_id)
+        project = AIProjectClient(
+            credential=DefaultAzureCredential(), endpoint=endpoint
+        )
 
-#         # Update agent with new instructions while preserving other properties
-#         updated_agent = project.agents.update_agent(
-#             agent_id=agent_id,
-#             model=current_agent.model,
-#             name=current_agent.name,
-#             description=current_agent.description,
-#             instructions=prompt_content,
-#             tools=current_agent.tools,
-#             tool_resources=current_agent.tool_resources,
-#             metadata=current_agent.metadata,
-#             temperature=current_agent.temperature,
-#             top_p=current_agent.top_p,
-#             response_format=current_agent.response_format,
-#         )
+        agent = project.agents.get_agent(agent_id)
 
-#         if updated_agent:
-#             log_agent_complete(
-#                 AGENT_NAME,
-#                 "Azure AI agent instructions updated successfully",
-#             )
-#             return True
-#         else:
-#             log_warning(
-#                 AGENT_NAME, "Failed to update Azure AI agent instructions"
-#             )
-#             return False
+        endpoint = config.azure_ai.project_endpoint
+        agent_id = config.azure_ai.agent_id
 
-#     except Exception as e:
-#         log_warning(AGENT_NAME, f"Prompt update failed: {str(e)}")
-#         return False
+        if not endpoint or not agent_id:
+            log_warning(
+                AGENT_NAME,
+                "Azure AI configuration missing for prompt update",
+            )
+            return False
+
+        project = AIProjectClient(
+            credential=DefaultAzureCredential(), endpoint=endpoint
+        )
+
+        # Get current agent to preserve other settings
+        current_agent = project.agents.get_agent(agent_id)
+
+        # Update agent with new instructions while preserving other properties
+        updated_agent = project.agents.update_agent(
+            agent_id=agent_id,
+            model=current_agent.model,
+            name=current_agent.name,
+            description=current_agent.description,
+            instructions=prompt_content,
+            tools=current_agent.tools,
+            tool_resources=current_agent.tool_resources,
+            metadata=current_agent.metadata,
+            temperature=current_agent.temperature,
+            top_p=current_agent.top_p,
+            response_format=current_agent.response_format,
+        )
+
+        if updated_agent:
+            log_agent_complete(
+                AGENT_NAME,
+                "Azure AI agent instructions updated successfully",
+            )
+            return True
+        else:
+            log_warning(AGENT_NAME, "Failed to update Azure AI agent instructions")
+            return False
+
+    except Exception as e:
+        log_warning(AGENT_NAME, f"Prompt update failed: {str(e)}")
+        return False

@@ -92,7 +92,6 @@ def cloud_architect_agent(state: InfrastructureStateDict) -> InfrastructureState
             workflow_phase = "planning"
 
         if template_validation_failed:
-
             response_content = (
                 f"Template validation failed: {template_validation_result['error']}"
             )
@@ -102,7 +101,6 @@ def cloud_architect_agent(state: InfrastructureStateDict) -> InfrastructureState
             should_respond_to_user = False
 
         else:
-
             # Load the cloud architect prompt with variable substitution
             system_prompt = template_manager.get_prompt(
                 "cloud_architect",
