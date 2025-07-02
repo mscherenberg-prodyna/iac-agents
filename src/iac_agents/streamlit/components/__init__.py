@@ -1,6 +1,5 @@
 """Streamlit UI components."""
 
-from .approval_handler import is_approval_message
 from .chat import (
     add_message,
     clear_chat_history,
@@ -13,7 +12,6 @@ from .compliance_panel import (
     get_deployment_config,
     render_compliance_settings,
     render_deployment_config,
-    render_system_metrics,
     set_compliance_settings,
 )
 from .header import display_header, setup_page_config
@@ -23,8 +21,6 @@ from .terraform_viewer import render_terraform_template_viewer
 from .workflow_manager import WorkflowManager
 
 __all__ = [
-    # Approval handler components
-    "is_approval_message",
     # Chat components
     "add_message",
     "clear_chat_history",
@@ -36,7 +32,6 @@ __all__ = [
     "get_deployment_config",
     "render_compliance_settings",
     "render_deployment_config",
-    "render_system_metrics",
     "set_compliance_settings",
     # Header components
     "display_header",

@@ -4,7 +4,6 @@ import streamlit as st
 
 from iac_agents.logging_system import agent_logger
 
-from .approval_handler import is_approval_message
 from .chat import add_message
 
 
@@ -22,14 +21,13 @@ class InputHandler:
 
         # Check if we have an interrupted workflow waiting for approval
         workflow_interrupted = st.session_state.get("workflow_interrupted", False)
-        is_approval = is_approval_message(user_input)
 
         agent_logger.log_info(
             "Process Input",
-            f"workflow_interrupted={workflow_interrupted}, is_approval={is_approval}, user_input='{user_input[:50]}...'",
+            f"workflow_interrupted={workflow_interrupted}, user_input='{user_input[:50]}...'",
         )
 
-        if workflow_interrupted and is_approval:
+        if workflow_interrupted:
             # Resume interrupted workflow with user's approval response
             agent_logger.log_info("Process Input", "Resuming interrupted workflow")
             st.session_state.workflow_active = True

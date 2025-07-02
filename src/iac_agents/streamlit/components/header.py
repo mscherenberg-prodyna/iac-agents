@@ -5,6 +5,7 @@ import os
 
 import streamlit as st
 
+# pylint: disable=E0402
 from ...config.settings import config
 from ...templates.ui_loader import ui_loader
 

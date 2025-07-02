@@ -8,7 +8,7 @@ from ...logging_system import (
 )
 from ...templates.template_manager import template_manager
 from ..state import InfrastructureStateDict
-from ..utils import get_agent_id, query_azure_agent
+from ..utils import get_agent_id_bing, query_azure_agent
 
 AGENT_NAME = "terraform_consultant"
 
@@ -27,7 +27,7 @@ def terraform_consultant_agent(
     # Initialize Azure AI Foundry agent if it does not exist
     try:
         if not agent_id:
-            agent_id = get_agent_id(agent_name=AGENT_NAME, prompt=system_prompt)
+            agent_id = get_agent_id_bing(agent_name=AGENT_NAME, prompt=system_prompt)
     except Exception as e:
         log_warning(AGENT_NAME, f"Error: {str(e)}")
         errors = state.get("errors", [])

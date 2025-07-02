@@ -5,6 +5,7 @@ import os
 import streamlit as st
 import streamlit.components.v1 as components
 
+# pylint: disable=E0402
 from ...templates.template_loader import template_loader
 from ...templates.template_manager import template_manager
 

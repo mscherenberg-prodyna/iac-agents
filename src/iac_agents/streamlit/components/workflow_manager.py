@@ -121,15 +121,6 @@ class WorkflowManager:
                 st.session_state.workflow_interrupt_data = result["__interrupt__"]
                 st.session_state.workflow_config = config
                 st.session_state.workflow_status = "Waiting for approval..."
-
-                # Add the approval request message to chat
-                interrupt_data = (
-                    result["__interrupt__"][0].value if result["__interrupt__"] else {}
-                )
-                approval_message = interrupt_data.get(
-                    "message", "Please approve the deployment plan above."
-                )
-                add_message("assistant", approval_message)
             else:
                 st.session_state.workflow_interrupted = False
 

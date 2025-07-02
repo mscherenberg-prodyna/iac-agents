@@ -35,8 +35,8 @@ def make_llm_call(
     return response.content
 
 
-def get_agent_id(agent_name: str, prompt: str) -> str:
-    """Update or create AI Foundry Agent."""
+def get_agent_id_bing(agent_name: str, prompt: str) -> str:
+    """Update or create AI Foundry Agent that uses Bing search."""
     credential = DefaultAzureCredential()
     agents_client = AgentsClient(
         endpoint=config.azure_ai.project_endpoint, credential=credential
@@ -59,10 +59,8 @@ def get_agent_id(agent_name: str, prompt: str) -> str:
     return output["id"]
 
 
-def query_azure_agent(
-    agent_name: str, agent_id: str, terraform_query: str
-) -> Optional[str]:
-    """Query the Azure AI Foundry Terraform Consultant agent."""
+def query_azure_agent(agent_name: str, agent_id: str, query: str) -> Optional[str]:
+    """Query an Azure AI Foundry agent."""
     try:
         credential = DefaultAzureCredential()
         agents_client = AgentsClient(
@@ -71,11 +69,11 @@ def query_azure_agent(
 
         thread = agents_client.threads.create()
 
-        # Send terraform query to the agent
+        # Send query to the agent
         message = agents_client.messages.create(
             thread_id=thread.id,
             role="user",
-            content=terraform_query,
+            content=query,
         )
 
         run = agents_client.runs.create_and_process(
@@ -83,7 +81,10 @@ def query_azure_agent(
         )
 
         if run.status == "failed":
-            log_warning(agent_name, f"Azure AI run failed: {run.last_error}")
+            log_warning(
+                agent_name,
+                f"Azure AI run failed for agent {agent_name}: {run.last_error}",
+            )
             return None
 
         messages = agents_client.messages.list(

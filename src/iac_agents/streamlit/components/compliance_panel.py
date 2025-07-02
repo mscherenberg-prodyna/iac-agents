@@ -1,14 +1,11 @@
 """Compliance settings panel component for the Streamlit interface."""
 
-import os
-import time
 from typing import Dict
 
 import streamlit as st
 
 # pylint: disable=E0402
 from ...config.settings import config
-from ...logging_system import agent_logger
 
 
 def render_compliance_settings():
@@ -56,55 +53,6 @@ def render_compliance_settings():
         st.session_state.compliance_settings["selected_frameworks"] = []
 
 
-def render_system_metrics():
-    """Render system metrics panel."""
-    st.markdown("### 📈 System Metrics")
-
-    try:
-        total_messages = (
-            len(st.session_state.messages) - 1 if "messages" in st.session_state else 0
-        )
-
-        active_agents_count = 0
-        try:
-            active_agents_count = len(agent_logger.get_active_agents())
-        except Exception:
-            pass
-
-        # Display metrics
-        st.markdown(f"**Total Messages:** {total_messages}")
-        st.markdown(f"**Active Agents:** {active_agents_count}")
-        st.markdown(f"**Session Duration:** {_get_session_duration()}")
-
-        # Additional metrics
-        if "compliance_settings" in st.session_state:
-            compliance_enabled = st.session_state.compliance_settings[
-                "enforce_compliance"
-            ]
-            frameworks_count = len(
-                st.session_state.compliance_settings["selected_frameworks"]
-            )
-            st.markdown(
-                f"**Compliance Enabled:** {'Yes' if compliance_enabled else 'No'}"
-            )
-            if compliance_enabled:
-                st.markdown(f"**Selected Frameworks:** {frameworks_count}")
-
-    except Exception as e:
-        st.error(f"Error loading metrics: {e}")
-
-
-def _get_session_duration():
-    """Get session duration for metrics."""
-    if "session_start_time" not in st.session_state:
-        st.session_state.session_start_time = time.time()
-
-    duration = time.time() - st.session_state.session_start_time
-    minutes = int(duration // 60)
-    seconds = int(duration % 60)
-    return f"{minutes}m {seconds}s"
-
-
 def get_compliance_settings() -> Dict[str, any]:
     """Get current compliance settings from session state."""
     return st.session_state.get(
@@ -144,13 +92,6 @@ def render_deployment_config():
         st.warning("⚠️ Auto-deployment without approval enabled")
     else:
         st.success("🛡️ Manual deployment mode (recommended)")
-
-
-def _check_terraform_credentials() -> bool:
-    """Check if required environment variables for Terraform Consultant are available."""
-    required_vars = ["AZURE_PROJECT_ENDPOINT", "BING_CONNECTION"]
-
-    return all(os.getenv(var) for var in required_vars)
 
 
 def get_deployment_config() -> Dict[str, any]:
