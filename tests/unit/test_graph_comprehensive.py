@@ -160,23 +160,3 @@ class TestInfrastructureAsPromptsAgentRouting:
         result = agent._route_cloud_engineer(state)
 
         assert result == "cloud_architect"
-
-    @patch("src.iac_agents.agents.graph.StateGraph")
-    def test_route_terraform_consultant_caller_specified(self, mock_graph):
-        """Test terraform consultant routing with caller specified."""
-        agent = InfrastructureAsPromptsAgent()
-
-        state = {"terraform_consultant_caller": "secops_finops"}
-        result = agent._route_terraform_consultant(state)
-
-        assert result == "secops_finops"
-
-    @patch("src.iac_agents.agents.graph.StateGraph")
-    def test_route_terraform_consultant_cloud_engineer_caller(self, mock_graph):
-        """Test terraform consultant routing from cloud engineer."""
-        agent = InfrastructureAsPromptsAgent()
-
-        state = {"terraform_consultant_caller": "cloud_engineer"}
-        result = agent._route_terraform_consultant(state)
-
-        assert result == "cloud_engineer"

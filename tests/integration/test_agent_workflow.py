@@ -36,7 +36,6 @@ class TestAgentWorkflowIntegration:
             "current_stage": None,
             "subscription_info": None,
             "needs_terraform_lookup": False,
-            "needs_pricing_lookup": False,
             # Add all required fields from InfrastructureStateDict
             "deployment_config": None,
             "phase_iterations": None,
@@ -62,7 +61,6 @@ class TestAgentWorkflowIntegration:
             "deployment_details": None,
             "resource_deployment_plan": None,
             "terraform_workspace": None,
-            "terraform_consultant_caller": None,
         }
 
         # Call the agent

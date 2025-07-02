@@ -18,7 +18,7 @@ from ..utils import (
     mark_stage_completed,
 )
 
-AGENT_NAME = "Cloud Engineer"
+AGENT_NAME = "cloud_engineer"
 
 
 def cloud_engineer_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
@@ -116,20 +116,10 @@ def cloud_engineer_agent(state: InfrastructureStateDict) -> InfrastructureStateD
             "final_template": template_content,
             "cloud_engineer_response": response,
             "needs_terraform_lookup": needs_terraform_lookup,
-            # Clear caller if we were called back from Terraform Consultant
-            "terraform_consultant_caller": (
-                None
-                if state.get("terraform_consultant_caller") == "cloud_engineer"
-                else state.get("terraform_consultant_caller")
-            ),
         }
 
-        # Set caller info if requesting Terraform consultation
-        if needs_terraform_lookup:
-            result_state["terraform_consultant_caller"] = "cloud_engineer"
-            # Clear validation failure after triggering consultation to prevent loops
-            if has_validation_failure:
-                result_state["template_validation_result"] = None
+        if needs_terraform_lookup and has_validation_failure:
+            result_state["template_validation_result"] = None
 
         return result_state
 

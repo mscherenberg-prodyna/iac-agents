@@ -8,87 +8,79 @@ from ...logging_system import (
 )
 from ...templates.template_manager import template_manager
 from ..state import InfrastructureStateDict, WorkflowStage
-from ..utils import add_error_to_state, make_llm_call
+from ..utils import add_error_to_state, get_agent_id, query_azure_agent
 
-AGENT_NAME = "SecOps/FinOps Consultant"
+AGENT_NAME = "secops_finops"
 
 
 def secops_finops_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
     """SecOps/FinOps Agent - Compliance validation and cost estimation."""
     log_agent_start(AGENT_NAME, "Validating compliance and estimating costs")
 
-    conversation_history = state["conversation_history"]
     template_content = state.get("final_template", "")
     compliance_settings = state.get("compliance_settings", {})
+    compliance_enforcement = (
+        "Enabled"
+        if compliance_settings.get("enforce_compliance", False)
+        else "Disabled"
+    )
+    compliance_frameworks = (
+        ", ".join(compliance_settings.get("selected_frameworks", [])) or "None selected"
+    )
+    system_prompt = template_manager.get_prompt(
+        "sec_fin_ops_engineer",
+        template_content=template_content,
+        compliance_enforcement=compliance_enforcement,
+        compliance_frameworks=compliance_frameworks,
+        compliance_requirements=str(compliance_settings),
+    )
+    conversation_history = state["conversation_history"]
+
+    agent_id = state.get("secops_finops_id", None)
+
+    # Initialize Azure AI Foundry agent if it does not exist
+    try:
+        if not agent_id:
+            agent_id = get_agent_id(agent_name=AGENT_NAME, prompt=system_prompt)
+
+    except Exception as e:
+        log_warning(AGENT_NAME, f"AI Foundry error: {str(e)}")
+        return add_error_to_state(state, f"SecOps/FinOps error: {str(e)}")
 
     try:
-        # Extract compliance configuration
-        compliance_enforcement = (
-            "Enabled"
-            if compliance_settings.get("enforce_compliance", False)
-            else "Disabled"
-        )
-        compliance_frameworks = (
-            ", ".join(compliance_settings.get("selected_frameworks", []))
-            or "None selected"
-        )
-
-        # Get terraform guidance from previous consultation
-        terraform_guidance = state.get("terraform_guidance", "")
-
-        # Load the secops/finops prompt
-        system_prompt = template_manager.get_prompt(
-            "sec_fin_ops_engineer",
-            template_content=template_content,
-            compliance_enforcement=compliance_enforcement,
-            compliance_frameworks=compliance_frameworks,
-            compliance_requirements=str(compliance_settings),
-            terraform_guidance=terraform_guidance,
-        )
-
-        # Make LLM call for SecOps/FinOps analysis
-        response = make_llm_call(
-            system_prompt, "\n\n###\n\n".join(conversation_history)
+        # Query Azure AI Foundry agent
+        azure_response = query_azure_agent(
+            AGENT_NAME, agent_id, "\n\n###\n\n".join(conversation_history)
         )
         conversation_history.append(
-            f"SecOps/FinOps: {response}"
+            f"SecOps/FinOps: {azure_response}"
         )  # Append response to conversation history
 
-        # Simple pricing lookup detection - let LLM be explicit
-        needs_pricing_lookup = "PRICING_LOOKUP_REQUIRED" in response
+        if azure_response:
+            log_agent_response(AGENT_NAME, azure_response)
+            log_agent_complete(AGENT_NAME, "Terraform Consultant guidance provided")
 
-        # Log the response content for debugging
-        log_agent_response(AGENT_NAME, response)
+            # Always clear both lookup flags to prevent infinite loops
+            result_state = {
+                **state,
+                "current_agent": "secops_finops",
+                "conversation_history": conversation_history,
+                "current_stage": WorkflowStage.VALIDATION_AND_COMPLIANCE.value,
+                "secops_finops_analysis": azure_response,
+                "secops_finops_id": agent_id,
+            }
 
-        log_agent_complete(
-            AGENT_NAME,
-            f"Analysis completed, pricing lookup {'required' if needs_pricing_lookup else 'not required'}",
-        )
+            return result_state
 
-        # Don't mark validation_and_compliance as completed - Cloud Architect controls this
-        # Only preserve existing completed stages
-        new_completed_stages = state.get("completed_stages", [])
+        log_warning(AGENT_NAME, "Azure AI unavailable")
+        errors = state.get("errors", [])
 
-        # Store analysis and let Cloud Architect handle routing logic
         result_state = {
             **state,
             "current_agent": "secops_finops",
-            "conversation_history": conversation_history,
-            "current_stage": WorkflowStage.VALIDATION_AND_COMPLIANCE.value,
-            "completed_stages": new_completed_stages,
-            "secops_finops_analysis": response,
-            "needs_pricing_lookup": needs_pricing_lookup,
-            # Clear caller if we were called back from Terraform Consultant
-            "terraform_consultant_caller": (
-                None
-                if state.get("terraform_consultant_caller") == "secops_finops"
-                else state.get("terraform_consultant_caller")
-            ),
+            "errors": errors + ["SecOps/FinOps Azure AI integration unavailable"],
+            "secops_finops_id": agent_id,
         }
-
-        # Set caller info if requesting pricing lookup
-        if needs_pricing_lookup:
-            result_state["terraform_consultant_caller"] = "secops_finops"
 
         return result_state
 

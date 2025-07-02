@@ -20,7 +20,7 @@ from ..terraform_utils import (
 )
 from ..utils import get_azure_subscription_info, make_llm_call
 
-AGENT_NAME = "Cloud Architect"
+AGENT_NAME = "cloud_architect"
 
 
 def cloud_architect_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:

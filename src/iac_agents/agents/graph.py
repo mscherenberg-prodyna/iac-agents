@@ -72,24 +72,9 @@ class InfrastructureAsPromptsAgent:
             },
         )
 
-        workflow.add_conditional_edges(
-            "terraform_consultant",
-            self._route_terraform_consultant,
-            {
-                "cloud_engineer": "cloud_engineer",
-                "secops_finops": "secops_finops",
-                "cloud_architect": "cloud_architect",
-            },
-        )
+        workflow.add_edge("terraform_consultant", "cloud_engineer")
 
-        workflow.add_conditional_edges(
-            "secops_finops",
-            self._route_secops_finops,
-            {
-                "terraform_consultant": "terraform_consultant",
-                "cloud_architect": "cloud_architect",
-            },
-        )
+        workflow.add_edge("secops_finops", "cloud_architect")
 
         workflow.add_conditional_edges(
             "human_approval",
@@ -134,29 +119,6 @@ class InfrastructureAsPromptsAgent:
     def _route_cloud_engineer(self, state: InfrastructureStateDict) -> str:
         """Route from cloud engineer agent."""
         if state.get("needs_terraform_lookup"):
-            return "terraform_consultant"
-        # Skip terraform consultant if disabled, return to Cloud Architect
-        return "cloud_architect"
-
-    def _route_terraform_consultant(self, state: InfrastructureStateDict) -> str:
-        """Route from terraform consultant agent."""
-        # Always route back to the source that requested consultation
-        caller = state.get("terraform_consultant_caller", None)
-
-        # Debug logging
-        log_info(
-            "Terraform Consultant Router",
-            f"caller={caller}, routing_to={caller}",
-        )
-
-        if caller:
-            return caller
-        # Fallback to Cloud Architect if caller not tracked
-        return "cloud_architect"
-
-    def _route_secops_finops(self, state: InfrastructureStateDict) -> str:
-        """Route from secops/finops agent."""
-        if state.get("needs_pricing_lookup"):
             return "terraform_consultant"
         # Skip terraform consultant if disabled, return to Cloud Architect
         return "cloud_architect"

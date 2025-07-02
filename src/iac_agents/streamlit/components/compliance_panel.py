@@ -6,6 +6,7 @@ from typing import Dict
 
 import streamlit as st
 
+# pylint: disable=E0402
 from ...config.settings import config
 from ...logging_system import agent_logger
 

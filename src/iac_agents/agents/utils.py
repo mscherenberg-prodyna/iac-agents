@@ -5,11 +5,12 @@ import subprocess
 from typing import Any, Dict, Optional
 
 from azure.ai.agents import AgentsClient
-from azure.ai.agents.models import BingGroundingTool
+from azure.ai.agents.models import BingGroundingTool, ListSortOrder, MessageRole
 from azure.identity import DefaultAzureCredential
 from langchain_openai import AzureChatOpenAI
 
 from ..config.settings import config
+from ..logging_system import log_warning
 
 
 def create_llm_client(temperature: Optional[float] = None) -> AzureChatOpenAI:
@@ -56,6 +57,48 @@ def get_agent_id(agent_name: str, prompt: str) -> str:
         temperature=config.agents.default_temperature,
     )
     return output["id"]
+
+
+def query_azure_agent(
+    agent_name: str, agent_id: str, terraform_query: str
+) -> Optional[str]:
+    """Query the Azure AI Foundry Terraform Consultant agent."""
+    try:
+        credential = DefaultAzureCredential()
+        agents_client = AgentsClient(
+            endpoint=config.azure_ai.project_endpoint, credential=credential
+        )
+
+        thread = agents_client.threads.create()
+
+        # Send terraform query to the agent
+        message = agents_client.messages.create(
+            thread_id=thread.id,
+            role="user",
+            content=terraform_query,
+        )
+
+        run = agents_client.runs.create_and_process(
+            thread_id=thread.id, agent_id=agent_id
+        )
+
+        if run.status == "failed":
+            log_warning(agent_name, f"Azure AI run failed: {run.last_error}")
+            return None
+
+        messages = agents_client.messages.list(
+            thread_id=thread.id, order=ListSortOrder.ASCENDING
+        )
+
+        for message in messages:
+            if message.text_messages and message.role == MessageRole.AGENT:
+                return message.text_messages[-1].text.value
+
+        return None
+
+    except Exception as e:
+        log_warning(agent_name, f"Azure AI query failed: {str(e)}")
+        return None
 
 
 def add_error_to_state(state: dict, error_message: str) -> list:

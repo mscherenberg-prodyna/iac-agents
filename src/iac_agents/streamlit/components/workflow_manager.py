@@ -1,6 +1,5 @@
 """Workflow execution manager for the Streamlit interface."""
 
-import uuid
 from typing import List
 
 import streamlit as st
@@ -110,10 +109,8 @@ class WorkflowManager:
                         "completed_stages": [],
                         "errors": [],
                         "needs_terraform_lookup": False,
-                        "needs_pricing_lookup": False,
                         "approval_received": False,
                         "phase_iterations": {},
-                        "terraform_consultant_caller": None,
                     },
                     config=config,
                 )

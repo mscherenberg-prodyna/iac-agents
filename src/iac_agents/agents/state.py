@@ -82,7 +82,6 @@ class InfrastructureStateDict(TypedDict):
     workflow_phase: Optional[str]
     subscription_info: Optional[Dict[str, Any]]
     needs_terraform_lookup: bool
-    needs_pricing_lookup: bool
     approval_received: bool
     cloud_architect_analysis: Optional[str]
     cloud_engineer_response: Optional[str]
@@ -94,4 +93,3 @@ class InfrastructureStateDict(TypedDict):
     deployment_details: Optional[Dict[str, Any]]
     resource_deployment_plan: Optional[List[str]]
     terraform_workspace: Optional[str]
-    terraform_consultant_caller: Optional[str]

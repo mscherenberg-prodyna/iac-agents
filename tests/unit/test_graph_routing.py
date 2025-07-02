@@ -67,26 +67,6 @@ class TestEngineerRouting:
         assert agent._route_cloud_engineer(state) == "cloud_architect"
 
 
-class TestTerraformRouting:
-    """Test terraform consultant routing decisions."""
-
-    @patch("src.iac_agents.agents.graph.StateGraph")
-    def test_routes_to_caller_when_specified(self, mock_graph):
-        """Should route back to specified caller."""
-        agent = InfrastructureAsPromptsAgent()
-        state = {"terraform_consultant_caller": "secops_finops"}
-
-        assert agent._route_terraform_consultant(state) == "secops_finops"
-
-    @patch("src.iac_agents.agents.graph.StateGraph")
-    def test_routes_to_architect_by_default(self, mock_graph):
-        """Should route to architect when no caller specified."""
-        agent = InfrastructureAsPromptsAgent()
-        state = {"terraform_consultant_caller": None}
-
-        assert agent._route_terraform_consultant(state) == "cloud_architect"
-
-
 class TestSecopsRouting:
     """Test secops finops routing decisions."""
 

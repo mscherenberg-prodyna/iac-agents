@@ -2,8 +2,6 @@
 
 from unittest.mock import Mock, patch
 
-import pytest
-
 from src.iac_agents.agents.graph import InfrastructureAsPromptsAgent
 
 
@@ -133,23 +131,3 @@ class TestGraphMethods:
 
         mock_compiled.stream.assert_called_once_with(input_state)
         assert len(result) == 2
-
-    @patch("src.iac_agents.agents.graph.StateGraph")
-    def test_route_terraform_consultant_fallback(self, mock_graph):
-        """Test terraform consultant routing fallback."""
-        agent = InfrastructureAsPromptsAgent()
-
-        state = {"terraform_consultant_caller": None}
-        result = agent._route_terraform_consultant(state)
-
-        assert result == "cloud_architect"
-
-    @patch("src.iac_agents.agents.graph.StateGraph")
-    def test_route_terraform_consultant_unknown_caller(self, mock_graph):
-        """Test terraform consultant routing with unknown caller."""
-        agent = InfrastructureAsPromptsAgent()
-
-        state = {"terraform_consultant_caller": "unknown_agent"}
-        result = agent._route_terraform_consultant(state)
-
-        assert result == "cloud_architect"

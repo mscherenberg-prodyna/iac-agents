@@ -14,7 +14,7 @@ from ..terraform_utils import (
     run_terraform_command,
 )
 
-AGENT_NAME = "DevOps Engineer"
+AGENT_NAME = "devops"
 
 
 def devops_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:

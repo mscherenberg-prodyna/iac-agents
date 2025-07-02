@@ -1,7 +1,5 @@
 """Unit tests for state module."""
 
-import pytest
-
 from src.iac_agents.agents.state import (
     InfrastructureStateDict,
     StageResult,
@@ -124,7 +122,6 @@ class TestInfrastructureStateDict:
             "workflow_phase": "analysis",
             "subscription_info": {"id": "123"},
             "needs_terraform_lookup": False,
-            "needs_pricing_lookup": False,
             "approval_received": False,
             "cloud_architect_analysis": None,
             "cloud_engineer_response": None,
@@ -171,7 +168,6 @@ class TestInfrastructureStateDict:
             "workflow_phase": None,
             "subscription_info": None,
             "needs_terraform_lookup": False,
-            "needs_pricing_lookup": False,
             "approval_received": False,
             "cloud_architect_analysis": None,
             "cloud_engineer_response": None,
@@ -183,7 +179,6 @@ class TestInfrastructureStateDict:
             "deployment_details": None,
             "resource_deployment_plan": None,
             "terraform_workspace": None,
-            "terraform_consultant_caller": None,
         }
 
         assert state["user_input"] == "Test input"
