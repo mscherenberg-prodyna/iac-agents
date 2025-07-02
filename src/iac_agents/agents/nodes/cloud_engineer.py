@@ -11,9 +11,9 @@ from ...logging_system import (
 )
 from ...templates.template_manager import template_manager
 from ..state import InfrastructureStateDict, TemplateGenerationResult, WorkflowStage
+from ..terraform_utils import extract_terraform_template
 from ..utils import (
     add_error_to_state,
-    extract_terraform_template,
     make_llm_call,
     mark_stage_completed,
 )
@@ -28,10 +28,6 @@ def cloud_engineer_agent(state: InfrastructureStateDict) -> InfrastructureStateD
     conversation_history = state["conversation_history"]
 
     try:
-        # Check if terraform research is enabled
-        deployment_config = state.get("deployment_config", {})
-        terraform_enabled = deployment_config.get("terraform_research_enabled", True)
-
         # Check for validation failures from previous attempts
         validation_result = state.get("template_validation_result", {})
         has_validation_failure = validation_result and not validation_result.get(
@@ -52,7 +48,6 @@ def cloud_engineer_agent(state: InfrastructureStateDict) -> InfrastructureStateD
         system_prompt = template_manager.get_prompt(
             "cloud_engineer",
             current_stage=state.get("current_stage", "template_generation"),
-            terraform_consultant_available=terraform_enabled,
             validation_error=validation_error,
             current_date=current_date,
             default_subscription_name=subscription_info.get(

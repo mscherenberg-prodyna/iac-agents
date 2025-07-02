@@ -2,8 +2,8 @@
 
 from typing import Optional
 
+from azure.ai.agents import AgentsClient
 from azure.ai.agents.models import ListSortOrder, MessageRole
-from azure.ai.projects import AIProjectClient
 from azure.identity import DefaultAzureCredential
 
 from ...config.settings import config
@@ -13,9 +13,11 @@ from ...logging_system import (
     log_agent_start,
     log_warning,
 )
+from ...templates.template_manager import template_manager
 from ..state import InfrastructureStateDict
+from ..utils import get_agent_id
 
-AGENT_NAME = "Terraform Consultant"
+AGENT_NAME = "terraform_consultant"
 
 
 def terraform_consultant_agent(
@@ -24,11 +26,35 @@ def terraform_consultant_agent(
     """Terraform Consultant Agent - Documentation lookup and best practices via Azure AI."""
     log_agent_start(AGENT_NAME, "Providing Terraform guidance")
 
+    system_prompt = template_manager.get_prompt(AGENT_NAME)
     conversation_history = state["conversation_history"]
 
+    agent_id = state.get("terraform_consultant_id", None)
+
     try:
-        # Try to connect to Azure AI Foundry agent
-        azure_response = _query_azure_agent("\n\n###\n\n".join(conversation_history))
+        if not agent_id:
+            agent_id = get_agent_id(agent_name=AGENT_NAME, prompt=system_prompt)
+    except Exception as e:
+        log_warning(AGENT_NAME, f"Error: {str(e)}")
+        errors = state.get("errors", [])
+
+        # Clear both flags to prevent infinite loops
+        result_state = {
+            **state,
+            "current_agent": "terraform_consultant",
+            "errors": errors + [f"Terraform Consultant error: {str(e)}"],
+            "needs_pricing_lookup": False,
+            "needs_terraform_lookup": False,
+            "terraform_consultant_id": agent_id,
+        }
+
+        return result_state
+
+    try:
+        # Connect to Azure AI Foundry agent
+        azure_response = query_azure_agent(
+            agent_id, "\n\n###\n\n".join(conversation_history)
+        )
         conversation_history.append(
             f"Terraform Consultant: {azure_response}"
         )  # Append response to conversation history
@@ -45,6 +71,7 @@ def terraform_consultant_agent(
                 "terraform_guidance": azure_response,
                 "needs_pricing_lookup": False,
                 "needs_terraform_lookup": False,
+                "terraform_consultant_id": agent_id,
             }
 
             return result_state
@@ -60,6 +87,7 @@ def terraform_consultant_agent(
             + ["Terraform Consultant Azure AI integration unavailable"],
             "needs_pricing_lookup": False,
             "needs_terraform_lookup": False,
+            "terraform_consultant_id": agent_id,
         }
 
         return result_state
@@ -75,34 +103,38 @@ def terraform_consultant_agent(
             "errors": errors + [f"Terraform Consultant error: {str(e)}"],
             "needs_pricing_lookup": False,
             "needs_terraform_lookup": False,
+            "terraform_consultant_id": agent_id,
         }
 
         return result_state
 
 
-def _query_azure_agent(terraform_query: str) -> Optional[str]:
+def query_azure_agent(agent_id: str, terraform_query: str) -> Optional[str]:
     """Query the Azure AI Foundry Terraform Consultant agent."""
     try:
-        agent, project = get_azure_agent()
+        credential = DefaultAzureCredential()
+        agents_client = AgentsClient(
+            endpoint=config.azure_ai.project_endpoint, credential=credential
+        )
 
-        thread = project.agents.threads.create()
+        thread = agents_client.threads.create()
 
         # Send terraform query to the agent
-        message = project.agents.messages.create(
+        message = agents_client.messages.create(
             thread_id=thread.id,
             role="user",
             content=terraform_query,
         )
 
-        run = project.agents.runs.create_and_process(
-            thread_id=thread.id, agent_id=agent.id
+        run = agents_client.runs.create_and_process(
+            thread_id=thread.id, agent_id=agent_id
         )
 
         if run.status == "failed":
             log_warning(AGENT_NAME, f"Azure AI run failed: {run.last_error}")
             return None
 
-        messages = project.agents.messages.list(
+        messages = agents_client.messages.list(
             thread_id=thread.id, order=ListSortOrder.ASCENDING
         )
 
@@ -115,70 +147,3 @@ def _query_azure_agent(terraform_query: str) -> Optional[str]:
     except Exception as e:
         log_warning(AGENT_NAME, f"Azure AI query failed: {str(e)}")
         return None
-
-
-def get_azure_agent(prompt_content: str) -> bool:
-    """Update the remote Azure AI agent with current prompt content."""
-    try:
-        endpoint = config.azure_ai.project_endpoint
-        agent_id = config.azure_ai.agent_id
-
-        if not endpoint or not agent_id:
-            log_warning(AGENT_NAME, "Azure AI configuration missing")
-            return None
-
-        if not terraform_query or not terraform_query.strip():
-            log_warning(AGENT_NAME, "Empty query provided")
-            return None
-
-        project = AIProjectClient(
-            credential=DefaultAzureCredential(), endpoint=endpoint
-        )
-
-        agent = project.agents.get_agent(agent_id)
-
-        endpoint = config.azure_ai.project_endpoint
-        agent_id = config.azure_ai.agent_id
-
-        if not endpoint or not agent_id:
-            log_warning(
-                AGENT_NAME,
-                "Azure AI configuration missing for prompt update",
-            )
-            return False
-
-        project = AIProjectClient(
-            credential=DefaultAzureCredential(), endpoint=endpoint
-        )
-
-        # Get current agent to preserve other settings
-        current_agent = project.agents.get_agent(agent_id)
-
-        # Update agent with new instructions while preserving other properties
-        updated_agent = project.agents.update_agent(
-            agent_id=agent_id,
-            model=current_agent.model,
-            name=current_agent.name,
-            description=current_agent.description,
-            instructions=prompt_content,
-            tools=current_agent.tools,
-            tool_resources=current_agent.tool_resources,
-            metadata=current_agent.metadata,
-            temperature=current_agent.temperature,
-            top_p=current_agent.top_p,
-            response_format=current_agent.response_format,
-        )
-
-        if updated_agent:
-            log_agent_complete(
-                AGENT_NAME,
-                "Azure AI agent instructions updated successfully",
-            )
-            return True
-        else:
-            log_warning(AGENT_NAME, "Failed to update Azure AI agent instructions")
-            return False
-
-    except Exception as e:
-        log_warning(AGENT_NAME, f"Prompt update failed: {str(e)}")
-        return False

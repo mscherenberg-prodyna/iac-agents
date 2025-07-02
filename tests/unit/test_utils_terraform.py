@@ -2,9 +2,7 @@
 
 from unittest.mock import patch
 
-import pytest
-
-from src.iac_agents.agents.utils import extract_terraform_template
+from src.iac_agents.agents.terraform_utils import extract_terraform_template
 
 
 class TestExtractTerraformTemplate:

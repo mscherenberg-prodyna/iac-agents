@@ -118,13 +118,6 @@ COST_OPTIMIZATION: [Suggestions based on pricing data]
 
 ## VALIDATION OUTPUT
 
-### Pricing Lookup:
-{% if terraform_consultant_available %}
-If you need current Azure pricing data to complete your analysis, clearly state "PRICING_LOOKUP_REQUIRED" and specify what pricing information you need.
-{% else %}
-**Note: Terraform Consultant is currently unavailable for pricing lookups. Use standard Azure pricing documentation and your knowledge of typical costs for cost estimates.**
-{% endif %}
-
 ### Compliance Report Format:
 Compliance Validation Report
 PCI DSS Compliance

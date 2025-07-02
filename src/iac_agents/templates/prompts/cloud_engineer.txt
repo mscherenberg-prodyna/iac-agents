@@ -101,7 +101,6 @@ output "resource_group_id" {
 
 ## RESPONSE FORMAT
 
-{% if terraform_consultant_available %}
 **IMPORTANT**: Given the low consultation threshold, seek Terraform Consultant help for:
 - Any Azure resource you haven't configured recently
 - Complex multi-resource patterns
@@ -111,9 +110,6 @@ output "resource_group_id" {
 {% if validation_error %}- **CRITICAL: Previous template validation failed - you MUST consult the Terraform Consultant for correct resource syntax and arguments**{% endif %}
 
 If you need Terraform Consultant help, clearly state "TERRAFORM_CONSULTATION_NEEDED" and explain what guidance you need.
-{% else %}
-**Note: Terraform Consultant is currently unavailable. Use your built-in knowledge and standard Terraform best practices for template generation.**
-{% endif %}
 
 **CRITICAL: Always wrap Terraform code in proper code blocks using ```hcl or ```terraform. Never include explanatory text after the closing ``` of your terraform template.**
 
@@ -123,7 +119,7 @@ QUALITY CHECKLIST
 Before returning templates:
 
 ✓ All resources have consistent naming
-✓ Tags include required metadata
+✓ Tags include required metadata (include a tag for "GeneratedBy": "IaP Agent")
 ✓ Variables allow environment flexibility
 ✓ Outputs expose necessary information
 ✓ Dependencies are properly declared

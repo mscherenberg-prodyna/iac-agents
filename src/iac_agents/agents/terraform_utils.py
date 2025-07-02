@@ -343,3 +343,78 @@ def is_valid_terraform_content(content: str, strict_validation: bool = False) ->
                 return False
 
     return has_terraform_keywords and has_hcl_syntax
+
+
+def extract_terraform_template(response: str) -> str:
+    """Extract Terraform template from LLM response."""
+    if not response:
+        return ""
+
+    # Find HCL code blocks first
+    hcl_pattern = r"```(?:hcl|terraform)\s*\n(.*?)\n```"
+    hcl_matches = re.findall(hcl_pattern, response, re.DOTALL | re.IGNORECASE)
+
+    if hcl_matches:
+        # Return the longest HCL block
+        return max(hcl_matches, key=len).strip()
+
+    # Fall back to generic code blocks
+    code_pattern = r"```\s*\n(.*?)\n```"
+    code_matches = re.findall(code_pattern, response, re.DOTALL)
+
+    for match in code_matches:
+        if is_valid_terraform_content(match, strict_validation=True):
+            return match.strip()
+
+    # Look for terraform blocks without code fences
+    if "resource " in response or "terraform {" in response:
+        lines = response.split("\n")
+        terraform_lines = []
+        in_terraform_block = False
+
+        for line in lines:
+            line_lower = line.lower().strip()
+
+            # Start collecting when we find terraform keywords
+            if any(
+                keyword in line_lower
+                for keyword in [
+                    "terraform {",
+                    "provider ",
+                    "resource ",
+                    "variable ",
+                    "output ",
+                ]
+            ):
+                in_terraform_block = True
+                terraform_lines.append(line)
+                continue
+
+            # Stop collecting when we hit non-terraform content
+            if in_terraform_block:
+                # Stop if we hit explanatory text or sentences
+                if (
+                    line.strip()
+                    and not line_lower.startswith("#")
+                    and not any(char in line for char in ["{", "}", "=", '"', "[", "]"])
+                    and any(
+                        word in line_lower
+                        for word in [
+                            "if you",
+                            "this template",
+                            "please",
+                            "note:",
+                            "important",
+                        ]
+                    )
+                ):
+                    break
+                # Continue collecting terraform content
+                terraform_lines.append(line)
+
+        if terraform_lines:
+            content = "\n".join(terraform_lines).strip()
+            if is_valid_terraform_content(content, strict_validation=True):
+                return content
+
+    return ""

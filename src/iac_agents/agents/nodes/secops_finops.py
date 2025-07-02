@@ -33,10 +33,6 @@ def secops_finops_agent(state: InfrastructureStateDict) -> InfrastructureStateDi
             or "None selected"
         )
 
-        # Check if terraform research is enabled
-        deployment_config = state.get("deployment_config", {})
-        terraform_enabled = deployment_config.get("terraform_research_enabled", True)
-
         # Get terraform guidance from previous consultation
         terraform_guidance = state.get("terraform_guidance", "")
 
@@ -47,7 +43,6 @@ def secops_finops_agent(state: InfrastructureStateDict) -> InfrastructureStateDi
             compliance_enforcement=compliance_enforcement,
             compliance_frameworks=compliance_frameworks,
             compliance_requirements=str(compliance_settings),
-            terraform_consultant_available=terraform_enabled,
             terraform_guidance=terraform_guidance,
         )
 

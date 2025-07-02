@@ -1,10 +1,5 @@
 """Infrastructure as Prompts Agent - Main orchestrator class using LangGraph."""
 
-import os
-from typing import Dict, Optional
-
-from azure.ai.projects import AIProjectClient
-from azure.identity import DefaultAzureCredential
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph
 from langgraph.types import interrupt
@@ -25,36 +20,14 @@ from .utils import make_llm_call
 class InfrastructureAsPromptsAgent:
     """Main orchestrator for Infrastructure as Prompts using LangGraph multi-agent workflow."""
 
-    def __init__(self, azure_config: Optional[Dict[str, str]] = None):
+    def __init__(self):
         """Initialize the Infrastructure as Prompts Agent.
 
         Args:
             azure_config: Optional Azure AI configuration. If not provided, reads from environment.
         """
-        self.azure_config = azure_config or {
-            "endpoint": os.getenv("AZURE_PROJECT_ENDPOINT"),
-            "agent_id": os.getenv("AZURE_AGENT_ID"),
-        }
 
-        self.azure_client = self._initialize_azure_client()
         self.graph = self._create_workflow_graph()
-
-    def _initialize_azure_client(self) -> Optional[AIProjectClient]:
-        """Initialize Azure AI client for Terraform Consultant."""
-        if not self.azure_config.get("endpoint"):
-            return None
-
-        try:
-            return AIProjectClient(
-                credential=DefaultAzureCredential(),
-                endpoint=self.azure_config["endpoint"],
-            )
-        except Exception as e:
-            log_agent_start(
-                "InfrastructureAsPromptsAgent",
-                f"Azure client initialization failed: {e}",
-            )
-            return None
 
     def _create_workflow_graph(self) -> StateGraph:
         """Create the LangGraph workflow with all agents."""
@@ -160,9 +133,7 @@ class InfrastructureAsPromptsAgent:
 
     def _route_cloud_engineer(self, state: InfrastructureStateDict) -> str:
         """Route from cloud engineer agent."""
-        deployment_config = state.get("deployment_config", {})
-        terraform_enabled = deployment_config.get("terraform_research_enabled", True)
-        if state.get("needs_terraform_lookup") and terraform_enabled:
+        if state.get("needs_terraform_lookup"):
             return "terraform_consultant"
         # Skip terraform consultant if disabled, return to Cloud Architect
         return "cloud_architect"
@@ -175,7 +146,7 @@ class InfrastructureAsPromptsAgent:
         # Debug logging
         log_info(
             "Terraform Consultant Router",
-            f"caller={caller}, routing_to={'secops_finops' if caller == 'secops_finops' else 'cloud_engineer' if caller == 'cloud_engineer' else 'cloud_architect (fallback)'}",
+            f"caller={caller}, routing_to={caller}",
         )
 
         if caller:
@@ -185,9 +156,7 @@ class InfrastructureAsPromptsAgent:
 
     def _route_secops_finops(self, state: InfrastructureStateDict) -> str:
         """Route from secops/finops agent."""
-        deployment_config = state.get("deployment_config", {})
-        terraform_enabled = deployment_config.get("terraform_research_enabled", True)
-        if state.get("needs_pricing_lookup") and terraform_enabled:
+        if state.get("needs_pricing_lookup"):
             return "terraform_consultant"
         # Skip terraform consultant if disabled, return to Cloud Architect
         return "cloud_architect"

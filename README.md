@@ -19,6 +19,10 @@ Transform cloud infrastructure deployment from complex command-line operations t
 
 ## 🔧 Setup
 
+### Prerequisites
+- Azure AI Foundry Project, including at least one OpenAI chat model deployment
+- Grounding with Bing Search resource in Microsoft Azure, connected to said Azure AI Foundry Project
+
 1. **Install dependencies**:
    ```bash
    poetry install
@@ -30,7 +34,7 @@ Transform cloud infrastructure deployment from complex command-line operations t
    - API key: **AZURE_OPENAI_API_KEY**
    - API version: **AZURE_OPENAI_API_VERSION**
    - Foundry Project Endpoint: **AZURE_PROJECT_ENDPOINT**
-   - Agent ID for Cloud Agent: **AZURE_AGENT_ID**
+   - Bing Search Service Connection for Foundry Project: **BING_CONNECTION**
 
 3. **Run Streamlit Web Interface**:
    ```bash
@@ -41,10 +45,6 @@ Transform cloud infrastructure deployment from complex command-line operations t
 
 <p align="center">
     <img src="assets/iap.png" alt="iap" width="500"/>
-</p>
-
-<p align="center">
-    <img src="assets/workflow.png" alt="iap" width="500"/>
 </p>
 
 ### Agent Responsibilities

@@ -1,8 +1,6 @@
 """Comprehensive tests for agents.graph module to achieve 70%+ coverage."""
 
-from unittest.mock import MagicMock, Mock, patch
-
-import pytest
+from unittest.mock import Mock, patch
 
 from src.iac_agents.agents.graph import InfrastructureAsPromptsAgent
 
@@ -146,7 +144,6 @@ class TestInfrastructureAsPromptsAgentRouting:
 
         state = {
             "needs_terraform_lookup": True,
-            "deployment_config": {"terraform_research_enabled": True},
         }
         result = agent._route_cloud_engineer(state)
 
@@ -159,7 +156,6 @@ class TestInfrastructureAsPromptsAgentRouting:
 
         state = {
             "needs_terraform_lookup": True,
-            "deployment_config": {"terraform_research_enabled": False},
         }
         result = agent._route_cloud_engineer(state)
 

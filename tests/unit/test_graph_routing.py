@@ -1,8 +1,6 @@
 """Test graph routing logic for coverage."""
 
-from unittest.mock import Mock, patch
-
-import pytest
+from unittest.mock import patch
 
 from src.iac_agents.agents.graph import InfrastructureAsPromptsAgent
 
@@ -54,7 +52,6 @@ class TestEngineerRouting:
         agent = InfrastructureAsPromptsAgent()
         state = {
             "needs_terraform_lookup": True,
-            "deployment_config": {"terraform_research_enabled": True},
         }
 
         assert agent._route_cloud_engineer(state) == "terraform_consultant"
@@ -65,7 +62,6 @@ class TestEngineerRouting:
         agent = InfrastructureAsPromptsAgent()
         state = {
             "needs_terraform_lookup": True,
-            "deployment_config": {"terraform_research_enabled": False},
         }
 
         assert agent._route_cloud_engineer(state) == "cloud_architect"

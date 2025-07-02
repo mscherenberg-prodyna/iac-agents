@@ -51,6 +51,11 @@ class InfrastructureStateDict(TypedDict):
     completed_stages: List[str]
     phase_iterations: Optional[Dict[str, int]]
 
+    # Agent IDs for Cloud Agents
+    terraform_consultant_id: Optional[str]
+    secops_finops_id: Optional[str]
+    devops_id: Optional[str]
+
     # Stage results (as dicts for LangGraph compatibility)
     requirements_analysis_result: Optional[Dict[str, Any]]
     research_data_result: Optional[Dict[str, Any]]

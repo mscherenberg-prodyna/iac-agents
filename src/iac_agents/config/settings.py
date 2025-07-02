@@ -3,6 +3,7 @@
 import os
 from dataclasses import dataclass
 from typing import Dict
+from dotenv import load_dotenv
 
 
 @dataclass
@@ -53,22 +54,22 @@ class AzureAISettings:
     """Azure AI Project configuration settings."""
 
     project_endpoint: str = None
-    agent_id: str = None
+    bing_connection: str = None
 
     def __post_init__(self):
         if self.project_endpoint is None:
             self.project_endpoint = os.getenv("AZURE_PROJECT_ENDPOINT")
-        if self.agent_id is None:
-            self.agent_id = os.getenv("AZURE_AGENT_ID")
+        if self.bing_connection is None:
+            self.bing_connection = os.getenv("BING_CONNECTION")
 
 
 @dataclass
 class AgentSettings:
     """AI Agent configuration settings."""
 
-    default_temperature: float = 0.2
-    terraform_agent_temperature: float = 0.1
-    max_response_tokens: int = 4000
+    default_temperature: float = 0
+    default_model: str = "gpt-4.1"
+    max_response_tokens: int = 9999
     request_timeout: int = 120  # seconds
 
 
@@ -106,6 +107,9 @@ class Config:
     """Main configuration class."""
 
     def __init__(self):
+        # Load environment variables from .env file
+        load_dotenv()
+        
         self.compliance = ComplianceSettings()
         self.azure_openai = AzureOpenAISettings()
         self.azure_ai = AzureAISettings()
@@ -117,7 +121,6 @@ class Config:
     @classmethod
     def load_from_env(cls):
         """Load configuration from environment variables."""
-        # This could be extended to read from environment variables
         return cls()
 
 
