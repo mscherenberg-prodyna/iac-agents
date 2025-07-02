@@ -14,8 +14,6 @@ from ...logging_system import (
 from ...templates.template_manager import template_manager
 from ..state import InfrastructureStateDict
 from ..terraform_utils import (
-    TerraformVariableManager,
-    enhance_terraform_template,
     run_terraform_command,
 )
 from ..utils import get_azure_subscription_info, make_llm_call
@@ -42,6 +40,7 @@ def cloud_architect_agent(state: InfrastructureStateDict) -> InfrastructureState
             or "None selected"
         )
         approval_required = "Yes" if state.get("requires_approval", True) else "No"
+        approval_received = "Yes" if state.get("approval_received", False) else "No"
 
         # Get Azure subscription information
         if not state.get("subscription_info", {}):
@@ -70,7 +69,7 @@ def cloud_architect_agent(state: InfrastructureStateDict) -> InfrastructureState
             # Always run validation when in validation phase, regardless of previous results
             log_info(AGENT_NAME, "Validating terraform template with terraform plan")
             template_validation_result = _validate_terraform_template(
-                state.get("final_template"), state.get("user_input", "")
+                state.get("final_template")
             )
 
             # If template validation fails, route back to Cloud Engineer
@@ -113,6 +112,7 @@ def cloud_architect_agent(state: InfrastructureStateDict) -> InfrastructureState
                 compliance_enforcement=compliance_enforcement,
                 compliance_frameworks=compliance_frameworks,
                 approval_required=approval_required,
+                approval_received=approval_received,
             )
 
             # Make LLM call using utility function
@@ -184,7 +184,7 @@ def _determine_workflow_phase(state: InfrastructureStateDict) -> str:
     current_iterations = phase_iterations.get(current_phase, 0)
 
     # If we've been in the same phase for too many iterations, force progression
-    if current_iterations >= 3:
+    if current_iterations >= 5:
         if current_phase == "validation":
             # Force completion of validation if stuck
             return "approval" if state.get("requires_approval") else "complete"
@@ -247,9 +247,7 @@ def _should_generate_user_response(
     return False
 
 
-def _validate_terraform_template(
-    template_content: str, user_requirements: str = ""
-) -> Dict[str, Any]:
+def _validate_terraform_template(template_content: str) -> Dict[str, Any]:
     """Validate terraform template using terraform plan command.
 
     Args:
@@ -265,45 +263,10 @@ def _validate_terraform_template(
             validation_dir = Path(temp_dir)
             log_info(AGENT_NAME, f"Created validation workspace: {validation_dir}")
 
-            # Enhance template with variable management
-            is_valid, issues = TerraformVariableManager.validate_template_variables(
-                template_content
-            )
-
-            if not is_valid:
-                log_info(AGENT_NAME, f"Template validation issues found: {issues}")
-                # Infer variable values from user requirements
-                inferred_values = (
-                    TerraformVariableManager.infer_variable_values_from_requirements(
-                        user_requirements
-                    )
-                )
-                log_info(AGENT_NAME, f"Inferred variable values: {inferred_values}")
-
-                # Enhance template with inferred defaults
-                enhanced_template = (
-                    TerraformVariableManager.enhance_template_with_defaults(
-                        template_content, inferred_values
-                    )
-                )
-                log_info(
-                    AGENT_NAME,
-                    "Template enhanced with inferred variable defaults",
-                )
-            else:
-                enhanced_template = template_content
-                log_info(
-                    AGENT_NAME,
-                    "Template validation passed, using original template",
-                )
-
-            # Add standard provider configuration if not present
-            enhanced_template = enhance_terraform_template(enhanced_template)
-
             # Write terraform configuration
             main_tf_path = validation_dir / "main.tf"
             with open(main_tf_path, "w", encoding="utf-8") as f:
-                f.write(enhanced_template)
+                f.write(template_content)
 
             log_info(AGENT_NAME, "Terraform configuration written for validation")
 

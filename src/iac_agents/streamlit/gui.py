@@ -1,4 +1,4 @@
-"""Enhanced GUI for the Infrastructure as Code AI Agent - Modular Interface."""
+"""GUI for the Infrastructure as Code AI Agent - Modular Interface."""
 
 from iac_agents.streamlit.main_interface import main
 

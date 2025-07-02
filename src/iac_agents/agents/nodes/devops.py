@@ -2,15 +2,12 @@
 
 import json
 import os
-import re
 import subprocess
 from pathlib import Path
 
 from ...logging_system import log_agent_complete, log_agent_start, log_info, log_warning
 from ..state import InfrastructureStateDict
 from ..terraform_utils import (
-    TerraformVariableManager,
-    enhance_terraform_template,
     run_terraform_command,
 )
 
@@ -45,7 +42,10 @@ def devops_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
             log_warning(
                 AGENT_NAME, "No infrastructure template available for deployment"
             )
-            devops_response = "❌ **Deployment Failed**\n\nNo infrastructure template was provided for deployment. Please ensure the Cloud Engineer has generated a valid Terraform template."
+            devops_response = (
+                "❌ **Deployment Failed**\n\nNo infrastructure template was provided for deployment. "
+                "Please ensure the Cloud Engineer has generated a valid Terraform template."
+            )
             conversation_history.append(f"DevOps Engineer: {devops_response}")
             return {
                 **state,
@@ -60,7 +60,10 @@ def devops_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
 
         # Verify Azure CLI authentication
         if not _verify_azure_auth():
-            devops_response = "❌ **Deployment Failed**\n\nAzure CLI authentication is required. Please run `az login` to authenticate with Azure before attempting deployment."
+            devops_response = (
+                "❌ **Deployment Failed**\n\nAzure CLI authentication is required. "
+                "Please run `az login` to authenticate with Azure before attempting deployment."
+            )
             conversation_history.append(f"DevOps Engineer: {devops_response}")
             return {
                 **state,
@@ -73,11 +76,8 @@ def devops_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
                 + ["Azure CLI authentication required"],
             }
 
-        # Get user requirements for variable inference
-        user_requirements = state.get("user_input", "")
-
         # Create deployment workspace with variable management
-        deployment_result = _deploy_infrastructure(template_content, user_requirements)
+        deployment_result = _deploy_infrastructure(template_content)
 
         if deployment_result["success"]:
             log_agent_complete(
@@ -96,10 +96,11 @@ def devops_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
                 "workflow_phase": "complete",
             }
         error_message = deployment_result["error"]
-        # Clean up ANSI color codes for better display
-        clean_error = _clean_terraform_error(error_message)
         log_warning(AGENT_NAME, f"Deployment failed: {error_message}")
-        devops_response = f"❌ **Deployment Failed**\n\nTerraform deployment encountered errors:\n\n```\n{clean_error}\n```\n\nPlease review the template and correct the issues before retrying deployment."
+        devops_response = (
+            f"❌ **Deployment Failed**\n\nTerraform deployment encountered errors:\n\n```\n{error_message}"
+            f"\n```\n\nPlease review the template and correct the issues before retrying deployment."
+        )
         conversation_history.append(f"DevOps Engineer: {devops_response}")
         return {
             **state,
@@ -108,12 +109,15 @@ def devops_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
             "devops_response": devops_response,
             "deployment_status": "failed",
             "workflow_phase": "complete",
-            "errors": state.get("errors", []) + [clean_error],
+            "errors": state.get("errors", []) + [error_message],
         }
 
     except Exception as e:
         log_warning(AGENT_NAME, f"Deployment failed with exception: {str(e)}")
-        devops_response = f"❌ **Deployment Failed**\n\nAn unexpected error occurred during deployment:\n\n```\n{str(e)}\n```"
+        devops_response = (
+            f"❌ **Deployment Failed**\n\nAn unexpected error occurred "
+            f"during deployment:\n\n```\n{str(e)}\n```"
+        )
         conversation_history.append(f"DevOps Engineer: {devops_response}")
         return {
             **state,
@@ -124,19 +128,6 @@ def devops_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
             "workflow_phase": "complete",
             "errors": state.get("errors", []) + [str(e)],
         }
-
-
-def _clean_terraform_error(error_message: str) -> str:
-    """Clean ANSI color codes and format terraform error messages."""
-
-    # Remove ANSI color codes
-    ansi_escape = re.compile(r"\x1b\[[0-9;]*m")
-    clean_message = ansi_escape.sub("", error_message)
-
-    # Remove extra whitespace and normalize line breaks
-    clean_message = re.sub(r"\n\s*\n", "\n\n", clean_message.strip())
-
-    return clean_message
 
 
 def _verify_azure_auth() -> bool:
@@ -168,7 +159,7 @@ def _verify_azure_auth() -> bool:
         return False
 
 
-def _deploy_infrastructure(template_content: str, user_requirements: str = "") -> dict:
+def _deploy_infrastructure(template_content: str) -> dict:
     """Deploy infrastructure using Terraform with Azure CLI authentication."""
     try:
         # Create deployment workspace
@@ -179,46 +170,12 @@ def _deploy_infrastructure(template_content: str, user_requirements: str = "") -
 
         log_info(AGENT_NAME, f"Created deployment workspace: {deployment_dir}")
 
-        # Validate and enhance template with variable management
-        is_valid, issues = TerraformVariableManager.validate_template_variables(
-            template_content
-        )
-
-        if not is_valid:
-            log_info(AGENT_NAME, f"Template validation issues found: {issues}")
-            # Infer variable values from user requirements
-            inferred_values = (
-                TerraformVariableManager.infer_variable_values_from_requirements(
-                    user_requirements
-                )
-            )
-            log_info(AGENT_NAME, f"Inferred variable values: {inferred_values}")
-
-            # Enhance template with inferred defaults
-            enhanced_template = TerraformVariableManager.enhance_template_with_defaults(
-                template_content, inferred_values
-            )
-            log_info(AGENT_NAME, "Template enhanced with inferred variable defaults")
-        else:
-            enhanced_template = template_content
-            log_info(AGENT_NAME, "Template validation passed, using original template")
-
-        # Apply standard enhancements (provider config, etc.)
-        enhanced_template = enhance_terraform_template(
-            enhanced_template,
-            project_name="iap-agent",
-            default_location="West Europe",
-        )
-
         # Write Terraform configuration
         main_tf_path = deployment_dir / "main.tf"
         with open(main_tf_path, "w", encoding="utf-8") as f:
-            f.write(enhanced_template)
+            f.write(template_content)
 
         log_info(AGENT_NAME, "Terraform configuration written")
-
-        # Log the template being deployed for debugging
-        log_info(AGENT_NAME, f"Template content:\n{enhanced_template}")
 
         # Execute Terraform commands
         deployment_result = {

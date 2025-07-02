@@ -3,8 +3,6 @@
 from enum import Enum
 from typing import Any, Dict, List, Optional, TypedDict
 
-from pydantic import BaseModel, Field
-
 
 class WorkflowStage(Enum):
     """Stages of the infrastructure deployment workflow."""
@@ -17,24 +15,6 @@ class WorkflowStage(Enum):
     APPROVAL_PREPARATION = "approval_preparation"
     TEMPLATE_REFINEMENT = "template_refinement"
     COMPLETED = "completed"
-
-
-class StageResult(BaseModel):
-    """Base model for stage results."""
-
-    status: str = Field(..., description="Status of the stage")
-    data: Optional[Dict[str, Any]] = None
-    errors: List[str] = Field(default_factory=list)
-    warnings: List[str] = Field(default_factory=list)
-    timestamp: Optional[str] = None
-
-
-class TemplateGenerationResult(StageResult):
-    """Template generation stage result."""
-
-    template_content: Optional[str] = None
-    provider: Optional[str] = None
-    resources_count: int = 0
 
 
 class InfrastructureStateDict(TypedDict):
@@ -54,16 +34,9 @@ class InfrastructureStateDict(TypedDict):
     # Agent IDs for Cloud Agents
     terraform_consultant_id: Optional[str]
     secops_finops_id: Optional[str]
-    devops_id: Optional[str]
 
     # Stage results (as dicts for LangGraph compatibility)
-    requirements_analysis_result: Optional[Dict[str, Any]]
-    research_data_result: Optional[Dict[str, Any]]
-    template_generation_result: Optional[Dict[str, Any]]
-    compliance_validation_result: Optional[Dict[str, Any]]
     template_validation_result: Optional[Dict[str, Any]]
-    cost_estimation_result: Optional[Dict[str, Any]]
-    approval_preparation_result: Optional[Dict[str, Any]]
 
     # Final output
     final_template: Optional[str]
@@ -75,14 +48,13 @@ class InfrastructureStateDict(TypedDict):
 
     # Human interaction
     requires_approval: bool
-    approval_request_id: Optional[str]
+    approval_received: bool
 
     # Additional workflow fields
     current_agent: Optional[str]
     workflow_phase: Optional[str]
     subscription_info: Optional[Dict[str, Any]]
     needs_terraform_lookup: bool
-    approval_received: bool
     cloud_architect_analysis: Optional[str]
     cloud_engineer_response: Optional[str]
     secops_finops_analysis: Optional[str]

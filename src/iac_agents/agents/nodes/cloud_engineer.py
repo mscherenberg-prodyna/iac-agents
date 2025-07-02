@@ -10,7 +10,7 @@ from ...logging_system import (
     log_warning,
 )
 from ...templates.template_manager import template_manager
-from ..state import InfrastructureStateDict, TemplateGenerationResult, WorkflowStage
+from ..state import InfrastructureStateDict, WorkflowStage
 from ..terraform_utils import extract_terraform_template
 from ..utils import (
     add_error_to_state,
@@ -75,21 +75,6 @@ def cloud_engineer_agent(state: InfrastructureStateDict) -> InfrastructureStateD
             f"Consultation decision: explicit_request={'TERRAFORM_CONSULTATION_NEEDED' in response}, validation_failure={has_validation_failure}, final_decision={needs_terraform_consultation}",
         )
 
-        # Create result with extracted template
-        result = TemplateGenerationResult(
-            status="completed",
-            data={
-                "full_response": response,
-                "has_template": bool(template_content),
-                "needs_terraform_consultation": needs_terraform_consultation,
-            },
-            template_content=template_content,
-            provider="azure" if template_content else None,
-            resources_count=(
-                template_content.count("resource ") if template_content else 0
-            ),
-        )
-
         # Mark stage as completed
         new_completed_stages = mark_stage_completed(
             state, WorkflowStage.TEMPLATE_GENERATION.value
@@ -112,7 +97,6 @@ def cloud_engineer_agent(state: InfrastructureStateDict) -> InfrastructureStateD
             "current_stage": WorkflowStage.TEMPLATE_GENERATION.value,
             "conversation_history": conversation_history,
             "completed_stages": new_completed_stages,
-            "template_generation_result": result.model_dump(),
             "final_template": template_content,
             "cloud_engineer_response": response,
             "needs_terraform_lookup": needs_terraform_lookup,

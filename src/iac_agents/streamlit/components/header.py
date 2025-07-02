@@ -62,9 +62,3 @@ def display_header():
 
     # Add gap below header
     st.markdown("<div style='margin-bottom: 2rem;'></div>", unsafe_allow_html=True)
-
-
-def display_navigation():
-    """Display navigation tabs or menu."""
-    tabs = st.tabs(["💬 Chat", "📊 Dashboard", "⚙️ Settings"])
-    return tabs

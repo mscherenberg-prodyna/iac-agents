@@ -3,7 +3,6 @@
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph
 
-from ..logging_system import log_info
 from .nodes import (
     cloud_architect_agent,
     cloud_engineer_agent,
@@ -74,11 +73,7 @@ class InfrastructureAsPromptsAgent:
 
         workflow.add_edge("secops_finops", "cloud_architect")
 
-        workflow.add_conditional_edges(
-            "human_approval",
-            self._route_human_approval,
-            {"devops": "devops", "cloud_architect": "cloud_architect"},
-        )
+        workflow.add_edge("human_approval", "cloud_architect")
 
         workflow.add_edge("devops", "cloud_architect")
 
@@ -93,17 +88,17 @@ class InfrastructureAsPromptsAgent:
             return END
 
         # Check if approval was received - if so, proceed to deployment
-        if approval_received:
+        if workflow_phase == "deployment" and approval_received:
             return "devops"
+
+        if workflow_phase == "approval" and requires_approval:
+            return "human_approval"
+
+        if workflow_phase == "validation":
+            return "secops_finops"
 
         if workflow_phase == "planning":
             return "cloud_engineer"
-        if workflow_phase == "validation":
-            return "secops_finops"
-        if workflow_phase == "approval" and requires_approval:
-            return "human_approval"
-        if workflow_phase == "deployment":
-            return "devops"
 
         return END
 
@@ -111,17 +106,6 @@ class InfrastructureAsPromptsAgent:
         """Route from cloud engineer agent."""
         if state.get("needs_terraform_lookup"):
             return "terraform_consultant"
-        return "cloud_architect"
-
-    def _route_human_approval(self, state: InfrastructureStateDict) -> str:
-        """Route from human approval node."""
-        approval_received = state.get("approval_received", False)
-        log_info("Human Approval Router", f"approval_received={approval_received}")
-
-        if approval_received:
-            log_info("Human Approval Router", "Approval received, routing to devops")
-            return "devops"
-        log_info("Human Approval Router", "No approval, going back to Cloud Architect")
         return "cloud_architect"
 
     def build(self):

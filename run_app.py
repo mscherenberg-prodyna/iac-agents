@@ -11,8 +11,9 @@ def main():
     base_dir = Path(__file__).parent
     streamlit_dir = base_dir / "src" / "iac_agents" / "streamlit"
 
-    print("🚀 Starting main app (port 8501) and log viewer (port 8502)")
-    print("❌ Press Ctrl+C to stop both")
+    print(
+        "🚀 Starting main app (port 8501) and log viewer (port 8502). Press Ctrl+C to stop both."
+    )
 
     # Start both apps in parallel
     main_cmd = [
