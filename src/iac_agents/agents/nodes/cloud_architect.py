@@ -23,7 +23,7 @@ AGENT_NAME = "cloud_architect"
 
 def cloud_architect_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
     """Cloud Architect Agent - Main orchestrator and requirements analyzer."""
-    log_agent_start(AGENT_NAME, "Analyzing requirements and orchestrating workflow")
+    log_agent_start(AGENT_NAME, "Orchestrating workflow")
 
     conversation_history = state["conversation_history"]
 
@@ -55,20 +55,16 @@ def cloud_architect_agent(state: InfrastructureStateDict) -> InfrastructureState
         )
 
         # Determine workflow phase based on current state
-        workflow_phase = _determine_workflow_phase(state)
-
-        # Track phase iterations for loop detection
-        phase_iterations = state.get("phase_iterations", {})
-        current_iterations = phase_iterations.get(workflow_phase, 0)
-        phase_iterations[workflow_phase] = current_iterations + 1
+        workflow_phase = determine_workflow_phase(state)
 
         # Validate terraform template if available and in validation phase
         template_validation_result = None
         template_validation_failed = False
-        if workflow_phase == "validation" and state.get("final_template"):
+        secops_finops_analysis = state.get("secops_finops_analysis", "")
+        if workflow_phase == "validation" and not secops_finops_analysis:
             # Always run validation when in validation phase, regardless of previous results
             log_info(AGENT_NAME, "Validating terraform template with terraform plan")
-            template_validation_result = _validate_terraform_template(
+            template_validation_result = validate_terraform_template(
                 state.get("final_template")
             )
 
@@ -82,13 +78,6 @@ def cloud_architect_agent(state: InfrastructureStateDict) -> InfrastructureState
                     "planning"  # Force back to planning to regenerate template
                 )
                 template_validation_failed = True
-        elif workflow_phase == "validation" and not state.get("final_template"):
-            # If we're in validation phase but no template exists, go back to planning
-            log_warning(
-                AGENT_NAME,
-                "In validation phase but no template found, returning to planning",
-            )
-            workflow_phase = "planning"
 
         if template_validation_failed:
             response_content = (
@@ -97,14 +86,12 @@ def cloud_architect_agent(state: InfrastructureStateDict) -> InfrastructureState
             conversation_history.append(
                 f"Cloud Architect: {response_content}"
             )  # Append response to conversation history
-            should_respond_to_user = False
 
         else:
             # Load the cloud architect prompt with variable substitution
             system_prompt = template_manager.get_prompt(
                 "cloud_architect",
                 current_stage=state.get("current_stage", "initial"),
-                completed_stages=", ".join(state.get("completed_stages", [])),
                 default_subscription_name=subscription_info[
                     "default_subscription_name"
                 ],
@@ -123,23 +110,9 @@ def cloud_architect_agent(state: InfrastructureStateDict) -> InfrastructureState
                 f"Cloud Architect: {response_content}"
             )  # Append response to conversation history
 
-            # Determine if this should be a user-facing response based on state AND response content
-            should_respond_to_user = _should_generate_user_response(
-                state, response_content
-            )
-
         # Log the response content for debugging
         log_agent_response(AGENT_NAME, response_content)
         log_agent_complete(AGENT_NAME, f"Workflow phase: {workflow_phase}")
-
-        # Mark validation_and_compliance as completed only when template validation passes
-        completed_stages = state.get("completed_stages", [])
-        if (
-            template_validation_result
-            and template_validation_result.get("valid")
-            and "validation_and_compliance" not in completed_stages
-        ):
-            completed_stages = completed_stages + ["validation_and_compliance"]
 
         result_state = {
             **state,
@@ -147,19 +120,25 @@ def cloud_architect_agent(state: InfrastructureStateDict) -> InfrastructureState
             "conversation_history": conversation_history,
             "workflow_phase": workflow_phase,
             "subscription_info": subscription_info,
-            "phase_iterations": phase_iterations,
             "cloud_architect_analysis": response_content,
             "template_validation_result": template_validation_result,
-            "completed_stages": completed_stages,
         }
 
         # Set final_response only when we should communicate with user
-        if should_respond_to_user:
-            result_state["final_response"] = response_content
-            log_agent_complete(AGENT_NAME, "Generated user response")
+        if template_validation_failed:
+            result_state["architect_target"] = "cloud_engineer"
+            log_agent_complete(
+                AGENT_NAME,
+                "Routing to Cloud Engineer due to template validation failure",
+            )
         else:
-            result_state["final_response"] = None
-            log_agent_complete(AGENT_NAME, "Internal coordination only")
+            result_state["architect_target"] = determine_architect_target(
+                response_content
+            )
+            log_agent_complete(
+                AGENT_NAME,
+                f"Next target: {result_state['architect_target']}",
+            )
 
         return result_state
 
@@ -174,80 +153,19 @@ def cloud_architect_agent(state: InfrastructureStateDict) -> InfrastructureState
         }
 
 
-def _determine_workflow_phase(state: InfrastructureStateDict) -> str:
+def determine_workflow_phase(state: InfrastructureStateDict) -> str:
     """Determine the next workflow phase based on current state."""
-    completed_stages = state.get("completed_stages", [])
-    current_phase = state.get("workflow_phase", "planning")
+    final_template = state.get("final_template", "")
 
-    # Loop detection: if we're in the same phase and have consulted Terraform multiple times
-    phase_iterations = state.get("phase_iterations", {})
-    current_iterations = phase_iterations.get(current_phase, 0)
-
-    # If we've been in the same phase for too many iterations, force progression
-    if current_iterations >= 5:
-        if current_phase == "validation":
-            # Force completion of validation if stuck
-            return "approval" if state.get("requires_approval") else "complete"
-        if current_phase == "planning":
-            return "validation"
-
-    if not completed_stages:
+    if not final_template:
         return "planning"
-
-    if (
-        "template_generation" in completed_stages
-        and "validation_and_compliance" not in completed_stages
-    ):
-        return "validation"
-
-    if "validation_and_compliance" in completed_stages and not state.get(
-        "approval_received"
-    ):
-        return "approval"
-
     if state.get("approval_received"):
         return "deployment"
-
-    return "complete"
-
-
-def _should_generate_user_response(
-    state: InfrastructureStateDict, response_content: str
-) -> bool:
-    """Determine if Cloud Architect should generate a user-facing response."""
-    errors = state.get("errors", [])
-    workflow_phase = state.get("workflow_phase", "planning")
-
-    # 1. ERROR NOTIFICATION - if there are errors
-    if errors:
-        log_warning(AGENT_NAME, f"Routing to User because of: {errors}")
-        return True
-
-    # 2. APPROVAL REQUEST - if validation is complete and approval workflow reached
-    if workflow_phase == "approval":
-        log_info(AGENT_NAME, "Routing to User for approval request")
-        return True
-
-    # 3. DEPLOYMENT COMPLETE - if deployment is finished
-    if workflow_phase == "deployment" and state.get("deployment_status") == "completed":
-        log_info(AGENT_NAME, "Routing to User for completed deployment")
-        return True
-
-    # 4. WORKFLOW COMPLETE - if workflow has reached completion
-    if workflow_phase == "complete":
-        log_info(AGENT_NAME, "Routing to User for completed workflow")
-        return True
-
-    # 5. CLARIFICATION NEEDED - if LLM explicitly requests clarification
-    if "CLARIFICATION_REQUIRED" in response_content:
-        log_info(AGENT_NAME, "Routing to User for clarification request")
-        return True
-
-    # All other cases: internal coordination only
-    return False
+    else:
+        return "validation"
 
 
-def _validate_terraform_template(template_content: str) -> Dict[str, Any]:
+def validate_terraform_template(template_content: str) -> Dict[str, Any]:
     """Validate terraform template using terraform plan command.
 
     Args:
@@ -329,3 +247,51 @@ def _validate_terraform_template(template_content: str) -> Dict[str, Any]:
             "output": "",
             "details": {"phase": "exception", "exception": str(e)},
         }
+
+
+def determine_architect_target(response_content: str) -> str | None:
+    """Determine Cloud Architect target."""
+
+    # Target Cloud Engineer
+    if "INTERNAL_CLOUD_ENGINEER" in response_content:
+        return "cloud_engineer"
+
+    # Target Sec/FinOps
+    if "INTERNAL_SECOPS_FINOPS" in response_content:
+        return "secops_finops"
+
+    # Target DevOps
+    if "INTERNAL_DEVOPS" in response_content:
+        return "devops"
+
+    # Check for User Response
+    target = determine_user_response(response_content)
+
+    return target
+
+
+def determine_user_response(response_content: str) -> str | None:
+    """Determine if Cloud Architect should generate a user-facing response."""
+
+    # 1. CLARIFICATION NEEDED
+    if "CLARIFICATION_REQUIRED" in response_content:
+        log_info(AGENT_NAME, "Routing to User for clarification request")
+        return "user"
+
+    # 2. ERROR NOTIFICATION
+    if "ERROR_NOTIFICATION" in response_content:
+        log_warning(AGENT_NAME, "Routing to User because of error in workflow")
+        return "user"
+
+    # 3. APPROVAL REQUEST
+    if "APPROVAL_REQUEST" in response_content:
+        log_info(AGENT_NAME, "Routing to User for approval request")
+        return "human_approval"
+
+    # 4. DEPLOYMENT COMPLETE
+    if "DEPLOYMENT_COMPLETE" in response_content:
+        log_info(AGENT_NAME, "Routing to User for completed deployment")
+        return "user"
+
+    # Return None if no valid architect target was found
+    return None

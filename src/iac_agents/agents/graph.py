@@ -18,11 +18,7 @@ class InfrastructureAsPromptsAgent:
     """Main orchestrator for Infrastructure as Prompts using LangGraph multi-agent workflow."""
 
     def __init__(self):
-        """Initialize the Infrastructure as Prompts Agent.
-
-        Args:
-            azure_config: Optional Azure AI configuration. If not provided, reads from environment.
-        """
+        """Initialize the Infrastructure as Prompts Agent."""
 
         self.graph = self._create_workflow_graph()
 
@@ -79,27 +75,22 @@ class InfrastructureAsPromptsAgent:
 
     def _route_cloud_architect(self, state: InfrastructureStateDict) -> str:
         """Route from cloud architect agent."""
-        approval_received = state.get("approval_received", False)
-        workflow_phase = state.get("workflow_phase", "planning")
-        requires_approval = state.get("requires_approval", True)
 
-        # Check if Cloud Architect generated a user response - if so, END workflow and wait for user
-        if state.get("final_response"):
+        # Check if Cloud Architect wants to route to user
+        if state.get("architect_target") == "user":
             return END
 
-        # Check if approval was received - if so, proceed to deployment
-        if workflow_phase == "deployment" and approval_received:
-            return "devops"
+        # If internal coordination, route to agent determined by Cloud Architect or human approval
+        architect_target = state.get("architect_target")
+        if architect_target in [
+            "cloud_engineer",
+            "secops_finops",
+            "devops",
+            "human_approval",
+        ]:
+            return architect_target
 
-        if workflow_phase == "approval" and requires_approval:
-            return "human_approval"
-
-        if workflow_phase == "validation":
-            return "secops_finops"
-
-        if workflow_phase == "planning":
-            return "cloud_engineer"
-
+        # Return END if no proper routing is possible
         return END
 
     def _route_cloud_engineer(self, state: InfrastructureStateDict) -> str:

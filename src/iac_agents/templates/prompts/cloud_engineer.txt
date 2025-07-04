@@ -5,7 +5,6 @@ You are responsible for translating high-level infrastructure requirements into 
 
 ## CURRENT CONTEXT
 - Current Stage: {{ current_stage }}
-- Completed Stages: {{ completed_stages }}
 {% if validation_error %}- Previous Template Validation Failed: {{ validation_error }}{% endif %}
 
 ## AZURE SUBSCRIPTION CONTEXT
@@ -112,6 +111,7 @@ output "resource_group_id" {
 If you need Terraform Consultant help, clearly state "TERRAFORM_CONSULTATION_NEEDED" and explain what guidance you need.
 
 **CRITICAL: Always wrap Terraform code in proper code blocks using ```hcl or ```terraform. Never include explanatory text after the closing ``` of your terraform template.**
+Always generate the full Terraform code, even if only asked to make small adjustments.
 
 Provide your infrastructure analysis and any Terraform templates using the standard format below.
 

@@ -15,7 +15,6 @@ from ..terraform_utils import extract_terraform_template
 from ..utils import (
     add_error_to_state,
     make_llm_call,
-    mark_stage_completed,
 )
 
 AGENT_NAME = "cloud_engineer"
@@ -75,11 +74,6 @@ def cloud_engineer_agent(state: InfrastructureStateDict) -> InfrastructureStateD
             f"Consultation decision: explicit_request={'TERRAFORM_CONSULTATION_NEEDED' in response}, validation_failure={has_validation_failure}, final_decision={needs_terraform_consultation}",
         )
 
-        # Mark stage as completed
-        new_completed_stages = mark_stage_completed(
-            state, WorkflowStage.TEMPLATE_GENERATION.value
-        )
-
         # Log the response content for debugging
         log_agent_response(AGENT_NAME, response)
 
@@ -96,8 +90,8 @@ def cloud_engineer_agent(state: InfrastructureStateDict) -> InfrastructureStateD
             **state,
             "current_stage": WorkflowStage.TEMPLATE_GENERATION.value,
             "conversation_history": conversation_history,
-            "completed_stages": new_completed_stages,
             "final_template": template_content,
+            "secops_finops_analysis": "",
             "cloud_engineer_response": response,
             "needs_terraform_lookup": needs_terraform_lookup,
         }

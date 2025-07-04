@@ -28,8 +28,7 @@ class InfrastructureStateDict(TypedDict):
 
     # Workflow tracking
     current_stage: Optional[str]
-    completed_stages: List[str]
-    phase_iterations: Optional[Dict[str, int]]
+    architect_target: Optional[str]
 
     # Agent IDs for Cloud Agents
     terraform_consultant_id: Optional[str]
@@ -40,7 +39,6 @@ class InfrastructureStateDict(TypedDict):
 
     # Final output
     final_template: Optional[str]
-    final_response: Optional[str]
 
     # Error handling
     errors: List[str]

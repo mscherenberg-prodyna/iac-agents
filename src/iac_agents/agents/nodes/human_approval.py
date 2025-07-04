@@ -57,9 +57,14 @@ def human_approval(state: InfrastructureStateDict) -> InfrastructureStateDict:
         f"Approval {'granted' if approval_received else 'denied'}",
     )
 
+    conversation_history = state["conversation_history"]
+    conversation_history.append(
+        f"User: {approval_response}"
+    )  # Append response to conversation history
     return {
         **state,
         "current_agent": "human_approval",
+        "conversation_history": conversation_history,
         "approval_received": approval_received,
     }
 

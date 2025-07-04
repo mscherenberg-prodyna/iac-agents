@@ -110,14 +110,6 @@ def add_error_to_state(state: dict, error_message: str) -> list:
     return errors
 
 
-def mark_stage_completed(state: dict, stage: str) -> list:
-    """Mark a workflow stage as completed."""
-    completed_stages = state.get("completed_stages", [])
-    if stage not in completed_stages:
-        completed_stages.append(stage)
-    return completed_stages
-
-
 def get_azure_subscription_info() -> Dict[str, Any]:
     """Get Azure subscription information using Azure CLI."""
     try:
