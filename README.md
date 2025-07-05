@@ -36,6 +36,11 @@ Transform cloud infrastructure deployment from complex command-line operations t
    - Foundry Project Endpoint: **AZURE_PROJECT_ENDPOINT**
    - Bing Search Service Connection for Foundry Project: **BING_CONNECTION**
 
+3. **Log in to your Azure account**:
+   ```bash
+   az login
+   ```
+
 3. **Run Streamlit Web Interface**:
    ```bash
    poetry run python run_app.py

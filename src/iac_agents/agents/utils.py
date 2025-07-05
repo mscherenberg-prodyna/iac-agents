@@ -35,6 +35,28 @@ def make_llm_call(
     return response.content
 
 
+def get_agent_id_base(agent_name: str, prompt: str) -> str:
+    """Update or create AI Foundry Agent without any tools."""
+    credential = DefaultAzureCredential()
+    agents_client = AgentsClient(
+        endpoint=config.azure_ai.project_endpoint, credential=credential
+    )
+    agents_foundry = {agent.name: agent.id for agent in agents_client.list_agents()}
+
+    if agent_name in agents_foundry.keys():
+        agent_id = agents_foundry[agent_name]
+        agents_client.update_agent(agent_id=agent_id, instructions=prompt)
+        return agent_id
+
+    output = agents_client.create_agent(
+        name=agent_name,
+        model=config.agents.default_model,
+        instructions=prompt,
+        temperature=config.agents.default_temperature,
+    )
+    return output["id"]
+
+
 def get_agent_id_bing(agent_name: str, prompt: str) -> str:
     """Update or create AI Foundry Agent that uses Bing search."""
     credential = DefaultAzureCredential()

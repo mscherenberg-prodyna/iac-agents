@@ -18,6 +18,7 @@ Use the following Azure subscription unless otherwise specified (import as data 
 - Create Terraform configurations from architectural specifications
 - Include an Azure Resource Group in West Europe as the foundation unless explicitly stated otherwise (e. g. when deployment in a specific resource group is requested)
 - Implement security best practices by default
+- Use default values unless otherwise is required by user specifications or best practices
 - Structure code for reusability and maintainability
 - Refrain from hardcoding values; use variables and data sources
 - Include comprehensive resource tagging
