@@ -90,7 +90,7 @@ def cloud_architect_agent(state: InfrastructureStateDict) -> InfrastructureState
         else:
             # Load the cloud architect prompt with variable substitution
             system_prompt = template_manager.get_prompt(
-                "cloud_architect",
+                AGENT_NAME,
                 current_stage=state.get("current_stage", "initial"),
                 default_subscription_name=subscription_info[
                     "default_subscription_name"

@@ -52,6 +52,37 @@ def run_terraform_command(
         }
 
 
+def get_terraform_version() -> str | None:
+    """
+    Get the currently installed Terraform version as a string.
+
+    Returns:
+        str: The Terraform version (e.g., "1.6.4") or None if not found/installed
+
+    Raises:
+        Exception: If there's an error running the terraform command
+    """
+
+    # Use current directory as working directory
+    working_dir = Path.cwd()
+
+    result = run_terraform_command(
+        working_dir=working_dir,
+        command=["terraform", "version"],
+        timeout=30,
+        context="check",
+    )
+
+    if not result["success"]:
+        return None
+
+    version_match = re.search(r"Terraform v(\d+\.\d+\.\d+)", result["stdout"])
+
+    if version_match:
+        return version_match.group(1)
+    return None
+
+
 def is_valid_terraform_content(content: str, strict_validation: bool = False) -> bool:
     """Validate if content appears to be valid Terraform configuration.
 

@@ -19,47 +19,11 @@ def devops_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
     log_agent_start(AGENT_NAME, "Starting Azure infrastructure deployment")
 
     template_content = state.get("final_template", "")
-    approval_received = state.get("approval_received", False)
     conversation_history = state["conversation_history"]
 
     try:
-        if not approval_received:
-            log_warning(AGENT_NAME, "Deployment cancelled - no approval received")
-            devops_response = (
-                "❌ **Deployment Cancelled**\n\nNo approval received for deployment."
-            )
-            conversation_history.append(f"DevOps Engineer: {devops_response}")
-            return {
-                **state,
-                "current_agent": "devops",
-                "conversation_history": conversation_history,
-                "devops_response": devops_response,
-                "deployment_status": "cancelled_no_approval",
-                "workflow_phase": "complete",
-            }
-
-        if not template_content or not template_content.strip():
-            log_warning(
-                AGENT_NAME, "No infrastructure template available for deployment"
-            )
-            devops_response = (
-                "❌ **Deployment Failed**\n\nNo infrastructure template was provided for deployment. "
-                "Please ensure the Cloud Engineer has generated a valid Terraform template."
-            )
-            conversation_history.append(f"DevOps Engineer: {devops_response}")
-            return {
-                **state,
-                "current_agent": "devops",
-                "conversation_history": conversation_history,
-                "devops_response": devops_response,
-                "deployment_status": "failed",
-                "workflow_phase": "complete",
-                "errors": state.get("errors", [])
-                + ["No infrastructure template provided"],
-            }
-
         # Verify Azure CLI authentication
-        if not _verify_azure_auth():
+        if not verify_azure_auth():
             devops_response = (
                 "❌ **Deployment Failed**\n\nAzure CLI authentication is required. "
                 "Please run `az login` to authenticate with Azure before attempting deployment."
@@ -77,7 +41,7 @@ def devops_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
             }
 
         # Create deployment workspace with variable management
-        deployment_result = _deploy_infrastructure(template_content)
+        deployment_result = deploy_infrastructure(template_content)
 
         if deployment_result["success"]:
             log_agent_complete(
@@ -130,7 +94,7 @@ def devops_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
         }
 
 
-def _verify_azure_auth() -> bool:
+def verify_azure_auth() -> bool:
     """Verify Azure CLI authentication using active session."""
     try:
         # Check if Azure CLI is installed and authenticated
@@ -159,7 +123,7 @@ def _verify_azure_auth() -> bool:
         return False
 
 
-def _deploy_infrastructure(template_content: str) -> dict:
+def deploy_infrastructure(template_content: str) -> dict:
     """Deploy infrastructure using Terraform with Azure CLI authentication."""
     try:
         # Create deployment workspace

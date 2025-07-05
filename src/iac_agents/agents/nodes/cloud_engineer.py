@@ -11,7 +11,7 @@ from ...logging_system import (
 )
 from ...templates.template_manager import template_manager
 from ..state import InfrastructureStateDict, WorkflowStage
-from ..terraform_utils import extract_terraform_template
+from ..terraform_utils import extract_terraform_template, get_terraform_version
 from ..utils import add_error_to_state, get_agent_id_base, query_azure_agent
 
 AGENT_NAME = "cloud_engineer"
@@ -31,11 +31,13 @@ def cloud_engineer_agent(state: InfrastructureStateDict) -> InfrastructureStateD
     )
     subscription_info = state["subscription_info"]
     current_date = str(date.today())
+    terraform_version = get_terraform_version()
     system_prompt = template_manager.get_prompt(
         "cloud_engineer",
         current_stage=state.get("current_stage", "template_generation"),
         validation_error=validation_error,
         current_date=current_date,
+        terraform_version=terraform_version,
         default_subscription_name=subscription_info.get("default_subscription_name"),
         default_subscription_id=subscription_info.get("default_subscription_id"),
     )

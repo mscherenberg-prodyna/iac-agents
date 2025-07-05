@@ -5,6 +5,7 @@ You are responsible for translating high-level infrastructure requirements into 
 
 ## CURRENT CONTEXT
 - Current Stage: {{ current_stage }}
+- Terraform version installed: {{ terraform_version }}
 {% if validation_error %}- Previous Template Validation Failed: {{ validation_error }}{% endif %}
 
 ## AZURE SUBSCRIPTION CONTEXT
@@ -107,7 +108,7 @@ output "resource_group_id" {
 - Security or compliance configurations
 - Performance optimization patterns
 - Any uncertainty about best practices
-{% if validation_error %}- **CRITICAL: Previous template validation failed - you MUST consult the Terraform Consultant for correct resource syntax and arguments**{% endif %}
+{% if validation_error %}- **CRITICAL: Previous template validation failed - you MUST consult the Terraform Consultant for correct resource syntax and arguments, take the full error message into account**{% endif %}
 
 If you need Terraform Consultant help, clearly state "TERRAFORM_CONSULTATION_NEEDED" and explain what guidance you need.
 

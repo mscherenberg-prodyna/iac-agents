@@ -28,7 +28,7 @@ def secops_finops_agent(state: InfrastructureStateDict) -> InfrastructureStateDi
         ", ".join(compliance_settings.get("selected_frameworks", [])) or "None selected"
     )
     system_prompt = template_manager.get_prompt(
-        "sec_fin_ops_engineer",
+        AGENT_NAME,
         template_content=template_content,
         compliance_enforcement=compliance_enforcement,
         compliance_frameworks=compliance_frameworks,
