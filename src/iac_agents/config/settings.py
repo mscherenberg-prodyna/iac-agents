@@ -11,11 +11,6 @@ from dotenv import load_dotenv
 class ComplianceSettings:
     """Compliance validation settings."""
 
-    minimum_score_enforced: float = 70.0
-    minimum_score_relaxed: float = 40.0
-    max_violations_enforced: int = 3
-    max_violations_relaxed: int = 8
-
     available_frameworks: Dict[str, str] = None
 
     def __post_init__(self):
@@ -36,8 +31,8 @@ class AzureOpenAISettings:
 
     endpoint: str = None
     api_key: str = None
-    deployment: str = None
-    api_version: str = "2024-02-15-preview"
+    deployment: dict = None
+    api_version: str = None
 
     def __post_init__(self):
         if self.endpoint is None:
@@ -45,9 +40,16 @@ class AzureOpenAISettings:
         if self.api_key is None:
             self.api_key = os.getenv("AZURE_OPENAI_API_KEY")
         if self.deployment is None:
-            self.deployment = os.getenv("AZURE_OPENAI_DEPLOYMENT")
-        if api_version_env := os.getenv("AZURE_OPENAI_API_VERSION"):
-            self.api_version = api_version_env
+            self.deployment = {
+                "default": os.getenv("AZURE_OPENAI_DEPLOYMENT"),
+                "cloud_engineer": (  # option to give the cloud engineer agent a codex deployment for more technical tasks
+                    os.getenv("CODEX_DEPLOYMENT")
+                    if os.getenv("CODEX_DEPLOYMENT")
+                    else os.getenv("AZURE_OPENAI_DEPLOYMENT")
+                ),
+            }
+        if self.api_version is None:
+            self.api_version = os.getenv("AZURE_OPENAI_API_VERSION")
 
 
 @dataclass
@@ -70,7 +72,6 @@ class AgentSettings:
 
     default_temperature: float = 0
     default_model: str = "gpt-4.1"
-    max_response_tokens: int = 9999
     request_timeout: int = 120  # seconds
 
 

@@ -13,23 +13,27 @@ from ..config.settings import config
 from ..logging_system import log_warning
 
 
-def create_llm_client(temperature: Optional[float] = None) -> AzureChatOpenAI:
+def create_llm_client(agent_name: str, temperature: float) -> AzureChatOpenAI:
     """Create an Azure OpenAI client with standard configuration."""
     return AzureChatOpenAI(
         azure_endpoint=config.azure_openai.endpoint,
-        azure_deployment=config.azure_openai.deployment,
+        azure_deployment=config.azure_openai.deployment[agent_name],
         api_version=config.azure_openai.api_version,
         api_key=config.azure_openai.api_key,
-        temperature=temperature or config.agents.default_temperature,
-        max_tokens=config.agents.max_response_tokens,
+        temperature=temperature,
     )
 
 
 def make_llm_call(
-    system_prompt: str, user_message: str, temperature: Optional[float] = None
+    system_prompt: str,
+    user_message: str,
+    agent_name: Optional[str] = "default",
+    temperature: Optional[float] = None,
 ) -> str:
     """Make a standard LLM call with system and user messages."""
-    llm = create_llm_client(temperature)
+    llm = create_llm_client(
+        agent_name, temperature if temperature else config.agents.default_temperature
+    )
     messages = [("system", system_prompt), ("human", user_message)]
     response = llm.invoke(messages)
     return response.content
