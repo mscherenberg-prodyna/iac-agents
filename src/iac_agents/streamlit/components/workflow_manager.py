@@ -48,7 +48,7 @@ class WorkflowManager:
             content = msg["content"]
             history.append(f"{role.capitalize()}: {content}")
 
-        return history
+        return history[1:]  # Exclude the initial welcome message
 
     def execute_workflow(self, user_input: str):
         """Execute the workflow after user message is displayed."""
@@ -97,21 +97,22 @@ class WorkflowManager:
                     "recursion_limit": 100,
                 }
 
-                result = self.agent.invoke(
-                    {
-                        "user_input": conversation_context,
-                        "conversation_history": self.get_conversation_history(),
-                        "compliance_settings": compliance_settings,
-                        "deployment_config": deployment_config,
-                        "requires_approval": approval_required,
-                        "current_agent": "cloud_architect",
-                        "workflow_phase": "planning",
-                        "errors": [],
-                        "needs_terraform_lookup": False,
-                        "approval_received": False,
-                    },
-                    config=config,
-                )
+                with st.spinner("IaP Agent is processing your requirements ..."):
+                    result = self.agent.invoke(
+                        {
+                            "user_input": conversation_context,
+                            "conversation_history": self.get_conversation_history(),
+                            "compliance_settings": compliance_settings,
+                            "deployment_config": deployment_config,
+                            "requires_approval": approval_required,
+                            "current_agent": "cloud_architect",
+                            "workflow_phase": "planning",
+                            "errors": [],
+                            "needs_terraform_lookup": False,
+                            "approval_received": False,
+                        },
+                        config=config,
+                    )
 
             # Check if workflow was interrupted for human approval
             if "__interrupt__" in result:

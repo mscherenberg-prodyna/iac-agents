@@ -35,7 +35,18 @@ def render_compliance_settings():
         selected_frameworks = []
 
         for framework, description in frameworks.items():
-            if st.checkbox(framework, help=description, key=f"compliance_{framework}"):
+            # Check if this framework should be pre-selected
+            default_selected = framework in st.session_state.compliance_settings.get(
+                "selected_frameworks", []
+            )
+            checkbox_key = f"compliance_{framework}"
+
+            # Use the session state value if it exists, otherwise use the default
+            checkbox_value = st.session_state.get(checkbox_key, default_selected)
+
+            if st.checkbox(
+                framework, help=description, key=checkbox_key, value=checkbox_value
+            ):
                 selected_frameworks.append(framework)
 
         st.session_state.compliance_settings["selected_frameworks"] = (

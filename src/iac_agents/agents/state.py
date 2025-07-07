@@ -31,9 +31,7 @@ class InfrastructureStateDict(TypedDict):
     architect_target: Optional[str]
 
     # Agent IDs for Cloud Agents
-    cloud_engineer_id: Optional[str]
     terraform_consultant_id: Optional[str]
-    secops_finops_id: Optional[str]
 
     # Stage results (as dicts for LangGraph compatibility)
     template_validation_result: Optional[Dict[str, Any]]

@@ -48,6 +48,12 @@ def trigger_auto_scroll():
 
 def display_chat_input() -> str:
     """Display chat input field and return user input."""
+    # Import here to avoid circular imports
+    from .showcase_scenarios import render_auto_answer_button
+
+    # Show auto-answer button if appropriate
+    render_auto_answer_button()
+
     # Chat input with proper spacing
     st.markdown(
         '<div style="margin-top: 1rem; margin-left: 1rem;">', unsafe_allow_html=True

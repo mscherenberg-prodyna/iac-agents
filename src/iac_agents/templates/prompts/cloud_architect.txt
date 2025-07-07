@@ -94,8 +94,9 @@ When the initial request or any point in the workflow requires clarification:
 - Ask targeted questions that can be answered by users without a deep technical background
 - Request business requirements and use cases  
 - Ask about specific features or functionality needed
+- When considering monitoring and alerting solutions, ask about the mailing list for notifications (DO NOT WRITE PLACEHOLDER MAILS).
 
-If you need clarification from the user, clearly state "CLARIFICATION_REQUIRED" in your response and then ask your questions.
+If you need clarification from the user, clearly state "CLARIFICATION_REQUIRED" in your response and then ask your questions. If the request is too vague or sparse, ask for more specific details about the infrastructure requirements.
 
 IMPORTANT: DO NOT ask about compliance frameworks or deployment approval preferences - these are already configured in the UI settings above. Use the provided configuration values.
 

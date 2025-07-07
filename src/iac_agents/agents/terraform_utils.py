@@ -52,6 +52,34 @@ def run_terraform_command(
         }
 
 
+def parse_terraform_providers(init_result: dict) -> dict[str, str]:
+    """Parse Terraform init output to extract installed providers and their versions.
+
+    Args:
+        init_result: Dictionary returned by run_terraform_command for 'terraform init'
+
+    Returns:
+        Dict mapping provider names to their versions (e.g., {'aws': '5.31.0', 'random': '3.6.0'})
+        Returns empty dict if parsing fails or no providers found
+    """
+    if not init_result.get("success", False):
+        return {}
+
+    stdout = init_result.get("stdout", "")
+    providers = {}
+
+    provider_pattern = r"(?:Installing|Using previously-installed|Downloading)\s+(?:registry\.terraform\.io/)?([^/\s]+/)?([^/\s]+)\s+v?(\d+\.\d+\.\d+(?:-[a-zA-Z0-9-]+)?)"
+
+    for line in stdout.split("\n"):
+        match = re.search(provider_pattern, line, re.IGNORECASE)
+        if match:
+            provider_name = match.group(2)
+            version = match.group(3)
+            providers[provider_name] = version
+
+    return providers
+
+
 def get_terraform_version() -> str | None:
     """
     Get the currently installed Terraform version as a string.

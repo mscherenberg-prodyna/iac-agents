@@ -157,7 +157,7 @@ def deploy_infrastructure(template_content: str) -> dict:
         )
         log_info(
             AGENT_NAME,
-            f"Terraform init output:\nSTDOUT:\n{init_result['stdout']}\nSTDERR:\n{init_result['stderr']}",
+            "Terraform init successful!",
         )
         if not init_result["success"]:
             deployment_result["error"] = (
@@ -188,7 +188,7 @@ def deploy_infrastructure(template_content: str) -> dict:
         apply_result = run_terraform_command(
             deployment_dir,
             ["terraform", "apply", "-no-color", "-auto-approve", "tfplan"],
-            timeout=300,
+            timeout=600,
             context="Deployment",
         )
         log_info(

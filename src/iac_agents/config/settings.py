@@ -3,6 +3,7 @@
 import os
 from dataclasses import dataclass
 from typing import Dict
+
 from dotenv import load_dotenv
 
 
@@ -109,7 +110,7 @@ class Config:
     def __init__(self):
         # Load environment variables from .env file
         load_dotenv()
-        
+
         self.compliance = ComplianceSettings()
         self.azure_openai = AzureOpenAISettings()
         self.azure_ai = AzureAISettings()

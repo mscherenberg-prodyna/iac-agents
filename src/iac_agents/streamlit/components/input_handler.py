@@ -5,6 +5,7 @@ import streamlit as st
 from iac_agents.logging_system import agent_logger
 
 from .chat import add_message
+from .showcase_scenarios import handle_showcase_clarifying_questions
 
 
 class InputHandler:
@@ -18,6 +19,14 @@ class InputHandler:
 
         # Add user message to chat immediately
         add_message("user", user_input)
+
+        # Trigger workflow start indicators
+        st.session_state.workflow_active = True
+        st.session_state.current_agent_status = "Cloud Architect"
+
+        # Check if this is a showcase scenario clarifying question
+        if handle_showcase_clarifying_questions(user_input):
+            return
 
         # Check if we have an interrupted workflow waiting for approval
         workflow_interrupted = st.session_state.get("workflow_interrupted", False)

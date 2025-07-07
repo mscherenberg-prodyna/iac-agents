@@ -17,6 +17,11 @@ from .compliance_panel import (
 from .header import display_header, setup_page_config
 from .input_handler import InputHandler
 from .session_manager import SessionManager
+from .showcase_scenarios import (
+    handle_showcase_clarifying_questions,
+    render_auto_answer_button,
+    render_showcase_scenarios,
+)
 from .terraform_viewer import render_terraform_template_viewer
 from .workflow_manager import WorkflowManager
 
@@ -42,4 +47,8 @@ __all__ = [
     "WorkflowManager",
     "SessionManager",
     "InputHandler",
+    # Showcase scenarios
+    "render_showcase_scenarios",
+    "handle_showcase_clarifying_questions",
+    "render_auto_answer_button",
 ]

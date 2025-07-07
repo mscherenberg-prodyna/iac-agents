@@ -12,6 +12,7 @@ from .components import (
     display_header,
     render_compliance_settings,
     render_deployment_config,
+    render_showcase_scenarios,
     render_terraform_template_viewer,
     setup_page_config,
 )
@@ -44,6 +45,10 @@ class StreamlitInterface:
                 self.session_manager.reset_session()
                 st.rerun()
 
+            st.markdown("---")
+
+            # Showcase scenarios section
+            render_showcase_scenarios()
             st.markdown("---")
 
             # Configuration sections

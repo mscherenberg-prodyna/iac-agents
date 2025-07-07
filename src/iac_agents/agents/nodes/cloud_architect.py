@@ -13,9 +13,7 @@ from ...logging_system import (
 )
 from ...templates.template_manager import template_manager
 from ..state import InfrastructureStateDict
-from ..terraform_utils import (
-    run_terraform_command,
-)
+from ..terraform_utils import parse_terraform_providers, run_terraform_command
 from ..utils import get_azure_subscription_info, make_llm_call
 
 AGENT_NAME = "cloud_architect"
@@ -188,11 +186,12 @@ def validate_terraform_template(template_content: str) -> Dict[str, Any]:
 
             log_info(AGENT_NAME, "Terraform configuration written for validation")
 
-            # Run terraform init
-            log_info(AGENT_NAME, "Running terraform init for validation...")
+            # Terraform init
+            log_info(AGENT_NAME, "Running terraform init...")
             init_result = run_terraform_command(
                 validation_dir, ["terraform", "init"], timeout=120, context="Validation"
             )
+            providers = parse_terraform_providers(init_result)
 
             if not init_result["success"]:
                 return {
@@ -231,7 +230,7 @@ def validate_terraform_template(template_content: str) -> Dict[str, Any]:
             )
             return {
                 "valid": False,
-                "error": f"Terraform plan validation failed: {plan_result['stderr']}",
+                "error": f"Terraform plan validation failed: {plan_result['stderr']}\n\nProviders used: {providers}",
                 "output": plan_result["stdout"],
                 "details": {
                     "phase": "plan",

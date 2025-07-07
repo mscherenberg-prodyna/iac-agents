@@ -65,26 +65,108 @@
     ],
     "estimated_cost": "$8,000-15,000/month"
   },
-  "ecommerce_scale": {
-    "title": "E-commerce Black Friday Preparation",
-    "business_context": "E-commerce company preparing for 10x traffic surge during Black Friday",
-    "user_request": "\nBlack Friday Infrastructure Scaling:\n\nCurrent Baseline:\n- 10,000 concurrent users normal load\n- $2M monthly revenue\n- Existing Azure App Service setup\n\nBlack Friday Projections:\n- 100,000+ concurrent users expected\n- 50x increase in transaction volume\n- Payment processing must never fail\n- Image/video content delivery globally\n\nRequirements:\n- Auto-scaling from 10 to 1000+ instances\n- Global load distribution\n- Database read replicas\n- CDN for static content\n- Real-time inventory management\n- Fraud detection integration\n\nBusiness Critical:\n- Zero downtime during peak hours\n- Sub-second page load times globally\n- PCI DSS compliance for payments\n- Real-time analytics dashboard\n\nDuration: Scale up 1 week before, scale down 1 week after\n        ",
+  "monthly_reports": {
+    "title": "Monthly Reports Storage",
+    "business_context": "Company needs secure storage for monthly reports with automatic notifications",
+    "user_request": "\nWe need a secure place to store our monthly business reports. When someone uploads a new report, we want to automatically send an email notification.\n",
     "expected_resources": [
-      "Azure App Service (Premium/Isolated tiers)",
-      "Azure Database for MySQL (Hyperscale)",
-      "Azure Redis Cache (Premium)",
-      "Azure CDN Premium",
-      "Azure Traffic Manager",
-      "Azure Application Gateway",
-      "Azure Functions for serverless scaling",
-      "Azure Event Grid",
-      "Azure Cosmos DB",
-      "Azure Monitor with custom metrics"
+      "Azure Storage Account",
+      "Azure Logic App"
     ],
     "compliance_requirements": [
-      "PCI DSS",
       "GDPR"
     ],
-    "estimated_cost": "$15,000-25,000/month during peak"
+    "estimated_cost": "$50-100/month",
+    "clarifying_questions": [
+      "What email address should receive the notifications when reports are uploaded?",
+      "What types of reports will you be storing (e.g., PDF, Excel, Word)?",
+      "How many reports do you expect to upload per month?"
+    ],
+    "suggested_answers": [
+      "We have about 5-6 people who upload reports, usually once per month so around 5-6 uploads total per month.",
+      "",
+      "The reports are mainly PDF files and Excel spreadsheets, typically around 2-5 MB each.",
+      "",
+      "Please send email notifications to marcel.scherenberg@prodyna.com whenever a new report is uploaded.",
+      "",
+      "Only our internal team should be able to upload and view the reports - no external access needed. Basic security is fine, nothing too complex.",
+      "",
+      "This is just for internal use within our organization. However, everything be publically accessible so that we can access it without VPN.",
+      "",
+      "No other requirements at this point in time! Make sure to use the existing resource group 'rg-iap-demo' for deployment."
+    ]
+  },
+  "document_backup": {
+    "title": "Document Backup and Archive Solution",
+    "business_context": "Company needs reliable backup storage for important business documents",
+    "user_request": "\nWe need a reliable backup solution for our important business documents. We want secure storage with monitoring to track when files are uploaded.\n",
+    "expected_resources": [
+      "Azure Storage Account",
+      "Azure Application Insights"
+    ],
+    "compliance_requirements": [
+      "GDPR"
+    ],
+    "estimated_cost": "$30-80/month",
+    "clarifying_questions": [
+      "Approximately how much data (in GB or TB) do you expect to store initially, and what is your anticipated growth rate?",
+      "How frequently will backups occur (e.g., daily, weekly, real-time)?",
+      "Who should have access to the stored documents, and are there any specific access control requirements?",
+      "What is your preferred retention period for the backups?",
+      "Do you require the ability to restore individual files, or full backups only?",
+      "Are there any specific monitoring or alerting features you need?"
+    ],
+    "suggested_answers": [
+      "We expect to store around 50-100 GB initially, with maybe 20-30 GB growth per year as we add more monthly reports.",
+      "",
+      "We'd like to back up files weekly, nothing too frequent since these are mainly monthly business reports.",
+      "",
+      "Basic access controls are fine, nothing too complex.",
+      "",
+      "We need to keep backups for at least 7 years for compliance reasons.",
+      "",
+      "We mainly need to restore individual files when someone accidentally deletes or corrupts a report.",
+      "",
+      "Basic monitoring would be helpful - just knowing when things fail and why.",
+      "",
+      "Please use the existing resource group 'rg-iap-demo' for deployment.",
+      "",
+      "No other requirements at this point in time!"
+    ]
+  },
+  "file_sharing_portal": {
+    "title": "Simple File Sharing Portal",
+    "business_context": "Small team needs a web portal to share and access business documents",
+    "user_request": "\nWe need a web portal where our team can upload and download business documents. Just a straightforward way to share files with each other using secure cloud storage.\n",
+    "expected_resources": [
+      "Azure App Service",
+      "Azure Storage Account"
+    ],
+    "compliance_requirements": [
+      "GDPR"
+    ],
+    "estimated_cost": "$80-150/month",
+    "clarifying_questions": [
+      "Approximately how many users will access the portal?",
+      "What types and sizes of documents will be uploaded?",
+      "Should access be restricted to your team only or do you need public access?",
+      "Do you require versioning or audit logs for uploaded/downloaded files?",
+      "Would you like notifications when new documents are uploaded or downloaded?"
+    ],
+    "suggested_answers": [
+      "About 8-12 team members will access the portal regularly, so a small team.",
+      "",
+      "Mainly PDFs, Word documents, Excel spreadsheets, and PowerPoint presentations. Most files are under 10MB, but occasionally we might have larger presentations up to 50MB.",
+      "",
+      "Access should be restricted to our network only, but we want to keep the login process simple - nothing too complicated like having to use your Microsoft account.",
+      "",
+      "We don't need versioning or detailed audit logs - just basic functionality to upload and download files.",
+      "",
+      "No notifications needed - we just want a simple file sharing solution without extra complexity.",
+      "",
+      "Please use the existing resource group 'rg-iap-demo' for deployment.",
+      "",
+      "No other requirements at this point in time!"
+    ]
   }
 }

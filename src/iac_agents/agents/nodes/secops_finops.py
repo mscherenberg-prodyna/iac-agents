@@ -1,7 +1,6 @@
 """SecOps/FinOps Engineer Agent node for LangGraph workflow."""
 
 from ...logging_system import (
-    log_agent_complete,
     log_agent_response,
     log_agent_start,
     log_warning,
@@ -36,12 +35,8 @@ def secops_finops_agent(state: InfrastructureStateDict) -> InfrastructureStateDi
     )
     conversation_history = state["conversation_history"]
 
-    agent_id = state.get("secops_finops_id", None)
-
-    # Initialize Azure AI Foundry agent if it does not exist
     try:
-        if not agent_id:
-            agent_id = get_agent_id_bing(agent_name=AGENT_NAME, prompt=system_prompt)
+        agent_id = get_agent_id_bing(agent_name=AGENT_NAME, prompt=system_prompt)
 
     except Exception as e:
         log_warning(AGENT_NAME, f"AI Foundry error: {str(e)}")
@@ -58,7 +53,6 @@ def secops_finops_agent(state: InfrastructureStateDict) -> InfrastructureStateDi
 
         if azure_response:
             log_agent_response(AGENT_NAME, azure_response)
-            log_agent_complete(AGENT_NAME, "Terraform Consultant guidance provided")
 
             # Always clear both lookup flags to prevent infinite loops
             result_state = {
@@ -67,7 +61,6 @@ def secops_finops_agent(state: InfrastructureStateDict) -> InfrastructureStateDi
                 "conversation_history": conversation_history,
                 "current_stage": WorkflowStage.VALIDATION_AND_COMPLIANCE.value,
                 "secops_finops_analysis": azure_response,
-                "secops_finops_id": agent_id,
             }
 
             return result_state
@@ -79,7 +72,6 @@ def secops_finops_agent(state: InfrastructureStateDict) -> InfrastructureStateDi
             **state,
             "current_agent": "secops_finops",
             "errors": errors + ["SecOps/FinOps Azure AI integration unavailable"],
-            "secops_finops_id": agent_id,
         }
 
         return result_state

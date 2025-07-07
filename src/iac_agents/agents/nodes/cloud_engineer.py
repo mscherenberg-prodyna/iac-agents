@@ -11,7 +11,7 @@ from ...logging_system import (
 )
 from ...templates.template_manager import template_manager
 from ..state import InfrastructureStateDict, WorkflowStage
-from ..terraform_utils import extract_terraform_template, get_terraform_version
+from ..terraform_utils import extract_terraform_template
 from ..utils import add_error_to_state, get_agent_id_base, query_azure_agent
 
 AGENT_NAME = "cloud_engineer"
@@ -31,24 +31,18 @@ def cloud_engineer_agent(state: InfrastructureStateDict) -> InfrastructureStateD
     )
     subscription_info = state["subscription_info"]
     current_date = str(date.today())
-    terraform_version = get_terraform_version()
     system_prompt = template_manager.get_prompt(
         "cloud_engineer",
         current_stage=state.get("current_stage", "template_generation"),
         validation_error=validation_error,
         current_date=current_date,
-        terraform_version=terraform_version,
         default_subscription_name=subscription_info.get("default_subscription_name"),
         default_subscription_id=subscription_info.get("default_subscription_id"),
     )
     conversation_history = state["conversation_history"]
 
-    agent_id = state.get("cloud_engineer_id", None)
-
-    # Initialize Azure AI Foundry agent if it does not exist
     try:
-        if not agent_id:
-            agent_id = get_agent_id_base(agent_name=AGENT_NAME, prompt=system_prompt)
+        agent_id = get_agent_id_base(agent_name=AGENT_NAME, prompt=system_prompt)
 
     except Exception as e:
         log_warning(AGENT_NAME, f"AI Foundry error: {str(e)}")
@@ -101,7 +95,6 @@ def cloud_engineer_agent(state: InfrastructureStateDict) -> InfrastructureStateD
                 "secops_finops_analysis": "",
                 "cloud_engineer_response": azure_response,
                 "needs_terraform_lookup": needs_terraform_lookup,
-                "cloud_engineer_id": agent_id,
             }
 
             if needs_terraform_lookup and has_validation_failure:
@@ -116,7 +109,6 @@ def cloud_engineer_agent(state: InfrastructureStateDict) -> InfrastructureStateD
             **state,
             "current_agent": "cloud_engineer",
             "errors": errors + ["Cloud Engineer Azure AI integration unavailable"],
-            "cloud_engineer_id": agent_id,
         }
 
         return result_state
