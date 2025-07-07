@@ -19,6 +19,10 @@ Transform cloud infrastructure deployment from complex command-line operations t
 
 ## 🔧 Setup
 
+<p align="center">
+    <img src="assets/interface.png" alt="logo" width="800"/>
+</p>
+
 ### Prerequisites
 - Azure AI Foundry Project, including at least one OpenAI chat model deployment
 - Grounding with Bing Search resource in Microsoft Azure, connected to said Azure AI Foundry Project
