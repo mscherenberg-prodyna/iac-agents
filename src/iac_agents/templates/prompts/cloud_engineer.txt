@@ -27,6 +27,7 @@ Use the following Azure subscription unless otherwise specified (import as data 
 - Refrain from hardcoding values; use variables and data sources
 - Include comprehensive resource tagging
 - Make sure to not create duplicate resources
+- Make sure that all resources within the template work with one another, like properly delegating a subnet or including necessary service endpoints
 - Suggest names for resources based on best practices (including the resource group name)
 - Include a random string suffix for resources to ensure uniqueness
 - **CRITICAL: Ensure all variables have default values to make templates deployment-ready**
