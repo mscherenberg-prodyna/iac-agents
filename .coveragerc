@@ -1,5 +1,5 @@
 [run]
-source = src/iac_agents
+source = src.iac_agents
 omit = 
     */agents_legacy/*
     */streamlit/*

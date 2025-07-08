@@ -7,7 +7,11 @@ import streamlit as st
 
 from iac_agents.templates.template_loader import template_loader
 
-from iac_agents.streamlit.log_viewer.file_manager import filter_log_lines, format_file_size, get_file_activity_status
+from iac_agents.streamlit.log_viewer.file_manager import (
+    filter_log_lines,
+    format_file_size,
+    get_file_activity_status,
+)
 
 
 def render_file_info_header(selected_path: Path):

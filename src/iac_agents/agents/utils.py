@@ -131,6 +131,8 @@ def query_azure_agent(agent_name: str, agent_id: str, query: str) -> Optional[st
 def add_error_to_state(state: dict, error_message: str) -> list:
     """Add an error message to the state errors list."""
     errors = state.get("errors", [])
+    if errors is None:
+        errors = []
     if error_message not in errors:
         errors.append(error_message)
     return errors

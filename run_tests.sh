@@ -3,7 +3,7 @@
 # CI Pipeline Test Script for IAC Agents
 # Runs comprehensive tests with coverage reporting
 
-set -e  # Exit on any error
+set -e # Exit on any error
 
 echo "🚀 Starting CI Pipeline Tests for IAC Agents"
 echo "============================================="
@@ -29,7 +29,6 @@ echo "========================"
 python -m pytest \
     --cov=src.iac_agents \
     --cov-report=html:coverage/html \
-    --cov-report=term-missing \
     --cov-report=xml:coverage/coverage.xml \
     --cov-config=.coveragerc \
     --junit-xml=coverage/junit.xml \
@@ -48,14 +47,22 @@ else
     exit 1
 fi
 
-# Display coverage summary
-echo ""
-echo "📈 Coverage Report:"
-echo "=================="
-python -m coverage report --show-missing --skip-covered
-
 # Check minimum coverage threshold (70%)
-COVERAGE=$(python -m coverage report --format=total 2>/dev/null || echo "0")
+# Extract coverage from XML report since coverage data was consumed by pytest
+if [ -f "coverage/coverage.xml" ]; then
+    COVERAGE=$(python -c "
+import xml.etree.ElementTree as ET
+try:
+    tree = ET.parse('coverage/coverage.xml')
+    root = tree.getroot()
+    line_rate = float(root.get('line-rate', 0))
+    print(int(line_rate * 100))
+except:
+    print(0)
+" 2>/dev/null)
+else
+    COVERAGE=0
+fi
 MIN_COVERAGE=70
 
 echo ""

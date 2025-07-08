@@ -1,0 +1,14 @@
+{
+  "scenarios": [
+    {
+      "name": "Web Application",
+      "description": "Deploy a web application with load balancer",
+      "requirements": "Web server, load balancer, database"
+    },
+    {
+      "name": "Data Pipeline",
+      "description": "Create data processing pipeline",
+      "requirements": "Storage, compute, networking"
+    }
+  ]
+}

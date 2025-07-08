@@ -1,0 +1,14 @@
+[
+  {
+    "name": "Test Subscription",
+    "id": "sub-123456",
+    "isDefault": true,
+    "state": "Enabled"
+  },
+  {
+    "name": "Another Subscription",
+    "id": "sub-789012",
+    "isDefault": false,
+    "state": "Enabled"
+  }
+]
