@@ -76,10 +76,11 @@ class WorkflowManager:
                     f"Resuming with approval_response='{approval_response}', thread_id={config.get('configurable', {}).get('thread_id', 'None')}",
                 )
 
-                # Resume with the actual user response
-                result = self.agent.invoke(
-                    Command(resume=approval_response), config=config
-                )
+                with st.spinner("IaP Agent is deploying your infrastructure ..."):
+                    # Resume with the actual user response
+                    result = self.agent.invoke(
+                        Command(resume=approval_response), config=config
+                    )
 
                 # Clear resumption flags
                 st.session_state.resuming_approval = False

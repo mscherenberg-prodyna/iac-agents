@@ -158,7 +158,7 @@
       "",
       "Mainly PDFs, Word documents, Excel spreadsheets, and PowerPoint presentations. Most files are under 10MB, but occasionally we might have larger presentations up to 50MB.",
       "",
-      "Access should be restricted to our network only, but we want to keep the login process simple - nothing too complicated like having to use your Microsoft account.",
+      "For the time being, public access should be allowed, but we want to keep the login process simple with a password that is stored in a vault - nothing too complicated like having to use your Microsoft account.",
       "",
       "We don't need versioning or detailed audit logs - just basic functionality to upload and download files.",
       "",

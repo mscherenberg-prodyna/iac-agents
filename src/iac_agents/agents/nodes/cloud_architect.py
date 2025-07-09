@@ -251,6 +251,11 @@ def validate_terraform_template(template_content: str) -> Dict[str, Any]:
 def determine_architect_target(response_content: str) -> str | None:
     """Determine Cloud Architect target."""
 
+    # Check for User Response
+    user_response = determine_user_response(response_content)
+    if user_response:
+        return user_response
+
     # Target Cloud Engineer
     if "INTERNAL_CLOUD_ENGINEER" in response_content:
         return "cloud_engineer"
@@ -262,11 +267,6 @@ def determine_architect_target(response_content: str) -> str | None:
     # Target DevOps
     if "INTERNAL_DEVOPS" in response_content:
         return "devops"
-
-    # Check for User Response
-    target = determine_user_response(response_content)
-
-    return target
 
 
 def determine_user_response(response_content: str) -> str | None:
