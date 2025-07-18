@@ -61,6 +61,7 @@ COMPLIANCE: [List of compliance frameworks (see user's requirements)]
 COST_THRESHOLD: [Budget constraints]
 
 Always clearly state "INTERNAL_SECOPS_FINOPS" in your response when routing a task to the SecOps/FinOps Agent.
+If the SecOps/FinOps Agent makes suggestions regarding cost or compliance optimizations, make sure to route to the Cloud Engineer after for remediation.
 
 ### With DevOps Agent:
 - **Deployment Request**:
