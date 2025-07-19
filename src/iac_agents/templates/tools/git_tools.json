@@ -1,0 +1,879 @@
+[
+  {
+    "name": "git_status",
+    "description": "Show the working tree status",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "porcelain": {
+          "type": "boolean",
+          "description": "Give the output in a stable, easy-to-parse format",
+          "default": true
+        },
+        "short": {
+          "type": "boolean",
+          "description": "Give the output in the short-format",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "git_add",
+    "description": "Add file contents to the index",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "files": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Files to add to the index"
+        },
+        "all": {
+          "type": "boolean",
+          "description": "Add all modified and deleted files",
+          "default": false
+        },
+        "interactive": {
+          "type": "boolean",
+          "description": "Interactive mode",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "git_commit",
+    "description": "Record changes to the repository",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string",
+          "description": "Commit message"
+        },
+        "amend": {
+          "type": "boolean",
+          "description": "Amend the previous commit",
+          "default": false
+        },
+        "all": {
+          "type": "boolean",
+          "description": "Commit all changed files",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "git_push",
+    "description": "Update remote refs along with associated objects",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "remote": {
+          "type": "string",
+          "description": "Remote name",
+          "default": "origin"
+        },
+        "branch": {
+          "type": "string",
+          "description": "Branch name"
+        },
+        "force": {
+          "type": "boolean",
+          "description": "Force push",
+          "default": false
+        },
+        "set_upstream": {
+          "type": "boolean",
+          "description": "Set upstream tracking",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "git_pull",
+    "description": "Fetch from and integrate with another repository or a local branch",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "remote": {
+          "type": "string",
+          "description": "Remote name",
+          "default": "origin"
+        },
+        "branch": {
+          "type": "string",
+          "description": "Branch name"
+        },
+        "rebase": {
+          "type": "boolean",
+          "description": "Rebase instead of merge",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "git_branch",
+    "description": "List, create, or delete branches",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "list_all": {
+          "type": "boolean",
+          "description": "List all branches including remote ones",
+          "default": false
+        },
+        "create": {
+          "type": "string",
+          "description": "Create a new branch with this name"
+        },
+        "delete": {
+          "type": "string",
+          "description": "Delete branch with this name"
+        },
+        "force_delete": {
+          "type": "boolean",
+          "description": "Force delete branch",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "git_checkout",
+    "description": "Switch branches or restore working tree files",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "branch": {
+          "type": "string",
+          "description": "Branch name to checkout"
+        },
+        "create_branch": {
+          "type": "boolean",
+          "description": "Create new branch",
+          "default": false
+        },
+        "files": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Specific files to checkout"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "git_log",
+    "description": "Show commit logs",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "max_count": {
+          "type": "integer",
+          "description": "Maximum number of commits to show",
+          "default": 10
+        },
+        "oneline": {
+          "type": "boolean",
+          "description": "Show one line per commit",
+          "default": true
+        },
+        "graph": {
+          "type": "boolean",
+          "description": "Show ASCII graph",
+          "default": false
+        },
+        "since": {
+          "type": "string",
+          "description": "Show commits since date"
+        },
+        "until": {
+          "type": "string",
+          "description": "Show commits until date"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "git_diff",
+    "description": "Show changes between commits, commit and working tree, etc",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "files": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Specific files to diff"
+        },
+        "cached": {
+          "type": "boolean",
+          "description": "Show staged changes",
+          "default": false
+        },
+        "name_only": {
+          "type": "boolean",
+          "description": "Show only names of changed files",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "git_merge",
+    "description": "Join two or more development histories together",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "branch": {
+          "type": "string",
+          "description": "Branch to merge"
+        },
+        "no_ff": {
+          "type": "boolean",
+          "description": "Create merge commit even if fast-forward",
+          "default": false
+        },
+        "squash": {
+          "type": "boolean",
+          "description": "Squash merge",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "git_rebase",
+    "description": "Reapply commits on top of another base tip",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "branch": {
+          "type": "string",
+          "description": "Branch to rebase onto"
+        },
+        "interactive": {
+          "type": "boolean",
+          "description": "Interactive rebase",
+          "default": false
+        },
+        "continue": {
+          "type": "boolean",
+          "description": "Continue rebase after resolving conflicts",
+          "default": false
+        },
+        "abort": {
+          "type": "boolean",
+          "description": "Abort rebase",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "git_reset",
+    "description": "Reset current HEAD to the specified state",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "commit": {
+          "type": "string",
+          "description": "Commit to reset to"
+        },
+        "hard": {
+          "type": "boolean",
+          "description": "Hard reset (discard all changes)",
+          "default": false
+        },
+        "soft": {
+          "type": "boolean",
+          "description": "Soft reset (keep changes staged)",
+          "default": false
+        },
+        "mixed": {
+          "type": "boolean",
+          "description": "Mixed reset (keep changes unstaged)",
+          "default": true
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "git_fetch",
+    "description": "Download objects and refs from another repository",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "remote": {
+          "type": "string",
+          "description": "Remote name",
+          "default": "origin"
+        },
+        "all": {
+          "type": "boolean",
+          "description": "Fetch from all remotes",
+          "default": false
+        },
+        "prune": {
+          "type": "boolean",
+          "description": "Prune remote tracking branches",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "git_remote",
+    "description": "Manage set of tracked repositories",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": ["list", "add", "remove", "rename", "get-url", "set-url"],
+          "description": "Action to perform",
+          "default": "list"
+        },
+        "name": {
+          "type": "string",
+          "description": "Remote name"
+        },
+        "url": {
+          "type": "string",
+          "description": "Remote URL"
+        },
+        "verbose": {
+          "type": "boolean",
+          "description": "Show URLs for remotes",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "git_remote_get_url",
+    "description": "Get the URL of a git remote",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "remote": {
+          "type": "string",
+          "description": "Name of the remote",
+          "default": "origin"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "git_stash",
+    "description": "Stash the changes in a dirty working directory away",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": ["push", "pop", "list", "show", "drop", "clear"],
+          "description": "Stash action to perform",
+          "default": "push"
+        },
+        "message": {
+          "type": "string",
+          "description": "Stash message"
+        },
+        "include_untracked": {
+          "type": "boolean",
+          "description": "Include untracked files",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "git_tag",
+    "description": "Create, list, delete or verify a tag object signed with GPG",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": ["list", "create", "delete"],
+          "description": "Tag action to perform",
+          "default": "list"
+        },
+        "name": {
+          "type": "string",
+          "description": "Tag name"
+        },
+        "message": {
+          "type": "string",
+          "description": "Tag message"
+        },
+        "commit": {
+          "type": "string",
+          "description": "Commit to tag"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "git_show",
+    "description": "Show various types of objects",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "object": {
+          "type": "string",
+          "description": "Object to show (commit, tag, etc.)"
+        },
+        "name_only": {
+          "type": "boolean",
+          "description": "Show only names of changed files",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "git_clone",
+    "description": "Clone a repository into a new directory",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string",
+          "description": "Repository URL to clone"
+        },
+        "directory": {
+          "type": "string",
+          "description": "Directory name for cloned repository"
+        },
+        "branch": {
+          "type": "string",
+          "description": "Branch to clone"
+        },
+        "depth": {
+          "type": "integer",
+          "description": "Shallow clone depth"
+        }
+      },
+      "required": ["url"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "git_init",
+    "description": "Create an empty Git repository or reinitialize an existing one",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "directory": {
+          "type": "string",
+          "description": "Directory to initialize"
+        },
+        "bare": {
+          "type": "boolean",
+          "description": "Create bare repository",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "git_rm",
+    "description": "Remove files from the working tree and from the index",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "files": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Files to remove"
+        },
+        "cached": {
+          "type": "boolean",
+          "description": "Remove from index only",
+          "default": false
+        },
+        "force": {
+          "type": "boolean",
+          "description": "Force removal",
+          "default": false
+        }
+      },
+      "required": ["files"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "git_mv",
+    "description": "Move or rename a file, a directory, or a symlink",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "type": "string",
+          "description": "Source file/directory"
+        },
+        "destination": {
+          "type": "string",
+          "description": "Destination file/directory"
+        },
+        "force": {
+          "type": "boolean",
+          "description": "Force move/rename",
+          "default": false
+        }
+      },
+      "required": ["source", "destination"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "git_cherry_pick",
+    "description": "Apply the changes introduced by some existing commits",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "commits": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Commits to cherry-pick"
+        },
+        "no_commit": {
+          "type": "boolean",
+          "description": "Don't make commit automatically",
+          "default": false
+        }
+      },
+      "required": ["commits"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "git_revert",
+    "description": "Revert some existing commits",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "commits": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Commits to revert"
+        },
+        "no_commit": {
+          "type": "boolean",
+          "description": "Don't make commit automatically",
+          "default": false
+        }
+      },
+      "required": ["commits"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "git_bisect",
+    "description": "Use binary search to find the commit that introduced a bug",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": ["start", "good", "bad", "reset"],
+          "description": "Bisect action"
+        },
+        "commit": {
+          "type": "string",
+          "description": "Commit reference"
+        }
+      },
+      "required": ["action"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "git_reflog",
+    "description": "Manage reflog information",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": ["show", "expire", "delete"],
+          "description": "Reflog action",
+          "default": "show"
+        },
+        "reference": {
+          "type": "string",
+          "description": "Reference to show reflog for"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "git_worktree",
+    "description": "Manage multiple working trees",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": ["add", "list", "remove", "prune"],
+          "description": "Worktree action"
+        },
+        "path": {
+          "type": "string",
+          "description": "Worktree path"
+        },
+        "branch": {
+          "type": "string",
+          "description": "Branch for new worktree"
+        }
+      },
+      "required": ["action"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "git_submodule",
+    "description": "Initialize, update or inspect submodules",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": ["init", "update", "add", "status", "foreach"],
+          "description": "Submodule action"
+        },
+        "path": {
+          "type": "string",
+          "description": "Submodule path"
+        },
+        "url": {
+          "type": "string",
+          "description": "Submodule URL"
+        },
+        "recursive": {
+          "type": "boolean",
+          "description": "Recursive operation",
+          "default": false
+        }
+      },
+      "required": ["action"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "git_archive",
+    "description": "Create an archive of files from a named tree",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "format": {
+          "type": "string",
+          "enum": ["tar", "zip"],
+          "description": "Archive format",
+          "default": "tar"
+        },
+        "output": {
+          "type": "string",
+          "description": "Output file"
+        },
+        "tree": {
+          "type": "string",
+          "description": "Tree-ish to archive"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "git_clean",
+    "description": "Remove untracked files from the working tree",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "dry_run": {
+          "type": "boolean",
+          "description": "Show what would be deleted",
+          "default": true
+        },
+        "force": {
+          "type": "boolean",
+          "description": "Actually delete files",
+          "default": false
+        },
+        "directories": {
+          "type": "boolean",
+          "description": "Remove directories too",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "git_blame",
+    "description": "Show what revision and author last modified each line of a file",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "file": {
+          "type": "string",
+          "description": "File to blame"
+        },
+        "line_range": {
+          "type": "string",
+          "description": "Line range (e.g., '10,20')"
+        }
+      },
+      "required": ["file"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "git_grep",
+    "description": "Print lines matching a pattern",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "pattern": {
+          "type": "string",
+          "description": "Search pattern"
+        },
+        "files": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Files to search in"
+        },
+        "ignore_case": {
+          "type": "boolean",
+          "description": "Ignore case",
+          "default": false
+        }
+      },
+      "required": ["pattern"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "git_shortlog",
+    "description": "Summarize 'git log' output",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "summary": {
+          "type": "boolean",
+          "description": "Show summary only",
+          "default": true
+        },
+        "numbered": {
+          "type": "boolean",
+          "description": "Sort by number of commits",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "git_describe",
+    "description": "Give an object a human readable name based on an available ref",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "commit": {
+          "type": "string",
+          "description": "Commit to describe"
+        },
+        "tags": {
+          "type": "boolean",
+          "description": "Use tags only",
+          "default": false
+        },
+        "all": {
+          "type": "boolean",
+          "description": "Use any ref",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "git_ls_files",
+    "description": "Show information about files in the index and the working tree",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "cached": {
+          "type": "boolean",
+          "description": "Show cached files",
+          "default": true
+        },
+        "others": {
+          "type": "boolean",
+          "description": "Show untracked files",
+          "default": false
+        },
+        "ignored": {
+          "type": "boolean",
+          "description": "Show ignored files",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "git_config",
+    "description": "Get and set repository or global options",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": ["get", "set", "unset", "list"],
+          "description": "Config action",
+          "default": "list"
+        },
+        "key": {
+          "type": "string",
+          "description": "Configuration key"
+        },
+        "value": {
+          "type": "string",
+          "description": "Configuration value"
+        },
+        "global": {
+          "type": "boolean",
+          "description": "Use global config",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+]

@@ -115,6 +115,11 @@ class TemplateLoader:
         """Load showcase scenarios from JSON."""
         return self.load_json_data("data/showcase_scenarios.json")
 
+    def load_tools(self, tool_file: str) -> list:
+        """Load tool definitions from JSON file."""
+        file_path = f"tools/{tool_file}.json"
+        return self.load_json_data(file_path)
+
     def list_available_html_templates(self) -> list:
         """List all available HTML template names."""
         html_dir = self.base_path / "html"
