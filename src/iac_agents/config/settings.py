@@ -67,6 +67,17 @@ class AzureAISettings:
 
 
 @dataclass
+class GitHubSettings:
+    """GitHub configuration settings."""
+
+    github_token: str = None
+
+    def __post_init__(self):
+        if self.github_token is None:
+            self.github_token = os.getenv("GITHUB_TOKEN")
+
+
+@dataclass
 class AgentSettings:
     """AI Agent configuration settings."""
 
@@ -115,6 +126,7 @@ class Config:
         self.compliance = ComplianceSettings()
         self.azure_openai = AzureOpenAISettings()
         self.azure_ai = AzureAISettings()
+        self.github = GitHubSettings()
         self.agents = AgentSettings()
         self.ui = UISettings()
         self.logging = LoggingSettings()
