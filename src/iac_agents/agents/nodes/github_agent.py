@@ -22,12 +22,25 @@ AGENT_NAME = "github_agent"
 
 def run_github_react_workflow(
     mcp_client: MCPClient,
-    system_prompt: str,
     conversation_history: List[str],
 ) -> str:
     """Sync wrapper for GitHub ReAct workflow."""
 
     async def _async_workflow():
+        # Get tools description within session context
+        async with mcp_client.session() as session:
+            tools_list = await mcp_client.list_tools(session)
+
+        # Format tools for consistency with devops agent
+        tools_description = "\n".join(
+            [f"- {tool['name']}: {tool['description']}" for tool in tools_list]
+        )
+
+        system_prompt = template_manager.get_prompt(
+            AGENT_NAME,
+            tools_description=tools_description,
+        )
+
         return await agent_react_step(
             mcp_client, system_prompt, conversation_history, AGENT_NAME
         )
@@ -35,7 +48,7 @@ def run_github_react_workflow(
     return asyncio.run(_async_workflow())
 
 
-async def github_agent(state: InfrastructureStateDict):
+def github_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
     """Handle GitHub operations using ReAct workflow with MCP tools."""
     log_agent_start(AGENT_NAME, "Running GitHub interactions")
 
@@ -62,11 +75,7 @@ async def github_agent(state: InfrastructureStateDict):
     )
     mcp_client.extend_tools(get_git_tools())
     mcp_client.set_custom_tool_executor(git_tool_executor)
-    tools_description = await mcp_client.list_tools(mcp_client.session())
-    system_prompt = template_manager.get_prompt(
-        AGENT_NAME,
-        tools_description=tools_description,
-    )
+
     conversation_history = state["conversation_history"]
 
     log_info(AGENT_NAME, "Starting ReAct workflow with GitHub tools")
@@ -75,7 +84,6 @@ async def github_agent(state: InfrastructureStateDict):
         # Run the ReAct workflow
         response = run_github_react_workflow(
             mcp_client=mcp_client,
-            system_prompt=system_prompt,
             conversation_history=conversation_history,
         )
         conversation_history.append(
