@@ -1,0 +1,892 @@
+[
+  {
+    "name": "terraform_version",
+    "description": "Show the current Terraform version",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "working_dir": {
+          "type": "string",
+          "description": "Working directory path (default: current directory)"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "terraform_init",
+    "description": "Initialize a Terraform working directory",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "working_dir": {
+          "type": "string",
+          "description": "Working directory path"
+        },
+        "backend": {
+          "type": "boolean",
+          "description": "Enable backend initialization",
+          "default": true
+        },
+        "backend_config": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Backend configuration key=value pairs"
+        },
+        "force_copy": {
+          "type": "boolean",
+          "description": "Suppress prompts about copying state data",
+          "default": false
+        },
+        "from_module": {
+          "type": "string",
+          "description": "Copy contents from the given module"
+        },
+        "get": {
+          "type": "boolean",
+          "description": "Download modules",
+          "default": true
+        },
+        "input": {
+          "type": "boolean",
+          "description": "Enable interactive prompts",
+          "default": true
+        },
+        "lock": {
+          "type": "boolean",
+          "description": "Hold a state lock during backend migration",
+          "default": true
+        },
+        "lock_timeout": {
+          "type": "string",
+          "description": "Duration to retry a state lock (e.g., '10s')",
+          "default": "0s"
+        },
+        "no_color": {
+          "type": "boolean",
+          "description": "Disable colored output",
+          "default": false
+        },
+        "json": {
+          "type": "boolean",
+          "description": "Machine readable JSON output",
+          "default": false
+        },
+        "plugin_dir": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Plugin directory paths"
+        },
+        "reconfigure": {
+          "type": "boolean",
+          "description": "Reconfigure backend, ignoring saved configuration",
+          "default": false
+        },
+        "migrate_state": {
+          "type": "boolean",
+          "description": "Reconfigure backend and migrate existing state",
+          "default": false
+        },
+        "upgrade": {
+          "type": "boolean",
+          "description": "Install latest module and provider versions",
+          "default": false
+        },
+        "lockfile": {
+          "type": "string",
+          "description": "Set dependency lockfile mode (readonly)",
+          "enum": ["readonly"]
+        },
+        "timeout": {
+          "type": "integer",
+          "description": "Command timeout in seconds",
+          "default": 300
+        }
+      },
+      "required": ["working_dir"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "terraform_validate",
+    "description": "Check whether the configuration is valid",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "working_dir": {
+          "type": "string",
+          "description": "Working directory path"
+        },
+        "json": {
+          "type": "boolean",
+          "description": "Machine readable JSON output",
+          "default": false
+        },
+        "no_color": {
+          "type": "boolean",
+          "description": "Disable colored output",
+          "default": false
+        },
+        "timeout": {
+          "type": "integer",
+          "description": "Command timeout in seconds",
+          "default": 60
+        }
+      },
+      "required": ["working_dir"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "terraform_plan",
+    "description": "Show changes required by the current configuration",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "working_dir": {
+          "type": "string",
+          "description": "Working directory path"
+        },
+        "destroy": {
+          "type": "boolean",
+          "description": "Create a destruction plan",
+          "default": false
+        },
+        "refresh_only": {
+          "type": "boolean",
+          "description": "Only check for external changes",
+          "default": false
+        },
+        "refresh": {
+          "type": "boolean",
+          "description": "Check for external changes to remote objects",
+          "default": true
+        },
+        "replace": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Force replacement of specific resources"
+        },
+        "target": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Limit planning to specific resources"
+        },
+        "var": {
+          "type": "object",
+          "description": "Input variable key-value pairs",
+          "additionalProperties": {"type": "string"}
+        },
+        "var_file": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Variable file paths"
+        },
+        "compact_warnings": {
+          "type": "boolean",
+          "description": "Show warnings in compact form",
+          "default": false
+        },
+        "detailed_exitcode": {
+          "type": "boolean",
+          "description": "Return detailed exit codes",
+          "default": false
+        },
+        "input": {
+          "type": "boolean",
+          "description": "Ask for input for variables",
+          "default": true
+        },
+        "lock": {
+          "type": "boolean",
+          "description": "Hold a state lock during operation",
+          "default": true
+        },
+        "lock_timeout": {
+          "type": "string",
+          "description": "Duration to retry a state lock",
+          "default": "0s"
+        },
+        "no_color": {
+          "type": "boolean",
+          "description": "Disable colored output",
+          "default": false
+        },
+        "out": {
+          "type": "string",
+          "description": "Write plan file to given path"
+        },
+        "parallelism": {
+          "type": "integer",
+          "description": "Limit concurrent operations",
+          "default": 10
+        },
+        "timeout": {
+          "type": "integer",
+          "description": "Command timeout in seconds",
+          "default": 300
+        }
+      },
+      "required": ["working_dir"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "terraform_apply",
+    "description": "Create or update infrastructure",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "working_dir": {
+          "type": "string",
+          "description": "Working directory path"
+        },
+        "plan_file": {
+          "type": "string",
+          "description": "Apply specific plan file"
+        },
+        "auto_approve": {
+          "type": "boolean",
+          "description": "Skip interactive approval",
+          "default": false
+        },
+        "backup": {
+          "type": "string",
+          "description": "Path to backup existing state file"
+        },
+        "compact_warnings": {
+          "type": "boolean",
+          "description": "Show warnings in compact form",
+          "default": false
+        },
+        "destroy": {
+          "type": "boolean",
+          "description": "Destroy Terraform-managed infrastructure",
+          "default": false
+        },
+        "lock": {
+          "type": "boolean",
+          "description": "Hold a state lock during operation",
+          "default": true
+        },
+        "lock_timeout": {
+          "type": "string",
+          "description": "Duration to retry a state lock",
+          "default": "0s"
+        },
+        "input": {
+          "type": "boolean",
+          "description": "Ask for input for variables",
+          "default": true
+        },
+        "no_color": {
+          "type": "boolean",
+          "description": "Disable colored output",
+          "default": false
+        },
+        "parallelism": {
+          "type": "integer",
+          "description": "Limit parallel resource operations",
+          "default": 10
+        },
+        "replace": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Force replacement of specific resources"
+        },
+        "state": {
+          "type": "string",
+          "description": "Path to read and save state"
+        },
+        "state_out": {
+          "type": "string",
+          "description": "Path to write state (different from state)"
+        },
+        "var": {
+          "type": "object",
+          "description": "Input variable key-value pairs",
+          "additionalProperties": {"type": "string"}
+        },
+        "var_file": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Variable file paths"
+        },
+        "timeout": {
+          "type": "integer",
+          "description": "Command timeout in seconds",
+          "default": 600
+        }
+      },
+      "required": ["working_dir"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "terraform_destroy",
+    "description": "Destroy previously-created infrastructure",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "working_dir": {
+          "type": "string",
+          "description": "Working directory path"
+        },
+        "auto_approve": {
+          "type": "boolean",
+          "description": "Skip interactive approval",
+          "default": false
+        },
+        "backup": {
+          "type": "string",
+          "description": "Path to backup existing state file"
+        },
+        "lock": {
+          "type": "boolean",
+          "description": "Hold a state lock during operation",
+          "default": true
+        },
+        "lock_timeout": {
+          "type": "string",
+          "description": "Duration to retry a state lock",
+          "default": "0s"
+        },
+        "no_color": {
+          "type": "boolean",
+          "description": "Disable colored output",
+          "default": false
+        },
+        "parallelism": {
+          "type": "integer",
+          "description": "Limit parallel resource operations",
+          "default": 10
+        },
+        "refresh": {
+          "type": "boolean",
+          "description": "Update state prior to checking for differences",
+          "default": true
+        },
+        "state": {
+          "type": "string",
+          "description": "Path to state file"
+        },
+        "target": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Limit operation to specific resources"
+        },
+        "var": {
+          "type": "object",
+          "description": "Input variable key-value pairs",
+          "additionalProperties": {"type": "string"}
+        },
+        "var_file": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Variable file paths"
+        },
+        "timeout": {
+          "type": "integer",
+          "description": "Command timeout in seconds",
+          "default": 600
+        }
+      },
+      "required": ["working_dir"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "terraform_output",
+    "description": "Show output values from your root module",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "working_dir": {
+          "type": "string",
+          "description": "Working directory path"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of specific output to show"
+        },
+        "state": {
+          "type": "string",
+          "description": "Path to state file"
+        },
+        "no_color": {
+          "type": "boolean",
+          "description": "Disable colored output",
+          "default": false
+        },
+        "json": {
+          "type": "boolean",
+          "description": "Machine readable JSON output",
+          "default": false
+        },
+        "raw": {
+          "type": "boolean",
+          "description": "Print raw string value",
+          "default": false
+        },
+        "timeout": {
+          "type": "integer",
+          "description": "Command timeout in seconds",
+          "default": 60
+        }
+      },
+      "required": ["working_dir"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "terraform_fmt",
+    "description": "Reformat configuration in the standard style",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "working_dir": {
+          "type": "string",
+          "description": "Working directory path"
+        },
+        "list": {
+          "type": "boolean",
+          "description": "List files whose formatting differs",
+          "default": true
+        },
+        "write": {
+          "type": "boolean",
+          "description": "Write result to source file",
+          "default": true
+        },
+        "diff": {
+          "type": "boolean",
+          "description": "Display diffs of formatting changes",
+          "default": false
+        },
+        "check": {
+          "type": "boolean",
+          "description": "Check if input is formatted without writing",
+          "default": false
+        },
+        "recursive": {
+          "type": "boolean",
+          "description": "Process files in subdirectories",
+          "default": false
+        },
+        "timeout": {
+          "type": "integer",
+          "description": "Command timeout in seconds",
+          "default": 60
+        }
+      },
+      "required": ["working_dir"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "terraform_show",
+    "description": "Show the current state or a saved plan",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "working_dir": {
+          "type": "string",
+          "description": "Working directory path"
+        },
+        "file": {
+          "type": "string",
+          "description": "Path to state or plan file to show"
+        },
+        "json": {
+          "type": "boolean",
+          "description": "Machine readable JSON output",
+          "default": false
+        },
+        "no_color": {
+          "type": "boolean",
+          "description": "Disable colored output",
+          "default": false
+        },
+        "timeout": {
+          "type": "integer",
+          "description": "Command timeout in seconds",
+          "default": 60
+        }
+      },
+      "required": ["working_dir"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "terraform_workspace_list",
+    "description": "List Terraform workspaces",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "working_dir": {
+          "type": "string",
+          "description": "Working directory path"
+        },
+        "timeout": {
+          "type": "integer",
+          "description": "Command timeout in seconds",
+          "default": 60
+        }
+      },
+      "required": ["working_dir"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "terraform_workspace_show",
+    "description": "Show the name of the current workspace",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "working_dir": {
+          "type": "string",
+          "description": "Working directory path"
+        },
+        "timeout": {
+          "type": "integer",
+          "description": "Command timeout in seconds",
+          "default": 60
+        }
+      },
+      "required": ["working_dir"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "terraform_workspace_new",
+    "description": "Create a new workspace",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "working_dir": {
+          "type": "string",
+          "description": "Working directory path"
+        },
+        "name": {
+          "type": "string",
+          "description": "Workspace name"
+        },
+        "state": {
+          "type": "string",
+          "description": "Copy existing state file into new workspace"
+        },
+        "timeout": {
+          "type": "integer",
+          "description": "Command timeout in seconds",
+          "default": 60
+        }
+      },
+      "required": ["working_dir", "name"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "terraform_workspace_select",
+    "description": "Select a workspace",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "working_dir": {
+          "type": "string",
+          "description": "Working directory path"
+        },
+        "name": {
+          "type": "string",
+          "description": "Workspace name"
+        },
+        "timeout": {
+          "type": "integer",
+          "description": "Command timeout in seconds",
+          "default": 60
+        }
+      },
+      "required": ["working_dir", "name"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "terraform_workspace_delete",
+    "description": "Delete a workspace",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "working_dir": {
+          "type": "string",
+          "description": "Working directory path"
+        },
+        "name": {
+          "type": "string",
+          "description": "Workspace name"
+        },
+        "force": {
+          "type": "boolean",
+          "description": "Remove workspace even if non-empty",
+          "default": false
+        },
+        "lock": {
+          "type": "boolean",
+          "description": "Hold a state lock during operation",
+          "default": true
+        },
+        "lock_timeout": {
+          "type": "string",
+          "description": "Duration to retry a state lock",
+          "default": "0s"
+        },
+        "timeout": {
+          "type": "integer",
+          "description": "Command timeout in seconds",
+          "default": 60
+        }
+      },
+      "required": ["working_dir", "name"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "terraform_import",
+    "description": "Associate existing infrastructure with a Terraform resource",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "working_dir": {
+          "type": "string",
+          "description": "Working directory path"
+        },
+        "address": {
+          "type": "string",
+          "description": "Resource address"
+        },
+        "id": {
+          "type": "string",
+          "description": "Resource ID"
+        },
+        "allow_missing_config": {
+          "type": "boolean",
+          "description": "Allow import when no resource configuration exists",
+          "default": false
+        },
+        "backup": {
+          "type": "string",
+          "description": "Path to backup the existing state file"
+        },
+        "input": {
+          "type": "boolean",
+          "description": "Ask for input for variables",
+          "default": true
+        },
+        "lock": {
+          "type": "boolean",
+          "description": "Hold a state lock during operation",
+          "default": true
+        },
+        "lock_timeout": {
+          "type": "string",
+          "description": "Duration to retry a state lock",
+          "default": "0s"
+        },
+        "no_color": {
+          "type": "boolean",
+          "description": "Disable colored output",
+          "default": false
+        },
+        "var": {
+          "type": "object",
+          "description": "Input variable key-value pairs",
+          "additionalProperties": {"type": "string"}
+        },
+        "var_file": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Variable file paths"
+        },
+        "timeout": {
+          "type": "integer",
+          "description": "Command timeout in seconds",
+          "default": 300
+        }
+      },
+      "required": ["working_dir", "address", "id"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "terraform_refresh",
+    "description": "Update the state to match remote systems",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "working_dir": {
+          "type": "string",
+          "description": "Working directory path"
+        },
+        "backup": {
+          "type": "string",
+          "description": "Path to backup the existing state file"
+        },
+        "input": {
+          "type": "boolean",
+          "description": "Ask for input for variables",
+          "default": true
+        },
+        "lock": {
+          "type": "boolean",
+          "description": "Hold a state lock during operation",
+          "default": true
+        },
+        "lock_timeout": {
+          "type": "string",
+          "description": "Duration to retry a state lock",
+          "default": "0s"
+        },
+        "no_color": {
+          "type": "boolean",
+          "description": "Disable colored output",
+          "default": false
+        },
+        "parallelism": {
+          "type": "integer",
+          "description": "Limit parallel resource operations",
+          "default": 10
+        },
+        "state": {
+          "type": "string",
+          "description": "Path to state file"
+        },
+        "state_out": {
+          "type": "string",
+          "description": "Path to write updated state"
+        },
+        "target": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Limit operation to specific resources"
+        },
+        "var": {
+          "type": "object",
+          "description": "Input variable key-value pairs",
+          "additionalProperties": {"type": "string"}
+        },
+        "var_file": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Variable file paths"
+        },
+        "timeout": {
+          "type": "integer",
+          "description": "Command timeout in seconds",
+          "default": 300
+        }
+      },
+      "required": ["working_dir"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "terraform_taint",
+    "description": "Mark a resource instance as not fully functional",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "working_dir": {
+          "type": "string",
+          "description": "Working directory path"
+        },
+        "address": {
+          "type": "string",
+          "description": "Resource address"
+        },
+        "allow_missing": {
+          "type": "boolean",
+          "description": "Allow missing resource in state",
+          "default": false
+        },
+        "backup": {
+          "type": "string",
+          "description": "Path to backup the existing state file"
+        },
+        "lock": {
+          "type": "boolean",
+          "description": "Hold a state lock during operation",
+          "default": true
+        },
+        "lock_timeout": {
+          "type": "string",
+          "description": "Duration to retry a state lock",
+          "default": "0s"
+        },
+        "state": {
+          "type": "string",
+          "description": "Path to state file"
+        },
+        "state_out": {
+          "type": "string",
+          "description": "Path to write updated state"
+        },
+        "timeout": {
+          "type": "integer",
+          "description": "Command timeout in seconds",
+          "default": 60
+        }
+      },
+      "required": ["working_dir", "address"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "terraform_untaint",
+    "description": "Remove the 'tainted' state from a resource instance",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "working_dir": {
+          "type": "string",
+          "description": "Working directory path"
+        },
+        "address": {
+          "type": "string",
+          "description": "Resource address"
+        },
+        "allow_missing": {
+          "type": "boolean",
+          "description": "Allow missing resource in state",
+          "default": false
+        },
+        "backup": {
+          "type": "string",
+          "description": "Path to backup the existing state file"
+        },
+        "lock": {
+          "type": "boolean",
+          "description": "Hold a state lock during operation",
+          "default": true
+        },
+        "lock_timeout": {
+          "type": "string",
+          "description": "Duration to retry a state lock",
+          "default": "0s"
+        },
+        "state": {
+          "type": "string",
+          "description": "Path to state file"
+        },
+        "state_out": {
+          "type": "string",
+          "description": "Path to write updated state"
+        },
+        "timeout": {
+          "type": "integer",
+          "description": "Command timeout in seconds",
+          "default": 60
+        }
+      },
+      "required": ["working_dir", "address"],
+      "additionalProperties": false
+    }
+  }
+]

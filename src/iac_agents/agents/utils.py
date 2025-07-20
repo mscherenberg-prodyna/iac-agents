@@ -39,6 +39,14 @@ def make_llm_call(
     return response.content
 
 
+def get_github_token() -> str:
+    """Get GitHub token from environment variable."""
+    token = config.github.github_token
+    if not token:
+        raise ValueError("GITHUB_TOKEN environment variable is not set")
+    return token
+
+
 def get_agent_id_base(agent_name: str, prompt: str) -> str:
     """Update or create AI Foundry Agent without any tools."""
     credential = DefaultAzureCredential()
