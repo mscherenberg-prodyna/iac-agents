@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import os
 import subprocess
 from pathlib import Path
 from typing import List
@@ -15,30 +16,48 @@ from ...logging_system import (
     log_warning,
 )
 from ...templates import template_manager
-from ..react_agent import agent_react_step_with_tools
+from ..git_utils import get_git_tools, git_tool_executor
+from ..mcp_utils import MultiMCPClient
+from ..react_agent import agent_react_step
 from ..state import InfrastructureStateDict
 from ..terraform_utils import get_terraform_tools, terraform_tool_executor
-from ..utils import add_error_to_state, load_agent_response_schema
+from ..utils import add_error_to_state, get_github_token, load_agent_response_schema
 
 AGENT_NAME = "devops"
 
 
 def run_devops_react_workflow(
-    system_prompt: str,
+    mcp_client: MultiMCPClient,
     conversation_history: List[str],
     schema: dict,
 ) -> str:
     """Sync wrapper for DevOps ReAct workflow."""
 
     async def _async_workflow():
-        tools = get_terraform_tools()
-        return await agent_react_step_with_tools(
-            tools=tools,
-            tool_executor=terraform_tool_executor,
-            system_prompt=system_prompt,
-            conversation_history=conversation_history,
-            agent_name=AGENT_NAME,
-            schema=schema,
+        # Get tools description within session context
+        async with mcp_client.session() as session:
+            tools_list = await mcp_client.list_tools(session)
+
+        # Format tools for consistency with devops agent
+        tools_description = "\n".join(
+            [f"- {tool['name']}: {tool['description']}" for tool in tools_list]
+        )
+
+        system_prompt = template_manager.get_prompt(
+            AGENT_NAME,
+            tools_description=tools_description,
+            working_dir=str(
+                Path.cwd() / "terraform_deployments" / f"deployment_{get_thread_id()}"
+            ),
+            response_schema=json.dumps(schema, indent=2),
+        )
+
+        return await agent_react_step(
+            mcp_client,
+            system_prompt,
+            conversation_history,
+            AGENT_NAME,
+            schema,
         )
 
     return asyncio.run(_async_workflow())
@@ -70,26 +89,43 @@ def devops_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
 
     log_info(AGENT_NAME, f"Created deployment workspace: {deployment_dir}")
 
-    # Get tools description for system prompt
-    tools = get_terraform_tools()
-    tools_description = "\n".join(
-        [f"- {tool['name']}: {tool['description']}" for tool in tools]
+    # get GitHub token from config
+    github_token = get_github_token()
+    if not github_token:
+        error_msg = "GITHUB_TOKEN environment variable not set"
+        log_warning(AGENT_NAME, error_msg)
+
+    mcp_client = MultiMCPClient()
+    mcp_client.add_server(
+        "github",
+        [
+            "run",
+            "-i",
+            "--rm",
+            "-v",
+            f"{os.getcwd()}:/workspace",
+            "-w",
+            "/workspace",
+            "-e",
+            "GITHUB_PERSONAL_ACCESS_TOKEN",
+            "ghcr.io/github/github-mcp-server",
+        ],
+        {"GITHUB_PERSONAL_ACCESS_TOKEN": github_token},
+    )
+    mcp_client.add_custom_tools("git_cli", get_git_tools(), git_tool_executor)
+    mcp_client.add_custom_tools(
+        "terraform_cli", get_terraform_tools(), terraform_tool_executor
     )
 
-    schema = load_agent_response_schema()
-    system_prompt = template_manager.get_prompt(
-        AGENT_NAME,
-        tools_description=tools_description,
-        working_dir=str(deployment_dir),
-        response_schema=json.dumps(schema, indent=2),
-    )
-
-    log_info(AGENT_NAME, "Starting ReAct workflow with Terraform tools")
+    log_info(AGENT_NAME, "Starting ReAct workflow with MCP tools")
 
     try:
+        # Load response schema
+        schema = load_agent_response_schema()
+
         # Run the ReAct workflow
         response = run_devops_react_workflow(
-            system_prompt=system_prompt,
+            mcp_client=mcp_client,
             conversation_history=conversation_history,
             schema=schema,
         )
