@@ -1,6 +1,7 @@
 """GitHub agent node for LangGraph workflow."""
 
 import asyncio
+import json
 import os
 from typing import List
 
@@ -15,7 +16,7 @@ from ..git_utils import get_git_tools, git_tool_executor
 from ..mcp_utils import MCPClient
 from ..react_agent import agent_react_step
 from ..state import InfrastructureStateDict
-from ..utils import add_error_to_state, get_github_token
+from ..utils import add_error_to_state, get_github_token, load_agent_response_schema
 
 AGENT_NAME = "github_agent"
 
@@ -23,6 +24,7 @@ AGENT_NAME = "github_agent"
 def run_github_react_workflow(
     mcp_client: MCPClient,
     conversation_history: List[str],
+    schema: dict,
 ) -> str:
     """Sync wrapper for GitHub ReAct workflow."""
 
@@ -39,10 +41,11 @@ def run_github_react_workflow(
         system_prompt = template_manager.get_prompt(
             AGENT_NAME,
             tools_description=tools_description,
+            response_schema=json.dumps(schema, indent=2),
         )
 
         return await agent_react_step(
-            mcp_client, system_prompt, conversation_history, AGENT_NAME
+            mcp_client, system_prompt, conversation_history, AGENT_NAME, schema
         )
 
     return asyncio.run(_async_workflow())
@@ -81,10 +84,14 @@ def github_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
     log_info(AGENT_NAME, "Starting ReAct workflow with GitHub tools")
 
     try:
+        # Load response schema once
+        schema = load_agent_response_schema()
+        
         # Run the ReAct workflow
         response = run_github_react_workflow(
             mcp_client=mcp_client,
             conversation_history=conversation_history,
+            schema=schema,
         )
         conversation_history.append(
             f"GitHub: {response}"

@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Agent Response Schema",
+  "description": "Standardized JSON response format for agents",
+  "type": "object",
+  "properties": {
+    "answer": {
+      "type": "string",
+      "description": "The agent's final response message - when provided, stops the ReAct loop"
+    },
+    "tool_calls": {
+      "type": "array",
+      "description": "List of tool calls to execute - continues the ReAct loop",
+      "items": {
+        "type": "object",
+        "properties": {
+          "tool_name": {
+            "type": "string",
+            "description": "Name of the tool to call"
+          },
+          "arguments": {
+            "type": "object",
+            "description": "Arguments to pass to the tool as key-value pairs",
+            "additionalProperties": true
+          }
+        },
+        "required": ["tool_name", "arguments"],
+        "additionalProperties": false
+      },
+      "default": []
+    },
+    "routing": {
+      "type": "string",
+      "description": "Optional routing information for workflow control",
+      "enum": [
+        "INTERNAL_CLOUD_ENGINEER",
+        "INTERNAL_SECOPS_FINOPS", 
+        "INTERNAL_DEVOPS",
+        "TERRAFORM_CONSULTATION_NEEDED",
+        "CLARIFICATION_REQUIRED",
+        "ERROR_NOTIFICATION",
+        "APPROVAL_REQUEST",
+        "DEPLOYMENT_COMPLETE"
+      ]
+    }
+  },
+  "anyOf": [
+    {"required": ["answer"]},
+    {"required": ["tool_calls"]}
+  ],
+  "additionalProperties": false
+}

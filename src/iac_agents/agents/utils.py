@@ -2,11 +2,13 @@
 
 import json
 import subprocess
+from pathlib import Path
 from typing import Any, Dict, Optional
 
 from azure.ai.agents import AgentsClient
 from azure.ai.agents.models import BingGroundingTool, ListSortOrder, MessageRole
 from azure.identity import DefaultAzureCredential
+from langchain.schema import HumanMessage, SystemMessage
 from langchain_openai import AzureChatOpenAI
 
 from ..config.settings import config
@@ -34,9 +36,49 @@ def make_llm_call(
     llm = create_llm_client(
         agent_name, temperature if temperature else config.agents.default_temperature
     )
-    messages = [("system", system_prompt), ("human", user_message)]
+    messages = [
+        SystemMessage(content=system_prompt),
+        HumanMessage(content=user_message),
+    ]
     response = llm.invoke(messages)
     return response.content
+
+
+def load_agent_response_schema() -> Dict[str, Any]:
+    """Load the agent response JSON schema."""
+    schema_path = Path(__file__).parent / "agent_response_schema.json"
+    with open(schema_path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def make_structured_llm_call(
+    system_prompt: str,
+    user_message: str,
+    agent_name: Optional[str] = "default",
+    temperature: Optional[float] = None,
+    schema: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """Make a structured LLM call that returns JSON conforming to agent response schema."""
+    llm = create_llm_client(
+        agent_name, temperature if temperature else config.agents.default_temperature
+    )
+
+    # Load schema for structured output
+    if schema is None:
+        # Load default schema if not provided
+        schema = load_agent_response_schema()
+
+    # Create structured LLM with JSON schema
+    structured_llm = llm.with_structured_output(schema, method="json_mode")
+
+    messages = [
+        SystemMessage(content=system_prompt),
+        HumanMessage(content=user_message),
+    ]
+
+    # Returns a dictionary that conforms to the schema
+    response = structured_llm.invoke(messages)
+    return response
 
 
 def get_github_token() -> str:

@@ -1,15 +1,14 @@
 """MCP utilities for agent operations using Python MCP package."""
 
-import re
 from typing import Any, Callable, Dict, List
+
+from langchain.evaluation import JsonSchemaEvaluator
 
 from ..logging_system import (
     log_agent_response,
 )
 from .mcp_utils import MCPClient
-from .utils import make_llm_call
-
-TOOL_TRIGGER = "TOOL_CALL:"
+from .utils import load_agent_response_schema, make_structured_llm_call
 
 
 async def agent_react_step(
@@ -17,65 +16,73 @@ async def agent_react_step(
     system_prompt: str,
     conversation_history: List[str],
     agent_name: str,
+    schema: Dict[str, Any] = None,
 ) -> str:
     """Execute a ReAct loop with an MCP client and additional tools."""
+
+    # Load schema if not provided
+    if schema is None:
+        schema = load_agent_response_schema()
+    evaluator = JsonSchemaEvaluator()
 
     async with mcp_client.session() as session:
 
         # start ReAct loop
         while True:
 
-            # get LLM response
+            # get structured LLM response
             user_message = "\n\n###\n\n".join(conversation_history)
 
-            response = make_llm_call(system_prompt, user_message)
+            response_dict = make_structured_llm_call(
+                system_prompt, user_message, agent_name, schema=schema
+            )
 
-            # check if agent wants to use a tool
-            if TOOL_TRIGGER in response:
-                tool_lines = [
-                    line for line in response.split("\n") if TOOL_TRIGGER in line
-                ]
-                if tool_lines:
-                    tool_call = tool_lines[0].split(TOOL_TRIGGER)[1].strip()
-                    match = re.match(r"(\w+)\((.*)\)", tool_call)
-                    if match:
-                        tool_name = match.group(1)
+            # validate response against schema
+            validation_result = evaluator.evaluate_strings(
+                prediction=str(response_dict), reference=schema
+            )
 
-                        args_str = match.group(2)
-                        arguments = {}
-                        if args_str:
-                            for param in args_str.split(","):
-                                if "=" in param:
-                                    key, value = param.split("=", 1)
-                                    key = key.strip()
-                                    value = value.strip().strip("\"'")
-                                    if value.lower() == "true":
-                                        value = True
-                                    elif value.lower() == "false":
-                                        value = False
-                                    arguments[key] = value
+            if not validation_result.get("score", 0):
+                # Add validation error to conversation for agent feedback
+                error_msg = (
+                    "Invalid JSON schema format. Please ensure your response follows "
+                    "the required schema with 'answer', 'tool_calls', or 'routing' fields. "
+                    f"Error: {validation_result.get('reasoning', 'Schema validation failed')}"
+                )
+                conversation_history.append(f"System: {error_msg}")
+                log_agent_response(
+                    agent_name, f"Schema validation failed: {response_dict}"
+                )
+                continue
 
-                        log_agent_response(
-                            agent_name,
-                            f"Calling tool: {tool_name} with args: {arguments}",
-                        )
-                        tool_result = await mcp_client.call_tool(
-                            session, tool_name, arguments
-                        )
-                        log_agent_response(agent_name, f"Tool Result: {tool_result}")
+            # check if agent wants to use tools
+            if response_dict.get("tool_calls"):
+                for tool_call in response_dict["tool_calls"]:
+                    tool_name = tool_call["tool_name"]
+                    arguments = tool_call["arguments"]
 
-                    else:
-                        tool_result = f"Error: Invalid tool call format: {tool_call}"
+                    log_agent_response(
+                        agent_name,
+                        f"Calling tool: {tool_name} with args: {arguments}",
+                    )
+                    tool_result = await mcp_client.call_tool(
+                        session, tool_name, arguments
+                    )
+                    log_agent_response(agent_name, f"Tool Result: {tool_result}")
 
-                    # Add to conversation
-                    conversation_history.append(f"Agent: {response}")
+                    # Add tool call and result to conversation
+                    conversation_history.append(f"Tool Call: {tool_name}({arguments})")
                     conversation_history.append(f"Tool Result: {tool_result}")
-                else:
-                    # No valid tool call found, continue
-                    conversation_history.append(f"Agent: {response}")
             else:
-                # No tool call, agent is done
-                return response
+                # No tool calls, check if agent provided an answer
+                if response_dict.get("answer"):
+                    return response_dict["answer"]
+                # No answer or tool calls, provide feedback
+                feedback_msg = (
+                    "Please provide either an 'answer' to complete the task or "
+                    "'tool_calls' to continue with tool execution."
+                )
+                conversation_history.append(f"System: {feedback_msg}")
 
 
 class ToolClient:
@@ -102,6 +109,7 @@ class ToolClient:
         self, session, tool_name: str, arguments: Dict[str, Any]
     ) -> str:
         """Execute tool using the provided executor."""
+        # session parameter is unused but kept for interface compatibility
         return self.tool_executor(tool_name, arguments)
 
 
