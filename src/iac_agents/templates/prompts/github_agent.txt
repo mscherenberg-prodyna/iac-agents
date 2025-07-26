@@ -12,5 +12,6 @@ You MUST respond with a JSON object that follows this exact schema:
 **Response Rules:**
 - Use "tool_calls" array when you need to execute tools to continue working
 - Use "answer" when providing a final response to complete the task
+- Do not use the "routing" field, this is only relevant for orchestration agents
 - Each tool call must specify "tool_name" and "arguments" as an object
 - Multiple tool calls can be included in the array for sequential execution

@@ -120,6 +120,7 @@ async def agent_react_step_with_tools(
     system_prompt: str,
     conversation_history: List[str],
     agent_name: str,
+    schema: Dict[str, Any] = None,
 ) -> str:
     """Execute ReAct loop with custom tools (non-MCP)."""
 
@@ -128,5 +129,5 @@ async def agent_react_step_with_tools(
 
     # Use existing react agent with our tool client
     return await agent_react_step(
-        tool_client, system_prompt, conversation_history, agent_name
+        tool_client, system_prompt, conversation_history, agent_name, schema
     )

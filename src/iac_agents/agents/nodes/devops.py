@@ -1,6 +1,7 @@
 """DevOps Engineer Agent node for LangGraph workflow."""
 
 import asyncio
+import json
 import subprocess
 from pathlib import Path
 from typing import List
@@ -17,7 +18,7 @@ from ...templates import template_manager
 from ..react_agent import agent_react_step_with_tools
 from ..state import InfrastructureStateDict
 from ..terraform_utils import get_terraform_tools, terraform_tool_executor
-from ..utils import add_error_to_state
+from ..utils import add_error_to_state, load_agent_response_schema
 
 AGENT_NAME = "devops"
 
@@ -25,6 +26,7 @@ AGENT_NAME = "devops"
 def run_devops_react_workflow(
     system_prompt: str,
     conversation_history: List[str],
+    schema: dict,
 ) -> str:
     """Sync wrapper for DevOps ReAct workflow."""
 
@@ -36,6 +38,7 @@ def run_devops_react_workflow(
             system_prompt=system_prompt,
             conversation_history=conversation_history,
             agent_name=AGENT_NAME,
+            schema=schema,
         )
 
     return asyncio.run(_async_workflow())
@@ -73,8 +76,12 @@ def devops_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
         [f"- {tool['name']}: {tool['description']}" for tool in tools]
     )
 
+    schema = load_agent_response_schema()
     system_prompt = template_manager.get_prompt(
-        AGENT_NAME, tools_description=tools_description, working_dir=str(deployment_dir)
+        AGENT_NAME,
+        tools_description=tools_description,
+        working_dir=str(deployment_dir),
+        response_schema=json.dumps(schema, indent=2),
     )
 
     log_info(AGENT_NAME, "Starting ReAct workflow with Terraform tools")
@@ -84,6 +91,7 @@ def devops_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
         response = run_devops_react_workflow(
             system_prompt=system_prompt,
             conversation_history=conversation_history,
+            schema=schema,
         )
 
         conversation_history.append(

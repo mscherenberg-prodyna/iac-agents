@@ -85,7 +85,7 @@ def github_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
     log_info(AGENT_NAME, "Starting ReAct workflow with GitHub tools")
 
     try:
-        # Load response schema once
+        # Load response schema
         schema = load_agent_response_schema()
 
         # Run the ReAct workflow

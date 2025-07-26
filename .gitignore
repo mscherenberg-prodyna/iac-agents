@@ -85,3 +85,4 @@ terraform.tfstate*
 terraform.tfvars
 .terraform/
 terraform_deployments/*
+tmp_data/
