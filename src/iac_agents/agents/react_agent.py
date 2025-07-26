@@ -1,5 +1,6 @@
 """MCP utilities for agent operations using Python MCP package."""
 
+import json
 from typing import Any, Callable, Dict, List
 
 from langchain.evaluation import JsonSchemaEvaluator
@@ -34,12 +35,12 @@ async def agent_react_step(
             user_message = "\n\n###\n\n".join(conversation_history)
 
             response_dict = make_structured_llm_call(
-                system_prompt, user_message, agent_name, schema=schema
+                system_prompt, user_message, schema=schema
             )
 
             # validate response against schema
             validation_result = evaluator.evaluate_strings(
-                prediction=str(response_dict), reference=schema
+                prediction=json.dumps(response_dict), reference=schema
             )
 
             if not validation_result.get("score", 0):

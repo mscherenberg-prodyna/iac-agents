@@ -78,6 +78,14 @@ def make_structured_llm_call(
 
     # Returns a dictionary that conforms to the schema
     response = structured_llm.invoke(messages)
+
+    # Ensure response is a dictionary, parse if it's a string
+    if isinstance(response, str):
+        try:
+            response = json.loads(response)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Failed to parse LLM response as JSON: {e}") from e
+
     return response
 
 
@@ -178,14 +186,18 @@ def query_azure_agent(agent_name: str, agent_id: str, query: str) -> Optional[st
         return None
 
 
-def add_error_to_state(state: dict, error_message: str) -> list:
+def add_error_to_state(state: dict, error_message: str) -> dict:
     """Add an error message to the state errors list."""
     errors = state.get("errors", [])
     if errors is None:
         errors = []
     if error_message not in errors:
         errors.append(error_message)
-    return errors
+
+    # Return updated state with the error added
+    updated_state = state.copy()
+    updated_state["errors"] = errors
+    return updated_state
 
 
 def get_azure_subscription_info() -> Dict[str, Any]:

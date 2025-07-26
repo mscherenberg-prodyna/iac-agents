@@ -3,6 +3,7 @@
 import asyncio
 import json
 import os
+import traceback
 from typing import List
 
 from ...logging_system import (
@@ -86,7 +87,7 @@ def github_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
     try:
         # Load response schema once
         schema = load_agent_response_schema()
-        
+
         # Run the ReAct workflow
         response = run_github_react_workflow(
             mcp_client=mcp_client,
@@ -109,5 +110,8 @@ def github_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
         return result_state
 
     except Exception as e:
+
+        full_error = traceback.format_exc()
         log_warning(AGENT_NAME, f"ReAct workflow failed: {str(e)}")
+        log_warning(AGENT_NAME, f"Full traceback: {full_error}")
         return add_error_to_state(state, f"GitHub agent error: {str(e)}")
