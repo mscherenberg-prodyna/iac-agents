@@ -14,7 +14,7 @@ from ...logging_system import (
 )
 from ...templates import template_manager
 from ..git_utils import get_git_tools, git_tool_executor
-from ..mcp_utils import MCPClient
+from ..mcp_utils import MultiMCPClient
 from ..react_agent import agent_react_step
 from ..state import InfrastructureStateDict
 from ..utils import add_error_to_state, get_github_token, load_agent_response_schema
@@ -23,7 +23,7 @@ AGENT_NAME = "github_agent"
 
 
 def run_github_react_workflow(
-    mcp_client: MCPClient,
+    mcp_client: MultiMCPClient,
     conversation_history: List[str],
     schema: dict,
 ) -> str:
@@ -62,7 +62,9 @@ def github_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
         error_msg = "GITHUB_TOKEN environment variable not set"
         log_warning(AGENT_NAME, error_msg)
 
-    mcp_client = MCPClient(
+    mcp_client = MultiMCPClient()
+    mcp_client.add_server(
+        "github",
         [
             "run",
             "-i",
@@ -77,8 +79,7 @@ def github_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
         ],
         {"GITHUB_PERSONAL_ACCESS_TOKEN": github_token},
     )
-    mcp_client.extend_tools(get_git_tools())
-    mcp_client.set_custom_tool_executor(git_tool_executor)
+    mcp_client.add_custom_tools("git_cli", get_git_tools(), git_tool_executor)
 
     conversation_history = state["conversation_history"]
 
