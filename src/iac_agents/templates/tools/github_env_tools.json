@@ -1,0 +1,242 @@
+[
+  {
+    "name": "create_environment",
+    "description": "Create or update a GitHub environment with protection rules",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "environment_name": {
+          "type": "string",
+          "description": "Name of the environment to create"
+        },
+        "wait_timer": {
+          "type": "integer",
+          "description": "Wait time in minutes before deployment (0-43200)",
+          "default": 0,
+          "minimum": 0,
+          "maximum": 43200
+        },
+        "prevent_self_review": {
+          "type": "boolean",
+          "description": "Prevent the user who triggered the deployment from approving it",
+          "default": false
+        },
+        "protected_branches": {
+          "type": "boolean",
+          "description": "Only allow deployments from protected branches",
+          "default": false
+        },
+        "custom_branch_policies": {
+          "type": "boolean",
+          "description": "Enable custom deployment branch policies",
+          "default": true
+        },
+        "reviewers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "User",
+                  "Team"
+                ],
+                "description": "Type of reviewer"
+              },
+              "id": {
+                "type": "integer",
+                "description": "GitHub user or team ID"
+              }
+            },
+            "required": [
+              "type",
+              "id"
+            ]
+          },
+          "description": "List of required reviewers (max 6)",
+          "maxItems": 6
+        }
+      },
+      "required": [
+        "environment_name"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_environments",
+    "description": "List all environments in the repository",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "get_environment",
+    "description": "Get details of a specific environment",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "environment_name": {
+          "type": "string",
+          "description": "Name of the environment to retrieve"
+        }
+      },
+      "required": [
+        "environment_name"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "delete_environment",
+    "description": "Delete a GitHub environment",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "environment_name": {
+          "type": "string",
+          "description": "Name of the environment to delete"
+        }
+      },
+      "required": [
+        "environment_name"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "create_secret",
+    "description": "Create or update an environment secret",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "environment_name": {
+          "type": "string",
+          "description": "Name of the environment"
+        },
+        "secret_name": {
+          "type": "string",
+          "description": "Name of the secret"
+        },
+        "secret_value": {
+          "type": "string",
+          "description": "Value of the secret"
+        }
+      },
+      "required": [
+        "environment_name",
+        "secret_name",
+        "secret_value"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_secrets",
+    "description": "List all secrets in an environment",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "environment_name": {
+          "type": "string",
+          "description": "Name of the environment"
+        }
+      },
+      "required": [
+        "environment_name"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "delete_secret",
+    "description": "Delete an environment secret",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "environment_name": {
+          "type": "string",
+          "description": "Name of the environment"
+        },
+        "secret_name": {
+          "type": "string",
+          "description": "Name of the secret to delete"
+        }
+      },
+      "required": [
+        "environment_name",
+        "secret_name"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "create_variable",
+    "description": "Create or update an environment variable",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "environment_name": {
+          "type": "string",
+          "description": "Name of the environment"
+        },
+        "variable_name": {
+          "type": "string",
+          "description": "Name of the variable"
+        },
+        "variable_value": {
+          "type": "string",
+          "description": "Value of the variable"
+        }
+      },
+      "required": [
+        "environment_name",
+        "variable_name",
+        "variable_value"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_variables",
+    "description": "List all variables in an environment",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "environment_name": {
+          "type": "string",
+          "description": "Name of the environment"
+        }
+      },
+      "required": [
+        "environment_name"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "delete_variable",
+    "description": "Delete an environment variable",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "environment_name": {
+          "type": "string",
+          "description": "Name of the environment"
+        },
+        "variable_name": {
+          "type": "string",
+          "description": "Name of the variable to delete"
+        }
+      },
+      "required": [
+        "environment_name",
+        "variable_name"
+      ],
+      "additionalProperties": false
+    }
+  }
+]

@@ -14,6 +14,7 @@ from ...logging_system import (
 )
 from ...templates import template_manager
 from ..git_utils import get_git_tools, git_tool_executor
+from ..github_env_utils import get_github_env_tools, github_env_tool_executor
 from ..mcp_utils import MultiMCPClient
 from ..react_agent import agent_react_step
 from ..state import InfrastructureStateDict
@@ -80,10 +81,11 @@ def github_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
         {"GITHUB_PERSONAL_ACCESS_TOKEN": github_token},
     )
     mcp_client.add_custom_tools("git_cli", get_git_tools(), git_tool_executor)
+    mcp_client.add_custom_tools("github_env", get_github_env_tools(), github_env_tool_executor)
 
     conversation_history = state["conversation_history"]
 
-    log_info(AGENT_NAME, "Starting ReAct workflow with GitHub tools")
+    log_info(AGENT_NAME, "Starting ReAct workflow with GitHub and Git CLI tools")
 
     try:
         # Load response schema
