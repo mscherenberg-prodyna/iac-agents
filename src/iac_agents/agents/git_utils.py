@@ -2,16 +2,23 @@
 
 import os
 import subprocess
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 from ..templates.template_loader import template_loader
 
 
-def execute_git_command(command: str) -> str:
+def execute_git_command(command: Union[str, List[str]]) -> str:
     """Execute a local git command and return the result."""
     try:
+        # Handle command as string or list
+        if isinstance(command, str):
+            import shlex
+            cmd_list = shlex.split(command)
+        else:
+            cmd_list = command
+            
         result = subprocess.run(
-            command.split(),
+            cmd_list,
             capture_output=True,
             text=True,
             timeout=30,
@@ -93,7 +100,7 @@ def build_git_command(tool_name: str, arguments: Dict[str, Any]) -> str:
 
     # Handle special cases
     if "message" in arguments:
-        cmd_parts.extend(["-m", f'"{arguments["message"]}"'])
+        cmd_parts.extend(["-m", arguments["message"]])
 
     if "max_count" in arguments:
         cmd_parts.extend(["-n", str(arguments["max_count"])])
