@@ -1,93 +1,144 @@
 """Cloud Engineer Agent node for LangGraph workflow."""
 
-from datetime import date
+import asyncio
+import json
+import os
+from pathlib import Path
+from typing import List, Tuple
 
 from ...logging_system import (
-    log_agent_complete,
     log_agent_response,
     log_agent_start,
     log_info,
     log_warning,
 )
 from ...templates.template_manager import template_manager
+from ..iap_workflow_utils import get_iap_tools, iap_tool_executor
+from ..mcp_utils import MultiMCPClient
+from ..react_agent import agent_react_step
 from ..state import InfrastructureStateDict, WorkflowStage
-from ..terraform_utils import extract_terraform_template
-from ..utils import add_error_to_state, make_llm_call
+from ..terraform_utils import get_terraform_tools, terraform_tool_executor
+from ..utils import (
+    add_error_to_state,
+    get_azure_credentials,
+    load_agent_response_schema,
+    verify_azure_auth,
+)
 
 AGENT_NAME = "cloud_engineer"
+
+
+def run_cloud_engineer_react_workflow(
+    mcp_client: MultiMCPClient,
+    conversation_history: List[str],
+    schema: dict,
+) -> Tuple[str, str | None]:
+    """Sync wrapper for Cloud Engineer ReAct workflow."""
+
+    async def _async_workflow():
+        # Get tools description within session context
+        async with mcp_client.session() as session:
+            tools_list = await mcp_client.list_tools(session)
+
+        # Format tools for consistency
+        tools_description = "\n".join(
+            [f"- {tool['name']}: {tool['description']}" for tool in tools_list]
+        )
+
+        system_prompt = template_manager.get_prompt(
+            "cloud_engineer",
+            tools_description=tools_description,
+            working_dir=f"{Path.cwd()}/tmp_data",
+            response_schema=json.dumps(schema, indent=2),
+        )
+
+        return await agent_react_step(
+            mcp_client,
+            system_prompt,
+            conversation_history,
+            AGENT_NAME,
+            schema,
+        )
+
+    return asyncio.run(_async_workflow())
 
 
 def cloud_engineer_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
     """Generate infrastructure templates based on Cloud Architect requirements."""
     log_agent_start(AGENT_NAME, "Processing requirements and generating templates")
 
-    # Check for validation failures from previous attempts
-    validation_result = state.get("template_validation_result", {})
-    has_validation_failure = validation_result and not validation_result.get(
-        "valid", True
+    conversation_history = state.get("conversation_history", [])
+
+    # Verify Azure CLI authentication
+    if not verify_azure_auth(AGENT_NAME):
+        error_msg = "Azure CLI authentication required"
+        log_warning(AGENT_NAME, error_msg)
+        return add_error_to_state(state, f"Cloud Engineer agent error: {error_msg}")
+
+    tenant_id, client_id, client_secret = get_azure_credentials()
+
+    mcp_client = MultiMCPClient()
+    mcp_client.add_server(
+        "azcli",
+        [
+            "run",
+            "-i",
+            "--rm",
+            "mcr.microsoft.com/azure-sdk/azure-mcp:latest",
+        ],
+        {
+            "AZURE_TENANT_ID": tenant_id,
+            "AZURE_CLIENT_ID": client_id,
+            "AZURE_CLIENT_SECRET": client_secret,
+        },
     )
-    validation_error = (
-        validation_result.get("error", "") if has_validation_failure else ""
+    mcp_client.add_custom_tools(
+        "terraform_cli", get_terraform_tools(), terraform_tool_executor
     )
-    subscription_info = state["subscription_info"]
-    current_date = str(date.today())
-    system_prompt = template_manager.get_prompt(
-        "cloud_engineer",
-        current_stage=state.get("current_stage", "template_generation"),
-        validation_error=validation_error,
-        current_date=current_date,
-        default_subscription_name=subscription_info.get("default_subscription_name"),
-        default_subscription_id=subscription_info.get("default_subscription_id"),
-    )
-    conversation_history = state["conversation_history"]
+    mcp_client.add_custom_tools("iap_workflow", get_iap_tools(), iap_tool_executor)
+
+    log_info(AGENT_NAME, "Starting ReAct workflow with MCP tools")
 
     try:
-        response = make_llm_call(
-            system_prompt, "\n\n###\n\n".join(conversation_history)
+        # Load response schema
+        schema = load_agent_response_schema()
+
+        # Run the ReAct workflow
+        response, routing = run_cloud_engineer_react_workflow(
+            mcp_client=mcp_client,
+            conversation_history=conversation_history,
+            schema=schema,
         )
         conversation_history.append(
             f"Cloud Engineer: {response}"
         )  # Append response to conversation history
 
-        # Extract Terraform template (needed for deployment)
-        template_content = extract_terraform_template(response)
-
         # Consultation upon request
-        needs_terraform_consultation = "TERRAFORM_CONSULTATION_NEEDED" in response
+        needs_terraform_lookup = "TERRAFORM_CONSULTATION_NEEDED" in routing
+
+        # Save template in state if generated
+        if os.path.exists(f"{Path.cwd()}/tmp_data/main.tf"):
+            with open(f"{Path.cwd()}/tmp_data/main.tf", "r", encoding="utf-8") as f:
+                template_content = f.read()
+            state["final_template"] = template_content
 
         # Debug logging
         log_info(
             AGENT_NAME,
-            (
-                f"Consultation decision: explicit_request={'TERRAFORM_CONSULTATION_NEEDED' in response}, "
-                f"validation_failure={has_validation_failure}, final_decision={needs_terraform_consultation}"
-            ),
+            f"Consultation decision: explicit_request={needs_terraform_lookup}",
         )
 
-        # Log the response content for debugging
+        # Log the response
         log_agent_response(AGENT_NAME, response)
-
-        log_agent_complete(
-            AGENT_NAME,
-            f"Response generated {'with template' if template_content else 'without template'}, "
-            f"consultation {'required' if needs_terraform_consultation else 'not required'}",
-        )
-
-        # Determine if we need Terraform consultation
-        needs_terraform_lookup = needs_terraform_consultation
 
         result_state = {
             **state,
             "current_stage": WorkflowStage.TEMPLATE_GENERATION.value,
             "conversation_history": conversation_history,
-            "final_template": template_content,
             "secops_finops_analysis": "",
             "cloud_engineer_response": response,
             "needs_terraform_lookup": needs_terraform_lookup,
         }
-
-        if needs_terraform_lookup and has_validation_failure:
-            result_state["template_validation_result"] = None
 
         return result_state
 

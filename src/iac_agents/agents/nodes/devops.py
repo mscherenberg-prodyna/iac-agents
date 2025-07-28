@@ -3,13 +3,11 @@
 import asyncio
 import json
 import os
-import subprocess
 from pathlib import Path
-from typing import List
-
-from iac_agents.logging_system import get_thread_id
+from typing import List, Tuple
 
 from ...logging_system import (
+    get_thread_id,
     log_agent_response,
     log_agent_start,
     log_info,
@@ -21,7 +19,12 @@ from ..mcp_utils import MultiMCPClient
 from ..react_agent import agent_react_step
 from ..state import InfrastructureStateDict
 from ..terraform_utils import get_terraform_tools, terraform_tool_executor
-from ..utils import add_error_to_state, get_github_token, load_agent_response_schema
+from ..utils import (
+    add_error_to_state,
+    get_github_token,
+    load_agent_response_schema,
+    verify_azure_auth,
+)
 
 AGENT_NAME = "devops"
 
@@ -30,7 +33,7 @@ def run_devops_react_workflow(
     mcp_client: MultiMCPClient,
     conversation_history: List[str],
     schema: dict,
-) -> str:
+) -> Tuple[str, str | None]:
     """Sync wrapper for DevOps ReAct workflow."""
 
     async def _async_workflow():
@@ -38,7 +41,7 @@ def run_devops_react_workflow(
         async with mcp_client.session() as session:
             tools_list = await mcp_client.list_tools(session)
 
-        # Format tools for consistency with devops agent
+        # Format tools for consistency
         tools_description = "\n".join(
             [f"- {tool['name']}: {tool['description']}" for tool in tools_list]
         )
@@ -68,10 +71,10 @@ def devops_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
     log_agent_start(AGENT_NAME, "Running DevOps deployment with Terraform tools")
 
     template_content = state.get("final_template", "")
-    conversation_history = state["conversation_history"]
+    conversation_history = state.get("conversation_history", [])
 
     # Verify Azure CLI authentication
-    if not verify_azure_auth():
+    if not verify_azure_auth(AGENT_NAME):
         error_msg = "Azure CLI authentication required"
         log_warning(AGENT_NAME, error_msg)
         return add_error_to_state(state, f"DevOps agent error: {error_msg}")
@@ -124,7 +127,7 @@ def devops_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
         schema = load_agent_response_schema()
 
         # Run the ReAct workflow
-        response = run_devops_react_workflow(
+        response, _ = run_devops_react_workflow(
             mcp_client=mcp_client,
             conversation_history=conversation_history,
             schema=schema,
@@ -157,32 +160,3 @@ def devops_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
     except Exception as e:
         log_warning(AGENT_NAME, f"ReAct workflow failed: {str(e)}")
         return add_error_to_state(state, f"DevOps agent error: {str(e)}")
-
-
-def verify_azure_auth() -> bool:
-    """Verify Azure CLI authentication using active session."""
-    try:
-        # Check if Azure CLI is installed and authenticated
-        result = subprocess.run(
-            ["az", "account", "show"],
-            capture_output=True,
-            text=True,
-            timeout=30,
-            check=False,
-        )
-
-        if result.returncode == 0:
-            log_agent_start(AGENT_NAME, "Azure CLI authentication verified")
-            return True
-        log_warning(AGENT_NAME, f"Azure CLI authentication failed: {result.stderr}")
-        return False
-
-    except subprocess.TimeoutExpired:
-        log_warning(AGENT_NAME, "Azure CLI authentication check timed out")
-        return False
-    except FileNotFoundError:
-        log_warning(AGENT_NAME, "Azure CLI not found - please install Azure CLI")
-        return False
-    except Exception as e:
-        log_warning(AGENT_NAME, f"Azure authentication verification failed: {str(e)}")
-        return False

@@ -4,7 +4,7 @@ import asyncio
 import json
 import os
 import traceback
-from typing import List
+from typing import List, Tuple
 
 from ...logging_system import (
     log_agent_response,
@@ -27,7 +27,7 @@ def run_github_react_workflow(
     mcp_client: MultiMCPClient,
     conversation_history: List[str],
     schema: dict,
-) -> str:
+) -> Tuple[str, str | None]:
     """Sync wrapper for GitHub ReAct workflow."""
 
     async def _async_workflow():
@@ -81,7 +81,9 @@ def github_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
         {"GITHUB_PERSONAL_ACCESS_TOKEN": github_token},
     )
     mcp_client.add_custom_tools("git_cli", get_git_tools(), git_tool_executor)
-    mcp_client.add_custom_tools("github_env", get_github_env_tools(), github_env_tool_executor)
+    mcp_client.add_custom_tools(
+        "github_env", get_github_env_tools(), github_env_tool_executor
+    )
 
     conversation_history = state["conversation_history"]
 
@@ -92,7 +94,7 @@ def github_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
         schema = load_agent_response_schema()
 
         # Run the ReAct workflow
-        response = run_github_react_workflow(
+        response, _ = run_github_react_workflow(
             mcp_client=mcp_client,
             conversation_history=conversation_history,
             schema=schema,

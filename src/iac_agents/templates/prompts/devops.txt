@@ -20,7 +20,7 @@ You get tasks handed to you by the Cloud Architect.
 
 ## AVAILABLE TOOLS
 
-You have access to comprehensive Terraform CLI tools for infrastructure operations:
+You have access to comprehensive Git and Terraform CLI tools for infrastructure operations:
 
 {{ tools_description }}
 

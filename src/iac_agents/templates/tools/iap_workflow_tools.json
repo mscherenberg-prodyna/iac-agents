@@ -1,0 +1,27 @@
+[
+    {
+        "name": "write_terraform_template",
+        "description": "Write a generated Terraform template to the state",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "template_content": {
+                    "type": "string",
+                    "description": "Template to use for the Terraform deployment, must be a valid Terraform configuration"
+                },
+                "working_dir": {
+                    "type": "string",
+                    "description": "Working directory path"
+                }
+            },
+            "additionalProperties": false
+        }
+    },
+    {
+        "name": "read_terraform_template",
+        "description": "Read a generated Terraform template from the state",
+        "inputSchema": {
+            "additionalProperties": false
+        }
+    }
+]

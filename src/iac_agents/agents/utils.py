@@ -3,7 +3,7 @@
 import json
 import subprocess
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 from azure.ai.agents import AgentsClient
 from azure.ai.agents.models import BingGroundingTool, ListSortOrder, MessageRole
@@ -12,7 +12,7 @@ from langchain.schema import HumanMessage, SystemMessage
 from langchain_openai import AzureChatOpenAI
 
 from ..config.settings import config
-from ..logging_system import log_warning
+from ..logging_system import log_agent_start, log_warning
 
 
 def create_llm_client(agent_name: str, temperature: float) -> AzureChatOpenAI:
@@ -95,6 +95,18 @@ def get_github_token() -> str:
     if not token:
         raise ValueError("GITHUB_TOKEN environment variable is not set")
     return token
+
+
+def get_azure_credentials() -> Tuple[str, str, str]:
+    """Get Azure credentials from environment variables."""
+    tenant_id = config.azure.tenant_id
+    client_id = config.azure.client_id
+    client_secret = config.azure.client_secret
+
+    if not tenant_id or not client_id or not client_secret:
+        raise ValueError("Azure credentials are not set in the configuration")
+
+    return tenant_id, client_id, client_secret
 
 
 def get_agent_id_base(agent_name: str, prompt: str) -> str:
@@ -256,3 +268,32 @@ def get_azure_subscription_info() -> Dict[str, Any]:
             "total_subscriptions": 0,
             "available_subscriptions": [],
         }
+
+
+def verify_azure_auth(agent_name: str) -> bool:
+    """Verify Azure CLI authentication using active session."""
+    try:
+        # Check if Azure CLI is installed and authenticated
+        result = subprocess.run(
+            ["az", "account", "show"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+
+        if result.returncode == 0:
+            log_agent_start(agent_name, "Azure CLI authentication verified")
+            return True
+        log_warning(agent_name, f"Azure CLI authentication failed: {result.stderr}")
+        return False
+
+    except subprocess.TimeoutExpired:
+        log_warning(agent_name, "Azure CLI authentication check timed out")
+        return False
+    except FileNotFoundError:
+        log_warning(agent_name, "Azure CLI not found - please install Azure CLI")
+        return False
+    except Exception as e:
+        log_warning(agent_name, f"Azure authentication verification failed: {str(e)}")
+        return False

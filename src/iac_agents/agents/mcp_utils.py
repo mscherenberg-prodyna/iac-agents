@@ -173,7 +173,10 @@ class MultiMCPClient:
                         for tool in tools_result.tools
                     ]
         except Exception as e:
+            import traceback
+
             log_warning("MultiMCP", f"Failed to get tools from {server_name}: {e}")
+            log_warning("MultiMCP", f"Traceback: {traceback.format_exc()}")
             return []
 
     async def list_tools(self, _session=None) -> List[Dict[str, Any]]:
@@ -242,6 +245,12 @@ class MultiMCPClient:
                                 )
                             return "Success"
                 except Exception as e:
+                    import traceback
+
+                    log_warning(
+                        "MultiMCP", f"Error calling {name} on {server_name}: {e}"
+                    )
+                    log_warning("MultiMCP", f"Traceback: {traceback.format_exc()}")
                     return f"Error calling {name} on {server_name}: {e}"
 
         return f"Tool {name} not found"

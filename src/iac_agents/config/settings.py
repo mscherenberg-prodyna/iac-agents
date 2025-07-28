@@ -67,6 +67,23 @@ class AzureAISettings:
 
 
 @dataclass
+class AzureSettings:
+    """Azure configuration settings."""
+
+    tenant_id: str = None
+    client_id: str = None
+    client_secret: str = None
+
+    def __post_init__(self):
+        if self.tenant_id is None:
+            self.tenant_id = os.getenv("AZURE_TENANT_ID")
+        if self.client_id is None:
+            self.client_id = os.getenv("AZURE_CLIENT_ID")
+        if self.client_secret is None:
+            self.client_secret = os.getenv("AZURE_CLIENT_SECRET")
+
+
+@dataclass
 class GitHubSettings:
     """GitHub configuration settings."""
 
@@ -126,6 +143,7 @@ class Config:
         self.compliance = ComplianceSettings()
         self.azure_openai = AzureOpenAISettings()
         self.azure_ai = AzureAISettings()
+        self.azure = AzureSettings()
         self.github = GitHubSettings()
         self.agents = AgentSettings()
         self.ui = UISettings()

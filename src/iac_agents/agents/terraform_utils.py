@@ -230,10 +230,10 @@ def execute_terraform_command(command: str, working_dir: str = None) -> str:
     try:
         # Split command into parts
         cmd_parts = command.split()
-        
+
         # Set working directory
         cwd = Path(working_dir) if working_dir else Path.cwd()
-        
+
         result = subprocess.run(
             cmd_parts,
             capture_output=True,
@@ -266,131 +266,131 @@ def get_terraform_tools() -> List[Dict[str, Any]]:
 
 def build_terraform_command(tool_name: str, arguments: Dict[str, Any]) -> str:
     """Build terraform command string from tool name and arguments."""
-    
+
     # Extract terraform command from tool name
-    tf_cmd = tool_name.replace('terraform_', '', 1)
-    
+    tf_cmd = tool_name.replace("terraform_", "", 1)
+
     # Start with base command
-    cmd_parts = ['terraform']
-    
+    cmd_parts = ["terraform"]
+
     # Handle workspace commands specially
-    if tf_cmd.startswith('workspace_'):
-        workspace_action = tf_cmd.replace('workspace_', '', 1)
-        cmd_parts.extend(['workspace', workspace_action])
-        
-        if workspace_action in ['new', 'select', 'delete'] and 'name' in arguments:
-            cmd_parts.append(arguments['name'])
-        
+    if tf_cmd.startswith("workspace_"):
+        workspace_action = tf_cmd.replace("workspace_", "", 1)
+        cmd_parts.extend(["workspace", workspace_action])
+
+        if workspace_action in ["new", "select", "delete"] and "name" in arguments:
+            cmd_parts.append(arguments["name"])
+
         # Add workspace-specific flags
-        if workspace_action == 'delete' and arguments.get('force', False):
-            cmd_parts.append('-force')
-        if workspace_action == 'new' and 'state' in arguments:
-            cmd_parts.extend(['-state', arguments['state']])
+        if workspace_action == "delete" and arguments.get("force", False):
+            cmd_parts.append("-force")
+        if workspace_action == "new" and "state" in arguments:
+            cmd_parts.extend(["-state", arguments["state"]])
     else:
         cmd_parts.append(tf_cmd)
-        
+
         # Handle specific commands with positional arguments
-        if tf_cmd == 'import' and 'address' in arguments and 'id' in arguments:
-            cmd_parts.extend([arguments['address'], arguments['id']])
-        elif tf_cmd in ['taint', 'untaint'] and 'address' in arguments:
-            cmd_parts.append(arguments['address'])
-        elif tf_cmd == 'output' and 'name' in arguments:
-            cmd_parts.append(arguments['name'])
-        elif tf_cmd == 'show' and 'file' in arguments:
-            cmd_parts.append(arguments['file'])
-        elif tf_cmd == 'apply' and 'plan_file' in arguments:
-            cmd_parts.append(arguments['plan_file'])
-    
+        if tf_cmd == "import" and "address" in arguments and "id" in arguments:
+            cmd_parts.extend([arguments["address"], arguments["id"]])
+        elif tf_cmd in ["taint", "untaint"] and "address" in arguments:
+            cmd_parts.append(arguments["address"])
+        elif tf_cmd == "output" and "name" in arguments:
+            cmd_parts.append(arguments["name"])
+        elif tf_cmd == "show" and "file" in arguments:
+            cmd_parts.append(arguments["file"])
+        elif tf_cmd == "apply" and "plan_file" in arguments:
+            cmd_parts.append(arguments["plan_file"])
+
     # Map common boolean arguments to flags
     bool_flag_mappings = {
-        'auto_approve': '-auto-approve',
-        'destroy': '-destroy',
-        'detailed_exitcode': '-detailed-exitcode',
-        'no_color': '-no-color',
-        'json': '-json',
-        'raw': '-raw',
-        'check': '-check',
-        'diff': '-diff',
-        'write': '-write',
-        'list': '-list',
-        'recursive': '-recursive',
-        'refresh_only': '-refresh-only',
-        'compact_warnings': '-compact-warnings',
-        'upgrade': '-upgrade',
-        'reconfigure': '-reconfigure',
-        'migrate_state': '-migrate-state',
-        'force_copy': '-force-copy'
+        "auto_approve": "-auto-approve",
+        "destroy": "-destroy",
+        "detailed_exitcode": "-detailed-exitcode",
+        "no_color": "-no-color",
+        "json": "-json",
+        "raw": "-raw",
+        "check": "-check",
+        "diff": "-diff",
+        "write": "-write",
+        "list": "-list",
+        "recursive": "-recursive",
+        "refresh_only": "-refresh-only",
+        "compact_warnings": "-compact-warnings",
+        "upgrade": "-upgrade",
+        "reconfigure": "-reconfigure",
+        "migrate_state": "-migrate-state",
+        "force_copy": "-force-copy",
     }
-    
+
     # Add boolean flags that are true
     for arg, flag in bool_flag_mappings.items():
         if arguments.get(arg, False):
             cmd_parts.append(flag)
-    
+
     # Add boolean flags that can be explicitly disabled
-    disable_flags = ['input', 'lock', 'get', 'backend', 'refresh']
+    disable_flags = ["input", "lock", "get", "backend", "refresh"]
     for flag in disable_flags:
         if flag in arguments:
             if arguments[flag]:
                 cmd_parts.append(f'-{flag.replace("_", "-")}')
             else:
                 cmd_parts.append(f'-{flag.replace("_", "-")}=false')
-    
+
     # Handle string arguments with flags
     string_mappings = {
-        'out': '-out',
-        'backup': '-backup',
-        'state': '-state',
-        'state_out': '-state-out',
-        'lock_timeout': '-lock-timeout',
-        'lockfile': '-lockfile',
-        'from_module': '-from-module'
+        "out": "-out",
+        "backup": "-backup",
+        "state": "-state",
+        "state_out": "-state-out",
+        "lock_timeout": "-lock-timeout",
+        "lockfile": "-lockfile",
+        "from_module": "-from-module",
     }
-    
+
     for arg, flag in string_mappings.items():
         if arg in arguments and arguments[arg]:
             cmd_parts.extend([flag, arguments[arg]])
-    
+
     # Handle integer arguments
-    if 'parallelism' in arguments:
-        cmd_parts.extend(['-parallelism', str(arguments['parallelism'])])
-    
+    if "parallelism" in arguments:
+        cmd_parts.extend(["-parallelism", str(arguments["parallelism"])])
+
     # Handle array arguments
-    if 'var_file' in arguments:
-        for var_file in arguments['var_file']:
-            cmd_parts.extend(['-var-file', var_file])
-    
-    if 'var' in arguments:
-        for key, value in arguments['var'].items():
-            cmd_parts.extend(['-var', f'{key}={value}'])
-    
-    if 'backend_config' in arguments:
-        for config in arguments['backend_config']:
-            cmd_parts.extend(['-backend-config', config])
-    
-    if 'replace' in arguments:
-        for resource in arguments['replace']:
-            cmd_parts.extend(['-replace', resource])
-    
-    if 'target' in arguments:
-        for target in arguments['target']:
-            cmd_parts.extend(['-target', target])
-    
-    return ' '.join(cmd_parts)
+    if "var_file" in arguments:
+        for var_file in arguments["var_file"]:
+            cmd_parts.extend(["-var-file", var_file])
+
+    if "var" in arguments:
+        for key, value in arguments["var"].items():
+            cmd_parts.extend(["-var", f"{key}={value}"])
+
+    if "backend_config" in arguments:
+        for config in arguments["backend_config"]:
+            cmd_parts.extend(["-backend-config", config])
+
+    if "replace" in arguments:
+        for resource in arguments["replace"]:
+            cmd_parts.extend(["-replace", resource])
+
+    if "target" in arguments:
+        for target in arguments["target"]:
+            cmd_parts.extend(["-target", target])
+
+    return " ".join(cmd_parts)
 
 
 def terraform_tool_executor(tool_name: str, arguments: Dict[str, Any]) -> str:
     """Execute terraform tools using the terraform command function."""
-    
+
     try:
         # Build command
         command = build_terraform_command(tool_name, arguments)
-        
+
         # Get working directory
-        working_dir = arguments.get('working_dir')
-        
+        working_dir = arguments.get("working_dir")
+
         # Execute command
         return execute_terraform_command(command, working_dir)
-        
+
     except Exception as e:
         return f"Failed to execute {tool_name}: {e}"

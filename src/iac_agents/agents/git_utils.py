@@ -1,6 +1,7 @@
 """Utils for executing git commands in a local repository."""
 
 import os
+import shlex
 import subprocess
 from typing import Any, Dict, List, Union
 
@@ -12,11 +13,10 @@ def execute_git_command(command: Union[str, List[str]]) -> str:
     try:
         # Handle command as string or list
         if isinstance(command, str):
-            import shlex
             cmd_list = shlex.split(command)
         else:
             cmd_list = command
-            
+
         result = subprocess.run(
             cmd_list,
             capture_output=True,

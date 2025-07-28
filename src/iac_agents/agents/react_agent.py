@@ -1,7 +1,7 @@
 """MCP utilities for agent operations using Python MCP package."""
 
 import json
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Tuple
 
 from langchain.evaluation import JsonSchemaEvaluator
 
@@ -18,7 +18,7 @@ async def agent_react_step(
     conversation_history: List[str],
     agent_name: str,
     schema: Dict[str, Any] = None,
-) -> str:
+) -> Tuple[str, str | None]:
     """Execute a ReAct loop with an MCP client and additional tools."""
 
     # Load schema if not provided
@@ -77,7 +77,9 @@ async def agent_react_step(
             else:
                 # No tool calls, check if agent provided an answer
                 if response_dict.get("answer"):
-                    return response_dict["answer"]
+                    if response_dict.get("routing", None):
+                        return response_dict["answer"], response_dict["routing"]
+                    return response_dict["answer"], None
                 # No answer or tool calls, provide feedback
                 feedback_msg = (
                     "Please provide either an 'answer' to complete the task or "
@@ -121,7 +123,7 @@ async def agent_react_step_with_tools(
     conversation_history: List[str],
     agent_name: str,
     schema: Dict[str, Any] = None,
-) -> str:
+) -> Tuple[str, str | None]:
     """Execute ReAct loop with custom tools (non-MCP)."""
 
     # Create tool client
