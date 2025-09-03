@@ -7,7 +7,7 @@ from typing import Any, Dict, Optional, Tuple
 
 from azure.ai.agents import AgentsClient
 from azure.ai.agents.models import BingGroundingTool, ListSortOrder, MessageRole
-from azure.identity import DefaultAzureCredential
+from azure.identity import AzureCliCredential
 from langchain.schema import HumanMessage, SystemMessage
 from langchain_openai import AzureChatOpenAI
 
@@ -111,7 +111,7 @@ def get_azure_credentials() -> Tuple[str, str, str]:
 
 def get_agent_id_base(agent_name: str, prompt: str) -> str:
     """Update or create AI Foundry Agent without any tools."""
-    credential = DefaultAzureCredential()
+    credential = AzureCliCredential()
     agents_client = AgentsClient(
         endpoint=config.azure_ai.project_endpoint, credential=credential
     )
@@ -133,7 +133,7 @@ def get_agent_id_base(agent_name: str, prompt: str) -> str:
 
 def get_agent_id_bing(agent_name: str, prompt: str) -> str:
     """Update or create AI Foundry Agent that uses Bing search."""
-    credential = DefaultAzureCredential()
+    credential = AzureCliCredential()
     agents_client = AgentsClient(
         endpoint=config.azure_ai.project_endpoint, credential=credential
     )
@@ -158,7 +158,7 @@ def get_agent_id_bing(agent_name: str, prompt: str) -> str:
 def query_azure_agent(agent_name: str, agent_id: str, query: str) -> Optional[str]:
     """Query an Azure AI Foundry agent."""
     try:
-        credential = DefaultAzureCredential()
+        credential = AzureCliCredential()
         agents_client = AgentsClient(
             endpoint=config.azure_ai.project_endpoint, credential=credential
         )
