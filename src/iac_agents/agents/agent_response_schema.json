@@ -50,7 +50,7 @@
         "string",
         "null"
       ],
-      "description": "Optional routing information for workflow control",
+      "description": "Optional routing information for workflow control. Only include this field when communicating directly with the user or when routing to another agent. Do not include when reasoning.",
       "enum": [
         "INTERNAL_CLOUD_ARCHITECT",
         "INTERNAL_CLOUD_ENGINEER",

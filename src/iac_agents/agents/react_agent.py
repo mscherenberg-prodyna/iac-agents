@@ -55,11 +55,8 @@ async def agent_react_step(
             # check if reasoning was given
             if response_dict.get("reasoning"):
                 reasoning = response_dict["reasoning"]
-                log_info(agent_name, f"Reasoning: {reasoning[:200]}")
+                log_info(agent_name, f"Reasoning: {reasoning[:200]}...")
                 conversation_history.append(f"{agent_name} Reasoning: {reasoning}")
-                # continue with routing if reasoning has lead to routing
-                if response_dict.get("routing", None):
-                    return reasoning, response_dict["routing"]
 
             # check if agent wants to use tools
             if response_dict.get("tool_calls"):
@@ -69,12 +66,12 @@ async def agent_react_step(
 
                     log_info(
                         agent_name,
-                        f"Calling tool: {tool_name} with args: {str(arguments)[:200]}",
+                        f"Calling tool: {tool_name} with args: {str(arguments)[:200]}...",
                     )
                     tool_result = await mcp_client.call_tool(
                         session, tool_name, arguments
                     )
-                    log_info(agent_name, f"Tool Result: {str(tool_result)[:200]}")
+                    log_info(agent_name, f"Tool Result: {str(tool_result)[:200]}...")
 
                     # Add tool call and result to conversation
                     conversation_history.append(f"Tool Call: {tool_name}({arguments})")

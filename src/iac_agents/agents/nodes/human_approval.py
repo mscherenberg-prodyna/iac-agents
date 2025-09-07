@@ -30,7 +30,6 @@ def human_approval(state: InfrastructureStateDict) -> InfrastructureStateDict:
         approval_request = {
             "type": "approval_request",
             "current_agent": "human_approval",
-            "workflow_phase": "approval",
             "deployment_summary": state.get(
                 "deployment_summary", "Infrastructure deployment ready"
             ),

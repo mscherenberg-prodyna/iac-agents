@@ -33,9 +33,6 @@ class InfrastructureStateDict(TypedDict):
     # Agent IDs for Cloud Agents
     terraform_consultant_id: Optional[str]
 
-    # Stage results (as dicts for LangGraph compatibility)
-    template_validation_result: Optional[Dict[str, Any]]
-
     # Final output
     final_template: Optional[str]
 
@@ -49,7 +46,6 @@ class InfrastructureStateDict(TypedDict):
 
     # Additional workflow fields
     current_agent: Optional[str]
-    workflow_phase: Optional[str]
     subscription_info: Optional[Dict[str, Any]]
     needs_terraform_lookup: bool
     cloud_architect_analysis: Optional[str]

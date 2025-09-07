@@ -292,7 +292,6 @@ def log_agent_start(agent_name: str, activity: str, details: Dict[str, Any] = No
             st.session_state, "workflow_active"
         ):
             st.session_state.current_agent_status = agent_name
-            st.session_state.current_workflow_phase = activity
             st.session_state.workflow_status = f"{agent_name} - {activity}"
     except (ImportError, AttributeError):
         # Streamlit not available or session_state not initialized

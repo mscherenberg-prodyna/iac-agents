@@ -101,7 +101,6 @@ def load_showcase_scenario(scenario_key: str, scenario_data: Dict[str, Any]):
     st.session_state.workflow_active = True
     st.session_state.workflow_status = "Starting showcase scenario..."
     st.session_state.current_agent_status = "Cloud Architect"
-    st.session_state.current_workflow_phase = "Planning"
     st.session_state.workflow_result = {}
     st.session_state.workflow_error = None
     st.session_state.workflow_interrupted = False
@@ -143,8 +142,10 @@ def should_show_auto_answer_button() -> bool:
         return False
 
     # Check if this is a clarification request from the agent
-    message_content = last_message.get("content", "").upper()
-    is_likely_clarifying = "CLARIFICATION_REQUIRED" in message_content
+    message_content = last_message.get("content", "").lower()
+    is_likely_clarifying = any(
+        term in message_content for term in ["clarify", "clarification"]
+    )
 
     # Only show if we haven't answered yet
     return is_likely_clarifying and not scenario_info.get("questions_answered", False)

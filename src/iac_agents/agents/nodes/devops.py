@@ -152,7 +152,6 @@ def devops_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
             "devops_response": response,
             "deployment_status": deployment_status,
             "terraform_workspace": str(deployment_dir),
-            "workflow_phase": "complete",
         }
 
         return result_state

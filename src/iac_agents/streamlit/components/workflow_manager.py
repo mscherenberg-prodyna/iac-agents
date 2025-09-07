@@ -107,7 +107,6 @@ class WorkflowManager:
                             "deployment_config": deployment_config,
                             "requires_approval": approval_required,
                             "current_agent": "cloud_architect",
-                            "workflow_phase": "planning",
                             "errors": [],
                             "needs_terraform_lookup": False,
                             "approval_received": False,

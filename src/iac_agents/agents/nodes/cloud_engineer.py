@@ -33,6 +33,7 @@ AGENT_NAME = "cloud_engineer"
 def run_cloud_engineer_react_workflow(
     mcp_client: MultiMCPClient,
     conversation_history: List[str],
+    state: InfrastructureStateDict,
     schema: dict,
 ) -> Tuple[str, str | None]:
     """Sync wrapper for Cloud Engineer ReAct workflow."""
@@ -47,12 +48,16 @@ def run_cloud_engineer_react_workflow(
             [f"- {tool['name']}: {tool['description']}" for tool in tools_list]
         )
 
-        azure_sub_info = get_azure_subscription_info()
+        # Get Azure subscription information
+        if not state.get("subscription_info", {}):
+            subscription_info = get_azure_subscription_info()
+        else:
+            subscription_info = state["subscription_info"]
 
         system_prompt = template_manager.get_prompt(
-            "cloud_engineer",
+            AGENT_NAME,
             tools_description=tools_description,
-            azure_info=azure_sub_info,
+            azure_info=subscription_info,
             working_dir=f"{Path.cwd()}/tmp_data",
             current_date=datetime.now().strftime("%Y-%m-%d"),
             response_schema=json.dumps(schema, indent=2),
@@ -95,6 +100,7 @@ def cloud_engineer_agent(state: InfrastructureStateDict) -> InfrastructureStateD
         response, routing = run_cloud_engineer_react_workflow(
             mcp_client=mcp_client,
             conversation_history=conversation_history,
+            state=state,
             schema=schema,
         )
         conversation_history.append(
