@@ -1,89 +1,35 @@
 {
-  "startup_mvp": {
-    "title": "Startup MVP Environment",
-    "business_context": "A startup needs to quickly deploy their MVP to validate product-market fit",
-    "user_request": "\nWe're a fintech startup launching our MVP. We need:\n\nBusiness Requirements:\n- Secure web application for 1000+ concurrent users\n- PCI DSS compliance for payment processing\n- 99.9% uptime SLA\n- Auto-scaling for traffic spikes\n- Separate dev/staging/prod environments\n\nTechnical Needs:\n- React frontend with global CDN\n- Node.js API with load balancing\n- PostgreSQL database with encryption\n- Redis for session management\n- Application monitoring and alerts\n- CI/CD pipeline integration\n\nBudget: $500/month initially, scalable to $2000/month\n\nTimeline: Production ready in 3 days\n        ",
-    "expected_resources": [
-      "Azure App Service (Premium tier)",
-      "Azure Database for PostgreSQL (Flexible Server)",
-      "Azure Redis Cache",
-      "Azure Application Gateway with WAF",
-      "Azure CDN",
-      "Azure Key Vault",
-      "Application Insights",
-      "Azure DevOps integration"
-    ],
-    "compliance_requirements": [
-      "PCI DSS",
-      "GDPR",
-      "SOC 2"
-    ],
-    "estimated_cost": "$450-750/month"
-  },
-  "enterprise_migration": {
-    "title": "Enterprise Application Migration",
-    "business_context": "Large enterprise migrating legacy on-premises application to Azure",
-    "user_request": "\nEnterprise Migration Project:\n\nCurrent State:\n- Legacy .NET application on Windows Server 2012\n- SQL Server 2016 database (500GB)\n- 50,000 daily active users\n- 24/7 operations requirement\n- Complex AD integration\n\nMigration Requirements:\n- Zero-downtime migration strategy\n- Enhanced security and compliance\n- Cost optimization (target 30% reduction)\n- Disaster recovery across regions\n- Advanced monitoring and analytics\n\nGovernance:\n- Must comply with SOX, HIPAA, ISO 27001\n- Approved vendor list constraints\n- Network isolation requirements\n- Audit trail for all changes\n\nGo-live date: 6 weeks\n        ",
-    "expected_resources": [
-      "Azure Virtual Machines (multiple tiers)",
-      "Azure SQL Database (Premium)",
-      "Azure Active Directory Premium",
-      "Azure Site Recovery",
-      "Azure Backup",
-      "Network Security Groups",
-      "Azure Firewall",
-      "Log Analytics Workspace",
-      "Azure Monitor",
-      "Azure Policy"
-    ],
-    "compliance_requirements": [
-      "SOX",
-      "HIPAA",
-      "ISO 27001",
-      "PCI DSS"
-    ],
-    "estimated_cost": "$3,500-5,000/month"
-  },
   "ai_ml_platform": {
-    "title": "AI/ML Research Platform",
+    "title": "AI/ML Platform",
     "business_context": "Research team needs scalable ML infrastructure for model training and inference",
-    "user_request": "\nAI Research Platform Requirements:\n\nResearch Needs:\n- Large language model training (up to 100B parameters)\n- Computer vision model development\n- Multi-GPU training capabilities\n- Jupyter notebook environment\n- Data lake for 10TB+ datasets\n\nInfrastructure:\n- GPU clusters (V100/A100)\n- High-performance storage\n- Container orchestration\n- Model versioning and registry\n- Automated ML pipelines\n\nCollaboration:\n- Multi-tenant access for 20+ researchers\n- Resource quotas and billing tracking\n- Integration with popular ML frameworks\n- Experiment tracking and visualization\n\nSecurity:\n- Sensitive research data protection\n- IP compliance and access controls\n- Secure data sharing capabilities\n        ",
-    "expected_resources": [
-      "Azure Machine Learning",
-      "Azure Kubernetes Service with GPU nodes",
-      "Azure Data Lake Storage Gen2",
-      "Azure Container Registry",
-      "Azure Databricks",
-      "Azure Cognitive Services",
-      "Azure Storage (Premium SSD)",
-      "Azure Virtual Network",
-      "Azure Active Directory B2B"
-    ],
+    "user_request": "\nMy team needs scalable AI and ML infrastructure for model training and inference. In the first place, the focus should be to leverage LLMs and other cloud services, but long term we want to be able to train our own models as well. Our training and reference data should be stored centrally in the cloud.\n",
     "compliance_requirements": [
-      "ISO 27001",
-      "Research Data Protection"
+      "GDPR",
+      "ISO 27001"
     ],
-    "estimated_cost": "$8,000-15,000/month"
+    "suggested_answers": [
+      "We want to start by using the newest OpenAI models since that is what our developers are most familiar with.",
+      "",
+      "We are looking at 10 - 15 developers doing real-time inference, though usually not at the same time.",
+      "",
+      "We don't have any existing cloud storage that we need to integrate with, however, we would like to use this for RAG or similar scenarios in the future.",
+      "",
+      "We don't need private networking for the time being. Long term, we want to be able to use GPUs for model training.",
+      "",
+      "For now, no notifications or alerts are necessary.",
+      "",
+      "No other requirements at this point in time! Please use the existing resource group 'rg-iap-demo' for deployment, do not create a new one."
+    ]
   },
   "monthly_reports": {
     "title": "Monthly Reports Storage",
     "business_context": "Company needs secure storage for monthly reports with automatic notifications",
-    "user_request": "\nWe need a secure place to store our monthly business reports. When someone uploads a new report, we want to automatically send an email notification.\n",
-    "expected_resources": [
-      "Azure Storage Account",
-      "Azure Logic App"
-    ],
+    "user_request": "\nWe need a secure place to store our monthly business reports. When someone uploads a new report, we want to automatically send out an email notification.\n",
     "compliance_requirements": [
       "GDPR"
     ],
-    "estimated_cost": "$50-100/month",
-    "clarifying_questions": [
-      "What email address should receive the notifications when reports are uploaded?",
-      "What types of reports will you be storing (e.g., PDF, Excel, Word)?",
-      "How many reports do you expect to upload per month?"
-    ],
     "suggested_answers": [
-      "We have about 5-6 people who upload reports, usually once per month so around 5-6 uploads total per month.",
+      "We have about 5-6 people who upload reports, usually once per month so around 5-6 uploads total per month. These are developers and business analysts, so they can use an API for uploads.",
       "",
       "The reports are mainly PDF files and Excel spreadsheets, typically around 2-5 MB each.",
       "",
@@ -91,67 +37,15 @@
       "",
       "Only our internal team should be able to upload and view the reports - no external access needed. Basic security is fine, nothing too complex.",
       "",
-      "This is just for internal use within our organization. However, everything be publically accessible so that we can access it without VPN.",
-      "",
-      "No other requirements at this point in time! Make sure to use the existing resource group 'rg-iap-demo' for deployment."
-    ]
-  },
-  "document_backup": {
-    "title": "Document Backup and Archive Solution",
-    "business_context": "Company needs reliable backup storage for important business documents",
-    "user_request": "\nWe need a reliable backup solution for our important business documents. We want secure storage with monitoring to track when files are uploaded.\n",
-    "expected_resources": [
-      "Azure Storage Account",
-      "Azure Application Insights"
-    ],
-    "compliance_requirements": [
-      "GDPR"
-    ],
-    "estimated_cost": "$30-80/month",
-    "clarifying_questions": [
-      "Approximately how much data (in GB or TB) do you expect to store initially, and what is your anticipated growth rate?",
-      "How frequently will backups occur (e.g., daily, weekly, real-time)?",
-      "Who should have access to the stored documents, and are there any specific access control requirements?",
-      "What is your preferred retention period for the backups?",
-      "Do you require the ability to restore individual files, or full backups only?",
-      "Are there any specific monitoring or alerting features you need?"
-    ],
-    "suggested_answers": [
-      "We expect to store around 50-100 GB initially, with maybe 20-30 GB growth per year as we add more monthly reports.",
-      "",
-      "We'd like to back up files weekly, nothing too frequent since these are mainly monthly business reports.",
-      "",
-      "Basic access controls are fine, nothing too complex.",
-      "",
-      "We need to keep backups for at least 7 years for compliance reasons.",
-      "",
-      "We mainly need to restore individual files when someone accidentally deletes or corrupts a report.",
-      "",
-      "Basic monitoring would be helpful - just knowing when things fail and why.",
-      "",
-      "Please use the existing resource group 'rg-iap-demo' for deployment.",
-      "",
-      "No other requirements at this point in time!"
+      "No other requirements at this point in time! Make sure to use the existing resource group 'rg-iap-demo' for deployment, do not create a new one."
     ]
   },
   "file_sharing_portal": {
-    "title": "Simple File Sharing Portal",
+    "title": "File Sharing Portal",
     "business_context": "Small team needs a web portal to share and access business documents",
     "user_request": "\nWe need a web portal where our team can upload and download business documents. Just a straightforward way to share files with each other using secure cloud storage.\n",
-    "expected_resources": [
-      "Azure App Service",
-      "Azure Storage Account"
-    ],
     "compliance_requirements": [
       "GDPR"
-    ],
-    "estimated_cost": "$80-150/month",
-    "clarifying_questions": [
-      "Approximately how many users will access the portal?",
-      "What types and sizes of documents will be uploaded?",
-      "Should access be restricted to your team only or do you need public access?",
-      "Do you require versioning or audit logs for uploaded/downloaded files?",
-      "Would you like notifications when new documents are uploaded or downloaded?"
     ],
     "suggested_answers": [
       "About 8-12 team members will access the portal regularly, so a small team.",
@@ -164,9 +58,7 @@
       "",
       "No notifications needed - we just want a simple file sharing solution without extra complexity.",
       "",
-      "Please use the existing resource group 'rg-iap-demo' for deployment.",
-      "",
-      "No other requirements at this point in time!"
+      "No other requirements at this point in time! Please use the existing resource group 'rg-iap-demo' for deployment, do not create a new one."
     ]
   }
 }

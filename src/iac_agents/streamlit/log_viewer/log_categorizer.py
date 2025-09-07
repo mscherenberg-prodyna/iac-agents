@@ -44,7 +44,16 @@ def categorize_log_line(line: str) -> LogCategory:
     # Check if it's an info log
     if "[INFO]" in line or "ℹ️" in line:
         # System logs - specific patterns
-        system_patterns = ["STARTING:", "RESPONSE:", "COMPLETED:"]
+        system_patterns = [
+            "STARTING:",
+            "RESPONSE:",
+            "COMPLETED:",
+            "LOGGING:",
+            "Session:",
+            "Workflow Execution:",
+            "human_approval_handler:",
+            "Process Input:",
+        ]
         if any(pattern in line_stripped for pattern in system_patterns):
             return LogCategory.SYSTEM
 

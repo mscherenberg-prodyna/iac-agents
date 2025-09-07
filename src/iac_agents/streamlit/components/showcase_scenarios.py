@@ -59,14 +59,6 @@ def render_showcase_scenarios():
             # Show scenario details
             with st.expander("📋 Scenario Details", expanded=False):
                 st.markdown(f"**Context:** {scenario_data['business_context']}")
-                st.markdown(
-                    f"**Expected Cost:** {scenario_data.get('estimated_cost', 'N/A')}"
-                )
-
-                if "expected_resources" in scenario_data:
-                    st.markdown("**Expected Resources:**")
-                    for resource in scenario_data["expected_resources"]:
-                        st.markdown(f"• {resource}")
 
             # Load scenario button
             if st.button(
@@ -138,10 +130,7 @@ def should_show_auto_answer_button() -> bool:
     scenario_data = scenario_info["data"]
 
     # Check if we have clarifying questions and answers
-    if (
-        "clarifying_questions" not in scenario_data
-        or "suggested_answers" not in scenario_data
-    ):
+    if "suggested_answers" not in scenario_data:
         return False
 
     # Check if the last assistant message contains clarifying questions

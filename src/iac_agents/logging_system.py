@@ -324,7 +324,7 @@ def log_error(agent_name: str, message: str, details: Dict[str, Any] = None):
     agent_logger.log_error(agent_name, message, details)
 
 
-def log_agent_response(agent_name: str, response: str, truncate_at: int = 100):
+def log_agent_response(agent_name: str, response: str, truncate_at: int = 200):
     """Log agent response content (truncated for readability)."""
     if response:
         truncated = (

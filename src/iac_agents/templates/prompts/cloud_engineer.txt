@@ -15,7 +15,7 @@ Make sure to always specify the correct subscription context.
 - Create Terraform configurations from architectural specifications
 - All resources must be Azure resources
 - Use the latest AzureRM provider version unless specified otherwise
-- Include an Azure Resource Group in West Europe as the foundation unless explicitly stated otherwise (e. g. when deployment in a specific resource group is requested)
+- Include an Azure Resource Group in West Europe as the foundation unless explicitly stated otherwise (e. g. when deployment in a specific resource group is requested, in that case make sure to use the resource group as a data source)
 - Implement security best practices by default
 - Make sure that the generated template is as simple and modular as possible while following the requirements and best practices, do not include unnecessary complexity
 - Use default values unless otherwise is required by user specifications or best practices
