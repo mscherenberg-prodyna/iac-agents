@@ -3,6 +3,8 @@
 import asyncio
 import json
 import os
+import traceback
+from datetime import datetime
 from pathlib import Path
 from typing import List, Tuple
 
@@ -20,7 +22,7 @@ from ..state import InfrastructureStateDict, WorkflowStage
 from ..terraform_utils import get_terraform_tools, terraform_tool_executor
 from ..utils import (
     add_error_to_state,
-    get_azure_credentials,
+    get_azure_subscription_info,
     load_agent_response_schema,
     verify_azure_auth,
 )
@@ -45,10 +47,14 @@ def run_cloud_engineer_react_workflow(
             [f"- {tool['name']}: {tool['description']}" for tool in tools_list]
         )
 
+        azure_sub_info = get_azure_subscription_info()
+
         system_prompt = template_manager.get_prompt(
             "cloud_engineer",
             tools_description=tools_description,
+            azure_info=azure_sub_info,
             working_dir=f"{Path.cwd()}/tmp_data",
+            current_date=datetime.now().strftime("%Y-%m-%d"),
             response_schema=json.dumps(schema, indent=2),
         )
 
@@ -65,7 +71,7 @@ def run_cloud_engineer_react_workflow(
 
 def cloud_engineer_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
     """Generate infrastructure templates based on Cloud Architect requirements."""
-    log_agent_start(AGENT_NAME, "Processing requirements and generating templates")
+    log_agent_start(AGENT_NAME, "Generating infrastructure template")
 
     conversation_history = state.get("conversation_history", [])
 
@@ -75,29 +81,11 @@ def cloud_engineer_agent(state: InfrastructureStateDict) -> InfrastructureStateD
         log_warning(AGENT_NAME, error_msg)
         return add_error_to_state(state, f"Cloud Engineer agent error: {error_msg}")
 
-    tenant_id, client_id, client_secret = get_azure_credentials()
-
     mcp_client = MultiMCPClient()
-    mcp_client.add_server(
-        "azcli",
-        [
-            "run",
-            "-i",
-            "--rm",
-            "mcr.microsoft.com/azure-sdk/azure-mcp:latest",
-        ],
-        {
-            "AZURE_TENANT_ID": tenant_id,
-            "AZURE_CLIENT_ID": client_id,
-            "AZURE_CLIENT_SECRET": client_secret,
-        },
-    )
     mcp_client.add_custom_tools(
         "terraform_cli", get_terraform_tools(), terraform_tool_executor
     )
     mcp_client.add_custom_tools("iap_workflow", get_iap_tools(), iap_tool_executor)
-
-    log_info(AGENT_NAME, "Starting ReAct workflow with MCP tools")
 
     try:
         # Load response schema
@@ -114,13 +102,18 @@ def cloud_engineer_agent(state: InfrastructureStateDict) -> InfrastructureStateD
         )  # Append response to conversation history
 
         # Consultation upon request
-        needs_terraform_lookup = "TERRAFORM_CONSULTATION_NEEDED" in routing
+        needs_terraform_lookup = (
+            "TERRAFORM_CONSULTATION_NEEDED" in routing if routing else False
+        )
 
         # Save template in state if generated
         if os.path.exists(f"{Path.cwd()}/tmp_data/main.tf"):
             with open(f"{Path.cwd()}/tmp_data/main.tf", "r", encoding="utf-8") as f:
                 template_content = f.read()
             state["final_template"] = template_content
+            log_info(AGENT_NAME, "Terraform template generated successfully")
+        else:
+            log_warning(AGENT_NAME, "No Terraform template was generated")
 
         # Debug logging
         log_info(
@@ -144,4 +137,5 @@ def cloud_engineer_agent(state: InfrastructureStateDict) -> InfrastructureStateD
 
     except Exception as e:
         log_warning(AGENT_NAME, f"Template generation failed: {str(e)}")
+        log_warning(AGENT_NAME, f"Stack trace: {traceback.format_exc()}")
         return add_error_to_state(state, f"Cloud Engineer error: {str(e)}")

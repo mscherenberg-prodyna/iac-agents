@@ -19,7 +19,11 @@ def terraform_consultant_agent(
     """Terraform Consultant Agent - Documentation lookup and best practices via Azure AI."""
     log_agent_start(AGENT_NAME, "Providing Terraform guidance")
 
-    system_prompt = template_manager.get_prompt(AGENT_NAME)
+    current_template = state.get("final_template")
+
+    system_prompt = template_manager.get_prompt(
+        AGENT_NAME, current_template=current_template
+    )
     conversation_history = state["conversation_history"]
 
     agent_id = state.get("terraform_consultant_id", None)

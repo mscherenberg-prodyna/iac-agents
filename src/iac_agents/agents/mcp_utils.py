@@ -8,15 +8,18 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from mcp.types import TextContent
 
-from ..logging_system import log_info, log_warning
+from ..logging_system import log_warning
 
 
 class MCPClient:
     """Generic MCP client."""
 
-    def __init__(self, mcp_args: List[str], mcp_env: Dict[str, str]):
+    def __init__(
+        self, mcp_args: List[str], mcp_env: Dict[str, str], mcp_command: str = "docker"
+    ):
         self.mcp_args = mcp_args
         self.mcp_env = mcp_env
+        self.mcp_command = mcp_command
         self.tools_cache = None
         self.custom_tools = []
         self.custom_tool_executor = None
@@ -25,7 +28,7 @@ class MCPClient:
     async def session(self):
         """Context manager for MCP session."""
         server_params = StdioServerParameters(
-            command="docker",
+            command=self.mcp_command,
             args=self.mcp_args,
             env=self.mcp_env,
         )
@@ -124,14 +127,17 @@ class MultiMCPClient:
         yield self
 
     def add_server(
-        self, name: str, mcp_args: List[str], mcp_env: Dict[str, str] = None
+        self,
+        name: str,
+        mcp_args: List[str],
+        mcp_env: Dict[str, str] = None,
+        mcp_command: str = "docker",
     ):
         """Add an MCP server."""
         self.servers[name] = StdioServerParameters(
-            command="docker", args=mcp_args, env=mcp_env or {}
+            command=mcp_command, args=mcp_args, env=mcp_env or {}
         )
         self._tools_cache = None  # Invalidate cache
-        log_info("MultiMCP", f"Added server: {name}")
 
     def add_custom_tools(self, prefix: str, tools: List[Dict], executor: Callable):
         """Add custom tools."""
@@ -149,7 +155,6 @@ class MultiMCPClient:
             }
 
         self._tools_cache = None  # Invalidate cache
-        log_info("MultiMCP", f"Added {len(tools)} custom tools with prefix: {prefix}")
 
     async def _get_server_tools(
         self, server_name: str, server_params: StdioServerParameters

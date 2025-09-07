@@ -1,15 +1,28 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Agent Response Schema",
-  "description": "Standardized JSON response format for agents",
+  "description": "Standardized JSON response format for agents. IMPORTANT: Never use null or none values for fields in the JSON response - completely omit fields that do not apply rather than setting them to null. Only include fields that have actual values.",
   "type": "object",
   "properties": {
     "answer": {
-      "type": "string",
-      "description": "The agent's final response message - when provided, stops the ReAct loop"
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "The agent's final response message to a user or agent - when provided, stops the ReAct loop"
+    },
+    "reasoning": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "A piece of reasoning or thought that can be used as a basis for the next step in the ReAct loop, never use both 'answer' and 'reasoning' in the same response"
     },
     "tool_calls": {
-      "type": "array",
+      "type": [
+        "array",
+        "null"
+      ],
       "description": "List of tool calls to execute - continues the ReAct loop",
       "items": {
         "type": "object",
@@ -24,17 +37,24 @@
             "additionalProperties": true
           }
         },
-        "required": ["tool_name", "arguments"],
+        "required": [
+          "tool_name",
+          "arguments"
+        ],
         "additionalProperties": false
       },
       "default": []
     },
     "routing": {
-      "type": "string",
+      "type": [
+        "string",
+        "null"
+      ],
       "description": "Optional routing information for workflow control",
       "enum": [
+        "INTERNAL_CLOUD_ARCHITECT",
         "INTERNAL_CLOUD_ENGINEER",
-        "INTERNAL_SECOPS_FINOPS", 
+        "INTERNAL_SECOPS_FINOPS",
         "INTERNAL_DEVOPS",
         "TERRAFORM_CONSULTATION_NEEDED",
         "CLARIFICATION_REQUIRED",
@@ -45,8 +65,21 @@
     }
   },
   "anyOf": [
-    {"required": ["answer"]},
-    {"required": ["tool_calls"]}
+    {
+      "required": [
+        "answer"
+      ]
+    },
+    {
+      "required": [
+        "tool_calls"
+      ]
+    },
+    {
+      "required": [
+        "routing"
+      ]
+    }
   ],
   "additionalProperties": false
 }

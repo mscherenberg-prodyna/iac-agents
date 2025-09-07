@@ -12,7 +12,7 @@ from langchain.schema import HumanMessage, SystemMessage
 from langchain_openai import AzureChatOpenAI
 
 from ..config.settings import config
-from ..logging_system import log_agent_start, log_warning
+from ..logging_system import log_warning
 
 
 def create_llm_client(agent_name: str, temperature: float) -> AzureChatOpenAI:
@@ -283,7 +283,6 @@ def verify_azure_auth(agent_name: str) -> bool:
         )
 
         if result.returncode == 0:
-            log_agent_start(agent_name, "Azure CLI authentication verified")
             return True
         log_warning(agent_name, f"Azure CLI authentication failed: {result.stderr}")
         return False

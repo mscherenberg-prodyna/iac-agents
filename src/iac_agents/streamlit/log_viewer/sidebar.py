@@ -12,11 +12,12 @@ def render_display_settings():
     st.subheader("⚙️ Display Settings")
 
     max_lines = st.slider(
-        "Lines to display",
-        min_value=50,
-        max_value=1000,
-        value=st.session_state.get("log_max_lines", 200),
-        step=50,
+        "Total lines to display",
+        min_value=150,  # Increased minimum for 3 categories
+        max_value=3000,  # Increased maximum for better categorization
+        value=st.session_state.get("log_max_lines", 600),  # Increased default
+        step=150,  # Larger step size
+        help="Total lines across all three categories (distributed equally)",
     )
     st.session_state.log_max_lines = max_lines
 
@@ -31,6 +32,14 @@ def render_display_settings():
         help="Filter to show only timestamped log entries",
     )
     st.session_state.show_timestamps = show_timestamps
+
+    st.markdown("---")
+
+    # Categorization info
+    st.markdown("**📊 Log Categories:**")
+    st.markdown("🏗️ **System**: STARTING, COMPLETED, RESPONSE, warnings")
+    st.markdown("🤖 **Agent**: Other info logs")
+    st.markdown("🔧 **Tool**: Tool Result, Calling tool")
 
 
 def render_file_selection():

@@ -5,12 +5,21 @@ from pathlib import Path
 
 import streamlit as st
 
-from iac_agents.templates.template_loader import template_loader
-
+from iac_agents.streamlit.log_viewer.categorized_display import (
+    render_agent_logs,
+    render_category_summary,
+    render_system_logs,
+    render_tool_logs,
+)
 from iac_agents.streamlit.log_viewer.file_manager import (
     filter_log_lines,
     format_file_size,
     get_file_activity_status,
+)
+from iac_agents.streamlit.log_viewer.log_categorizer import (
+    apply_max_lines_per_category,
+    categorize_log_lines,
+    get_category_stats,
 )
 
 
@@ -50,7 +59,7 @@ def render_file_info_header(selected_path: Path):
 def render_log_content(
     selected_path: Path, max_lines: int, auto_scroll: bool, show_timestamps: bool
 ):
-    """Render the main log content display."""
+    """Render the main categorized log content display."""
     try:
         with open(selected_path, "r", encoding="utf-8") as f:
             lines = f.readlines()
@@ -58,30 +67,46 @@ def render_log_content(
         # Filter lines if timestamp-only mode is enabled
         lines = filter_log_lines(lines, show_timestamps)
 
-        # Get the last N lines
-        recent_lines = lines[-max_lines:] if len(lines) > max_lines else lines
+        # Categorize all log lines
+        categorized_logs = categorize_log_lines(lines)
 
-        # Display the logs
-        log_text = "".join(recent_lines)
+        # Get statistics
+        system_count, agent_count, tool_count = get_category_stats(categorized_logs)
 
-        # Display header
-        st.markdown(
-            f"**Log Content** (showing last {len(recent_lines)} of {len(lines)} lines)"
+        # Apply max lines per category (divide max_lines by 3 for equal distribution)
+        max_lines_per_category = max(
+            max_lines // 3, 50
+        )  # Minimum 50 lines per category
+        limited_logs = apply_max_lines_per_category(
+            categorized_logs, max_lines_per_category
         )
 
-        # Use template-based log container with auto-scroll
-        if auto_scroll:
-            # Load HTML template and render with log content
-            log_container_template = template_loader.jinja_env.get_template(
-                "html/log_container.html"
-            )
-            log_html = log_container_template.render(log_content=log_text)
-            st.markdown(log_html, unsafe_allow_html=True)
-        else:
-            # Use regular code block when not auto-scrolling
-            st.code(log_text, language="text")
+        # Display category summary
+        render_category_summary(system_count, agent_count, tool_count, len(lines))
 
-        return len(recent_lines), len(lines)
+        st.markdown("---")
+
+        # Create three columns for the categorized logs
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            render_system_logs(limited_logs.system_logs, auto_scroll)
+
+        with col2:
+            render_agent_logs(limited_logs.agent_logs, auto_scroll)
+
+        with col3:
+            render_tool_logs(limited_logs.tool_logs, auto_scroll)
+
+        # Return stats for status display
+        limited_system_count = len(limited_logs.system_logs)
+        limited_agent_count = len(limited_logs.agent_logs)
+        limited_tool_count = len(limited_logs.tool_logs)
+        total_displayed = (
+            limited_system_count + limited_agent_count + limited_tool_count
+        )
+
+        return total_displayed, len(lines)
 
     except Exception as e:
         st.error(f"Error reading log file: {e}")
@@ -94,7 +119,7 @@ def render_status_info(
     selected_path: Path,
     show_timestamps: bool,
 ):
-    """Render status information."""
+    """Render status information for categorized logs."""
     col1, col2, col3 = st.columns(3)
 
     with col1:
@@ -104,7 +129,7 @@ def render_status_info(
         if show_timestamps:
             st.caption("🔍 Filtered view (timestamps only)")
         else:
-            st.caption("👁️ Full log view")
+            st.caption("👁️ Categorized log view")
 
     with col3:
         activity_status = get_file_activity_status(selected_path)

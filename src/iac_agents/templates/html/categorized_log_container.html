@@ -1,0 +1,79 @@
+<!-- Categorized log container template -->
+<div style="
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.8rem;
+    line-height: 1.25;
+    height: 400px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    border: 1px solid;
+" id="{{ container_id }}">{{ log_content }}</div>
+<script>
+    // Auto-scroll to bottom for categorized log container
+    setTimeout(function () {
+        const logContainer = document.getElementById('{{ container_id }}');
+        if (logContainer) {
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+    }, 100);
+</script>
+
+<style>
+    /* System logs - Blue theme */
+    #system-log-container {
+        background-color: #0d1421;
+        color: #a8c7ff;
+        border-color: #1e3a8a;
+    }
+
+    /* Agent logs - Green theme */
+    #agent-log-container {
+        background-color: #0d1b0d;
+        color: #a7f3d0;
+        border-color: #166534;
+    }
+
+    /* Tool logs - Orange theme */
+    #tool-log-container {
+        background-color: #1c1209;
+        color: #fed7aa;
+        border-color: #ea580c;
+    }
+
+    /* Scrollbar styling for categorized containers */
+    #system-log-container::-webkit-scrollbar,
+    #agent-log-container::-webkit-scrollbar,
+    #tool-log-container::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    #system-log-container::-webkit-scrollbar-track {
+        background: #1e3a8a;
+    }
+
+    #agent-log-container::-webkit-scrollbar-track {
+        background: #166534;
+    }
+
+    #tool-log-container::-webkit-scrollbar-track {
+        background: #ea580c;
+    }
+
+    #system-log-container::-webkit-scrollbar-thumb {
+        background: #3b82f6;
+        border-radius: 4px;
+    }
+
+    #agent-log-container::-webkit-scrollbar-thumb {
+        background: #10b981;
+        border-radius: 4px;
+    }
+
+    #tool-log-container::-webkit-scrollbar-thumb {
+        background: #f97316;
+        border-radius: 4px;
+    }
+</style>

@@ -5,9 +5,7 @@ from typing import Any, Callable, Dict, List, Tuple
 
 from langchain.evaluation import JsonSchemaEvaluator
 
-from ..logging_system import (
-    log_agent_response,
-)
+from ..logging_system import log_info, log_warning
 from .mcp_utils import MCPClient
 from .utils import load_agent_response_schema, make_structured_llm_call
 
@@ -51,10 +49,17 @@ async def agent_react_step(
                     f"Error: {validation_result.get('reasoning', 'Schema validation failed')}"
                 )
                 conversation_history.append(f"System: {error_msg}")
-                log_agent_response(
-                    agent_name, f"Schema validation failed: {response_dict}"
-                )
+                log_warning(agent_name, f"Schema validation failed: {response_dict}")
                 continue
+
+            # check if reasoning was given
+            if response_dict.get("reasoning"):
+                reasoning = response_dict["reasoning"]
+                log_info(agent_name, f"Reasoning: {reasoning[:100]}")
+                conversation_history.append(f"{agent_name} Reasoning: {reasoning}")
+                # continue with routing if reasoning has lead to routing
+                if response_dict.get("routing", None):
+                    return reasoning, response_dict["routing"]
 
             # check if agent wants to use tools
             if response_dict.get("tool_calls"):
@@ -62,18 +67,19 @@ async def agent_react_step(
                     tool_name = tool_call["tool_name"]
                     arguments = tool_call["arguments"]
 
-                    log_agent_response(
+                    log_info(
                         agent_name,
-                        f"Calling tool: {tool_name} with args: {arguments}",
+                        f"Calling tool: {tool_name} with args: {str(arguments)[:100]}",
                     )
                     tool_result = await mcp_client.call_tool(
                         session, tool_name, arguments
                     )
-                    log_agent_response(agent_name, f"Tool Result: {tool_result}")
+                    log_info(agent_name, f"Tool Result: {str(tool_result)[:100]}")
 
                     # Add tool call and result to conversation
                     conversation_history.append(f"Tool Call: {tool_name}({arguments})")
                     conversation_history.append(f"Tool Result: {tool_result}")
+
             else:
                 # No tool calls, check if agent provided an answer
                 if response_dict.get("answer"):

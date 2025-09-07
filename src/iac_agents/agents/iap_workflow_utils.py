@@ -15,7 +15,7 @@ def get_iap_tools() -> List[Dict[str, Any]]:
         return []
 
 
-def write_terraform_template(template_content: str, working_dir: str) -> str:
+def write_terraform_template(working_dir: str, template_content: str) -> str:
     """Write a Terraform template to the specified working directory."""
     try:
         with open(f"{working_dir}/main.tf", "w", encoding="utf-8") as f:
@@ -39,12 +39,12 @@ def iap_tool_executor(tool_name: str, arguments: Dict[str, Any]) -> str:
     try:
         if tool_name == "write_terraform_template":
             return write_terraform_template(
+                working_dir=arguments.get("working_dir", f"{Path.cwd()}/tmp_dir"),
                 template_content=arguments.get("template_content", ""),
-                working_dir=arguments.get("working_dir", str(Path.cwd())),
             )
         if tool_name == "read_terraform_template":
             return read_terraform_template(
-                working_dir=arguments.get("working_dir", str(Path.cwd()))
+                working_dir=arguments.get("working_dir", f"{Path.cwd()}/tmp_dir")
             )
         return f"Not a valid tool: {tool_name}"
     except Exception as e:

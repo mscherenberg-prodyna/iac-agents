@@ -5,17 +5,21 @@
         "inputSchema": {
             "type": "object",
             "properties": {
-                "template_content": {
-                    "type": "string",
-                    "description": "Template to use for the Terraform deployment, must be a valid Terraform configuration"
-                },
                 "working_dir": {
                     "type": "string",
                     "description": "Working directory path"
+                },
+                "template_content": {
+                    "type": "string",
+                    "description": "Template to use for the Terraform deployment, must be a valid Terraform configuration"
                 }
             },
             "additionalProperties": false
-        }
+        },
+        "required": [
+            "working_dir",
+            "template_content"
+        ]
     },
     {
         "name": "read_terraform_template",
