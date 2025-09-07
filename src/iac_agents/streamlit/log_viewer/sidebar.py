@@ -37,8 +37,8 @@ def render_display_settings():
 
     # Categorization info
     st.markdown("**📊 Log Categories:**")
-    st.markdown("🏗️ **System**: STARTING, COMPLETED, RESPONSE, warnings")
-    st.markdown("🤖 **Agent**: Other info logs")
+    st.markdown("🏗️ **System**: STARTING, COMPLETED, warnings")
+    st.markdown("🤖 **Agent**: Agent reasoning, responses and decisions")
     st.markdown("🔧 **Tool**: Tool Result, Calling tool")
 
 

@@ -46,7 +46,6 @@ def categorize_log_line(line: str) -> LogCategory:
         # System logs - specific patterns
         system_patterns = [
             "STARTING:",
-            "RESPONSE:",
             "COMPLETED:",
             "LOGGING:",
             "Session:",
