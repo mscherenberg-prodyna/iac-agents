@@ -37,6 +37,7 @@ Use the current client config to create role assignments for the deployment iden
 - Select appropriate resource types and configurations
 - Optimize for performance and cost
 - Implement modern resource configurations, e. g. using RBAC to access Key Vault instead of access policies (rbac_authorization_enabled = true)
+- If unclear, ask the Terraform Consultant Agent about modern standards, e. g. what models are available for deployment in Azure OpenAI
 - Implement high availability patterns
 
 ### Code Quality:
