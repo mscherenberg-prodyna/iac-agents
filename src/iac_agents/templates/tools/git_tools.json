@@ -27,7 +27,9 @@
       "properties": {
         "files": {
           "type": "array",
-          "items": {"type": "string"},
+          "items": {
+            "type": "string"
+          },
           "description": "Files to add to the index"
         },
         "all": {
@@ -39,6 +41,10 @@
           "type": "boolean",
           "description": "Interactive mode",
           "default": false
+        },
+        "directory": {
+          "type": "string",
+          "description": "Directory to run git command in"
         }
       },
       "additionalProperties": false
@@ -63,6 +69,10 @@
           "type": "boolean",
           "description": "Commit all changed files",
           "default": false
+        },
+        "directory": {
+          "type": "string",
+          "description": "Directory to run git command in"
         }
       },
       "additionalProperties": false
@@ -92,6 +102,10 @@
           "type": "boolean",
           "description": "Set upstream tracking",
           "default": false
+        },
+        "directory": {
+          "type": "string",
+          "description": "Directory to run git command in"
         }
       },
       "additionalProperties": false
@@ -166,7 +180,9 @@
         },
         "files": {
           "type": "array",
-          "items": {"type": "string"},
+          "items": {
+            "type": "string"
+          },
           "description": "Specific files to checkout"
         }
       },
@@ -214,7 +230,9 @@
       "properties": {
         "files": {
           "type": "array",
-          "items": {"type": "string"},
+          "items": {
+            "type": "string"
+          },
           "description": "Specific files to diff"
         },
         "cached": {
@@ -346,7 +364,14 @@
       "properties": {
         "action": {
           "type": "string",
-          "enum": ["list", "add", "remove", "rename", "get-url", "set-url"],
+          "enum": [
+            "list",
+            "add",
+            "remove",
+            "rename",
+            "get-url",
+            "set-url"
+          ],
           "description": "Action to perform",
           "default": "list"
         },
@@ -362,6 +387,10 @@
           "type": "boolean",
           "description": "Show URLs for remotes",
           "default": false
+        },
+        "directory": {
+          "type": "string",
+          "description": "Directory to run git command in"
         }
       },
       "additionalProperties": false
@@ -390,7 +419,14 @@
       "properties": {
         "action": {
           "type": "string",
-          "enum": ["push", "pop", "list", "show", "drop", "clear"],
+          "enum": [
+            "push",
+            "pop",
+            "list",
+            "show",
+            "drop",
+            "clear"
+          ],
           "description": "Stash action to perform",
           "default": "push"
         },
@@ -415,7 +451,11 @@
       "properties": {
         "action": {
           "type": "string",
-          "enum": ["list", "create", "delete"],
+          "enum": [
+            "list",
+            "create",
+            "delete"
+          ],
           "description": "Tag action to perform",
           "default": "list"
         },
@@ -477,7 +517,9 @@
           "description": "Shallow clone depth"
         }
       },
-      "required": ["url"],
+      "required": [
+        "url"
+      ],
       "additionalProperties": false
     }
   },
@@ -508,7 +550,9 @@
       "properties": {
         "files": {
           "type": "array",
-          "items": {"type": "string"},
+          "items": {
+            "type": "string"
+          },
           "description": "Files to remove"
         },
         "cached": {
@@ -522,7 +566,9 @@
           "default": false
         }
       },
-      "required": ["files"],
+      "required": [
+        "files"
+      ],
       "additionalProperties": false
     }
   },
@@ -546,7 +592,10 @@
           "default": false
         }
       },
-      "required": ["source", "destination"],
+      "required": [
+        "source",
+        "destination"
+      ],
       "additionalProperties": false
     }
   },
@@ -558,7 +607,9 @@
       "properties": {
         "commits": {
           "type": "array",
-          "items": {"type": "string"},
+          "items": {
+            "type": "string"
+          },
           "description": "Commits to cherry-pick"
         },
         "no_commit": {
@@ -567,7 +618,9 @@
           "default": false
         }
       },
-      "required": ["commits"],
+      "required": [
+        "commits"
+      ],
       "additionalProperties": false
     }
   },
@@ -579,7 +632,9 @@
       "properties": {
         "commits": {
           "type": "array",
-          "items": {"type": "string"},
+          "items": {
+            "type": "string"
+          },
           "description": "Commits to revert"
         },
         "no_commit": {
@@ -588,7 +643,9 @@
           "default": false
         }
       },
-      "required": ["commits"],
+      "required": [
+        "commits"
+      ],
       "additionalProperties": false
     }
   },
@@ -600,7 +657,12 @@
       "properties": {
         "action": {
           "type": "string",
-          "enum": ["start", "good", "bad", "reset"],
+          "enum": [
+            "start",
+            "good",
+            "bad",
+            "reset"
+          ],
           "description": "Bisect action"
         },
         "commit": {
@@ -608,7 +670,9 @@
           "description": "Commit reference"
         }
       },
-      "required": ["action"],
+      "required": [
+        "action"
+      ],
       "additionalProperties": false
     }
   },
@@ -620,7 +684,11 @@
       "properties": {
         "action": {
           "type": "string",
-          "enum": ["show", "expire", "delete"],
+          "enum": [
+            "show",
+            "expire",
+            "delete"
+          ],
           "description": "Reflog action",
           "default": "show"
         },
@@ -640,7 +708,12 @@
       "properties": {
         "action": {
           "type": "string",
-          "enum": ["add", "list", "remove", "prune"],
+          "enum": [
+            "add",
+            "list",
+            "remove",
+            "prune"
+          ],
           "description": "Worktree action"
         },
         "path": {
@@ -652,7 +725,9 @@
           "description": "Branch for new worktree"
         }
       },
-      "required": ["action"],
+      "required": [
+        "action"
+      ],
       "additionalProperties": false
     }
   },
@@ -664,7 +739,13 @@
       "properties": {
         "action": {
           "type": "string",
-          "enum": ["init", "update", "add", "status", "foreach"],
+          "enum": [
+            "init",
+            "update",
+            "add",
+            "status",
+            "foreach"
+          ],
           "description": "Submodule action"
         },
         "path": {
@@ -681,7 +762,9 @@
           "default": false
         }
       },
-      "required": ["action"],
+      "required": [
+        "action"
+      ],
       "additionalProperties": false
     }
   },
@@ -693,7 +776,10 @@
       "properties": {
         "format": {
           "type": "string",
-          "enum": ["tar", "zip"],
+          "enum": [
+            "tar",
+            "zip"
+          ],
           "description": "Archive format",
           "default": "tar"
         },
@@ -749,7 +835,9 @@
           "description": "Line range (e.g., '10,20')"
         }
       },
-      "required": ["file"],
+      "required": [
+        "file"
+      ],
       "additionalProperties": false
     }
   },
@@ -765,7 +853,9 @@
         },
         "files": {
           "type": "array",
-          "items": {"type": "string"},
+          "items": {
+            "type": "string"
+          },
           "description": "Files to search in"
         },
         "ignore_case": {
@@ -774,7 +864,9 @@
           "default": false
         }
       },
-      "required": ["pattern"],
+      "required": [
+        "pattern"
+      ],
       "additionalProperties": false
     }
   },
@@ -855,7 +947,12 @@
       "properties": {
         "action": {
           "type": "string",
-          "enum": ["get", "set", "unset", "list"],
+          "enum": [
+            "get",
+            "set",
+            "unset",
+            "list"
+          ],
           "description": "Config action",
           "default": "list"
         },
@@ -871,6 +968,15 @@
           "type": "boolean",
           "description": "Use global config",
           "default": false
+        },
+        "local": {
+          "type": "boolean",
+          "description": "Use local repository config",
+          "default": false
+        },
+        "directory": {
+          "type": "string",
+          "description": "Directory to run git command in"
         }
       },
       "additionalProperties": false

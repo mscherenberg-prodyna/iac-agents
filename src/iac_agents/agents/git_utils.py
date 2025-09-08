@@ -175,8 +175,12 @@ def build_git_command(tool_name: str, arguments: Dict[str, Any]) -> List[str]:
 def git_tool_executor(tool_name: str, arguments: Dict[str, Any]) -> str:
     """Execute git tools using dynamic command building."""
     try:
-        # Extract directory parameter if provided
-        working_dir = arguments.pop("directory", None)
+        # Extract directory parameter if provided (support both 'directory' and 'repo_path')
+        working_dir = arguments.pop("directory", None) or arguments.pop("repo_path", None)
+        
+        # Handle legacy parameter mappings
+        if "add_all" in arguments:
+            arguments["all"] = arguments.pop("add_all")
 
         command = build_git_command(tool_name, arguments)
         return execute_git_command(command, working_dir)

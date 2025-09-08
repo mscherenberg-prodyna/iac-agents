@@ -56,6 +56,7 @@ You have access to comprehensive Git and Terraform CLI tools for infrastructure 
 
 If the deployment is successful, you should create a GitHub repository under the current user named "iap_deployment_{thread_id}" using the thread ID from the current working directory.
 After that, initialize the current working directory as a git repository (important: do this first for the current subdirectory, do not use the existing git project in the parent folder).
+Also make sure to set the local configuration for user.name and user.email (investigate global settiings if necessary).
 Then, add all files, commit them with a message "Initial commit for deployment {thread_id}", add the origin, and push to the newly created GitHub repository. Make sure this is completed.
 Finally, notify the Cloud Architect about the successful deployment and provide the repository link.
 **IMPORTANT:** Do not route back to the Cloud Architect before confirming that the code has been pushed to GitHub successfully.

@@ -1,6 +1,8 @@
 """Session management for the Streamlit interface."""
 
+import shutil
 import uuid
+from pathlib import Path
 
 import streamlit as st
 
@@ -17,6 +19,16 @@ class SessionManager:
         """Initialize session-specific variables."""
         if "session_thread_id" not in st.session_state:
             st.session_state.session_thread_id = str(uuid.uuid4())
+            tmp_data_dir = Path.cwd() / "tmp_data"
+            if tmp_data_dir.exists() and any(tmp_data_dir.iterdir()):
+                for item in tmp_data_dir.iterdir():
+                    if item.is_file():
+                        item.unlink()
+                    elif item.is_dir():
+                        shutil.rmtree(item)
+                agent_logger.log_info(
+                    "Session", f"Cleaned up tmp_data directory at {tmp_data_dir}"
+                )
             agent_logger.log_info(
                 "Session",
                 f"New session initialized with thread_id: {st.session_state.session_thread_id}",

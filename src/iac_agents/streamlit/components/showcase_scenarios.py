@@ -144,7 +144,8 @@ def should_show_auto_answer_button() -> bool:
     # Check if this is a clarification request from the agent
     message_content = last_message.get("content", "").lower()
     is_likely_clarifying = any(
-        term in message_content for term in ["clarify", "clarification"]
+        term in message_content
+        for term in ["clarify", "clarification", "more information"]
     )
 
     # Only show if we haven't answered yet
