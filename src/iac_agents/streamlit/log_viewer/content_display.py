@@ -6,21 +6,12 @@ from pathlib import Path
 import streamlit as st
 
 from iac_agents.streamlit.log_viewer.categorized_display import (
-    render_agent_logs,
-    render_category_summary,
-    render_system_logs,
-    render_tool_logs,
-)
+    render_agent_logs, render_category_summary, render_system_logs,
+    render_tool_logs)
 from iac_agents.streamlit.log_viewer.file_manager import (
-    filter_log_lines,
-    format_file_size,
-    get_file_activity_status,
-)
+    filter_log_lines, format_file_size, get_file_activity_status)
 from iac_agents.streamlit.log_viewer.log_categorizer import (
-    apply_max_lines_per_category,
-    categorize_log_lines,
-    get_category_stats,
-)
+    apply_max_lines_per_category, categorize_log_lines, get_category_stats)
 
 
 def render_file_info_header(selected_path: Path):

@@ -6,10 +6,7 @@ import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 
 from iac_agents.streamlit.log_viewer.content_display import (
-    render_file_info_header,
-    render_log_content,
-    render_status_info,
-)
+    render_file_info_header, render_log_content, render_status_info)
 from iac_agents.streamlit.log_viewer.sidebar import render_sidebar
 
 

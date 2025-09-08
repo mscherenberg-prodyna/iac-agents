@@ -1,10 +1,6 @@
 """SecOps/FinOps Engineer Agent node for LangGraph workflow."""
 
-from ...logging_system import (
-    log_agent_response,
-    log_agent_start,
-    log_warning,
-)
+from ...logging_system import log_agent_response, log_agent_start, log_warning
 from ...templates.template_manager import template_manager
 from ..state import InfrastructureStateDict, WorkflowStage
 from ..utils import add_error_to_state, get_agent_id_bing, query_azure_agent

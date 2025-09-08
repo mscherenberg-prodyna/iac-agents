@@ -1,11 +1,7 @@
 """Terraform Consultant Agent node for LangGraph workflow."""
 
-from ...logging_system import (
-    log_agent_complete,
-    log_agent_response,
-    log_agent_start,
-    log_warning,
-)
+from ...logging_system import (log_agent_complete, log_agent_response,
+                               log_agent_start, log_warning)
 from ...templates.template_manager import template_manager
 from ..state import InfrastructureStateDict
 from ..utils import get_agent_id_bing, query_azure_agent

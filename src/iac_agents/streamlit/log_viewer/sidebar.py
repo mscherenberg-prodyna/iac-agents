@@ -4,7 +4,8 @@ import time
 
 import streamlit as st
 
-from iac_agents.streamlit.log_viewer.file_manager import format_file_size, get_log_files
+from iac_agents.streamlit.log_viewer.file_manager import (format_file_size,
+                                                          get_log_files)
 
 
 def render_display_settings():

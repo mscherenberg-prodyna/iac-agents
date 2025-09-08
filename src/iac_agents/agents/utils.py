@@ -6,7 +6,8 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
 from azure.ai.agents import AgentsClient
-from azure.ai.agents.models import BingGroundingTool, ListSortOrder, MessageRole
+from azure.ai.agents.models import (BingGroundingTool, ListSortOrder,
+                                    MessageRole)
 from azure.identity import AzureCliCredential
 from langchain.schema import HumanMessage, SystemMessage
 from langchain_openai import AzureChatOpenAI

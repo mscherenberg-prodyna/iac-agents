@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Union
 from ..templates.template_loader import template_loader
 
 
-def execute_git_command(command: Union[str, List[str]]) -> str:
+def execute_git_command(command: Union[str, List[str]], working_dir: str = None) -> str:
     """Execute a local git command and return the result."""
     try:
         # Handle command as string or list
@@ -17,12 +17,15 @@ def execute_git_command(command: Union[str, List[str]]) -> str:
         else:
             cmd_list = command
 
+        # Use provided working directory or current directory
+        cwd = working_dir if working_dir else os.getcwd()
+
         result = subprocess.run(
             cmd_list,
             capture_output=True,
             text=True,
             timeout=30,
-            cwd=os.getcwd(),
+            cwd=cwd,
             check=False,
         )
 
@@ -151,13 +154,31 @@ def build_git_command(tool_name: str, arguments: Dict[str, Any]) -> List[str]:
         action = arguments["action"]
         cmd_parts = ["git", "stash", action]
 
+    elif git_cmd == "config" and "action" in arguments:
+        action = arguments["action"]
+        if action == "list":
+            cmd_parts = ["git", "config", "--list"]
+        elif action == "get" and "key" in arguments:
+            cmd_parts = ["git", "config", arguments["key"]]
+        elif action == "set" and "key" in arguments and "value" in arguments:
+            cmd_parts = ["git", "config", arguments["key"], arguments["value"]]
+        elif action == "unset" and "key" in arguments:
+            cmd_parts = ["git", "config", "--unset", arguments["key"]]
+
+        # Add global flag if specified
+        if arguments.get("global", False) and "--global" not in cmd_parts:
+            cmd_parts.insert(2, "--global")
+
     return cmd_parts
 
 
 def git_tool_executor(tool_name: str, arguments: Dict[str, Any]) -> str:
     """Execute git tools using dynamic command building."""
     try:
+        # Extract directory parameter if provided
+        working_dir = arguments.pop("directory", None)
+
         command = build_git_command(tool_name, arguments)
-        return execute_git_command(command)
+        return execute_git_command(command, working_dir)
     except Exception as e:
         return f"Failed to execute {tool_name}: {e}"

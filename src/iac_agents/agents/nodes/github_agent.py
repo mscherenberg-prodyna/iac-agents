@@ -6,19 +6,16 @@ import os
 import traceback
 from typing import List, Tuple
 
-from ...logging_system import (
-    log_agent_response,
-    log_agent_start,
-    log_info,
-    log_warning,
-)
+from ...logging_system import (log_agent_response, log_agent_start, log_info,
+                               log_warning)
 from ...templates import template_manager
 from ..git_utils import get_git_tools, git_tool_executor
 from ..github_env_utils import get_github_env_tools, github_env_tool_executor
 from ..mcp_utils import MultiMCPClient
 from ..react_agent import agent_react_step
 from ..state import InfrastructureStateDict
-from ..utils import add_error_to_state, get_github_token, load_agent_response_schema
+from ..utils import (add_error_to_state, get_github_token,
+                     load_agent_response_schema)
 
 AGENT_NAME = "github_agent"
 

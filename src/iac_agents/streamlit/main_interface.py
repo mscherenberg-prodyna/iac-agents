@@ -4,18 +4,11 @@ import streamlit as st
 
 from iac_agents.templates.template_loader import template_loader
 
-from .components import (
-    InputHandler,
-    SessionManager,
-    WorkflowManager,
-    display_chat_interface,
-    display_header,
-    render_compliance_settings,
-    render_deployment_config,
-    render_showcase_scenarios,
-    render_terraform_template_viewer,
-    setup_page_config,
-)
+from .components import (InputHandler, SessionManager, WorkflowManager,
+                         display_chat_interface, display_header,
+                         render_compliance_settings, render_deployment_config,
+                         render_showcase_scenarios,
+                         render_terraform_template_viewer, setup_page_config)
 
 
 class StreamlitInterface:
