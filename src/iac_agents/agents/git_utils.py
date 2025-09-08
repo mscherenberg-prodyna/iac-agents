@@ -47,7 +47,7 @@ def get_git_tools() -> List[Dict[str, Any]]:
         return []
 
 
-def build_git_command(tool_name: str, arguments: Dict[str, Any]) -> str:
+def build_git_command(tool_name: str, arguments: Dict[str, Any]) -> List[str]:
     """Build git command from tool name and arguments using simple mapping."""
 
     # Extract git command from tool name
@@ -98,6 +98,14 @@ def build_git_command(tool_name: str, arguments: Dict[str, Any]) -> str:
         if arguments.get(arg, False):
             cmd_parts.append(flag)
 
+    # Handle options array (if passed as a list of flags)
+    if "options" in arguments:
+        options = arguments["options"]
+        if isinstance(options, list):
+            cmd_parts.extend(options)
+        elif isinstance(options, str):
+            cmd_parts.append(options)
+
     # Handle special cases
     if "message" in arguments:
         cmd_parts.extend(["-m", arguments["message"]])
@@ -110,6 +118,13 @@ def build_git_command(tool_name: str, arguments: Dict[str, Any]) -> str:
 
     if "branch" in arguments and git_cmd in ["push", "pull", "checkout"]:
         cmd_parts.append(arguments["branch"])
+
+    if "pathspec" in arguments:
+        pathspec = arguments["pathspec"]
+        if isinstance(pathspec, list):
+            cmd_parts.extend(pathspec)
+        else:
+            cmd_parts.append(pathspec)
 
     if "files" in arguments:
         cmd_parts.extend(arguments["files"])
@@ -136,7 +151,7 @@ def build_git_command(tool_name: str, arguments: Dict[str, Any]) -> str:
         action = arguments["action"]
         cmd_parts = ["git", "stash", action]
 
-    return " ".join(cmd_parts)
+    return cmd_parts
 
 
 def git_tool_executor(tool_name: str, arguments: Dict[str, Any]) -> str:

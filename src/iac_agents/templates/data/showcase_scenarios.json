@@ -1,4 +1,25 @@
 {
+  "file_sharing_portal": {
+    "title": "File Sharing Portal",
+    "business_context": "Small team needs a web portal to share and access business documents",
+    "user_request": "\nWe need a web portal where our team can upload and download business documents. Just a straightforward way to share files with each other using secure cloud storage.\n",
+    "compliance_requirements": [
+      "GDPR"
+    ],
+    "suggested_answers": [
+      "About 8-12 team members will access the portal regularly, so a small team.",
+      "",
+      "Mainly PDFs, Word documents, Excel spreadsheets, and PowerPoint presentations. Most files are under 10MB, but occasionally we might have larger presentations up to 50MB.",
+      "",
+      "For the time being, public access should be allowed, but we want to keep the login process simple with a password that is stored in a vault - nothing too complicated like having to use your Microsoft account.",
+      "",
+      "We don't need versioning or detailed audit logs - just basic functionality to upload and download files.",
+      "",
+      "No notifications needed - we just want a simple file sharing solution without extra complexity.",
+      "",
+      "No other requirements at this point in time! Please use the existing resource group 'rg-iap-demo' for deployment, do not create a new one."
+    ]
+  },
   "ai_ml_platform": {
     "title": "AI/ML Platform",
     "business_context": "Research team needs scalable ML infrastructure for model training and inference",
@@ -38,27 +59,6 @@
       "Only our internal team should be able to upload and view the reports - no external access needed. Basic security is fine, nothing too complex.",
       "",
       "No other requirements at this point in time! Make sure to use the existing resource group 'rg-iap-demo' for deployment, do not create a new one."
-    ]
-  },
-  "file_sharing_portal": {
-    "title": "File Sharing Portal",
-    "business_context": "Small team needs a web portal to share and access business documents",
-    "user_request": "\nWe need a web portal where our team can upload and download business documents. Just a straightforward way to share files with each other using secure cloud storage.\n",
-    "compliance_requirements": [
-      "GDPR"
-    ],
-    "suggested_answers": [
-      "About 8-12 team members will access the portal regularly, so a small team.",
-      "",
-      "Mainly PDFs, Word documents, Excel spreadsheets, and PowerPoint presentations. Most files are under 10MB, but occasionally we might have larger presentations up to 50MB.",
-      "",
-      "For the time being, public access should be allowed, but we want to keep the login process simple with a password that is stored in a vault - nothing too complicated like having to use your Microsoft account.",
-      "",
-      "We don't need versioning or detailed audit logs - just basic functionality to upload and download files.",
-      "",
-      "No notifications needed - we just want a simple file sharing solution without extra complexity.",
-      "",
-      "No other requirements at this point in time! Please use the existing resource group 'rg-iap-demo' for deployment, do not create a new one."
     ]
   }
 }

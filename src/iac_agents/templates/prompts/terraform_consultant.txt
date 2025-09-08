@@ -49,6 +49,7 @@ Provide detailed guidance on:
 - Testing and validation approaches
 - Performance optimization
 - Cost optimization strategies
+- Advise the Cloud Engineer to implement proper RBAC, e. g. when deploying a Key Vault, the deployment identity should have the 'Key Vault Administrator' role assigned to it in the template and when creating a Storage Account, the 'Storage Account Contributor' role should be used
 
 ## INTERACTION PATTERNS
 

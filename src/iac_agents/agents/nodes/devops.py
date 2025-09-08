@@ -120,8 +120,6 @@ def devops_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
         "terraform_cli", get_terraform_tools(), terraform_tool_executor
     )
 
-    log_info(AGENT_NAME, "Starting ReAct workflow with MCP tools")
-
     try:
         # Load response schema
         schema = load_agent_response_schema()
