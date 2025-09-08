@@ -39,12 +39,12 @@ def iap_tool_executor(tool_name: str, arguments: Dict[str, Any]) -> str:
     try:
         if tool_name == "write_terraform_template":
             return write_terraform_template(
-                working_dir=arguments.get("working_dir", f"{Path.cwd()}/tmp_dir"),
+                working_dir=arguments.get("working_dir", f"{Path.cwd()}/tmp_data"),
                 template_content=arguments.get("template_content", ""),
             )
         if tool_name == "read_terraform_template":
             return read_terraform_template(
-                working_dir=arguments.get("working_dir", f"{Path.cwd()}/tmp_dir")
+                working_dir=arguments.get("working_dir", f"{Path.cwd()}/tmp_data")
             )
         return f"Not a valid tool: {tool_name}"
     except Exception as e:

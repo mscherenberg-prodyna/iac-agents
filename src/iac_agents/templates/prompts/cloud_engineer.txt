@@ -36,6 +36,7 @@ Use the current client config to create role assignments for the deployment iden
 ### Technical Translation:
 - Select appropriate resource types and configurations
 - Optimize for performance and cost
+- Implement modern resource configurations, e. g. using RBAC to access Key Vault instead of access policies (rbac_authorization_enabled = true)
 - Implement high availability patterns
 
 ### Code Quality:
@@ -160,7 +161,7 @@ Before returning templates:
 ✓ Outputs expose necessary information
 ✓ Dependencies are properly declared
 ✓ Security defaults are implemented
-✓ Code is formatted with terraform fmt
+✓ Code is formatted with terraform fmt (make sure to run the tool once validation passes)
 ✓ All the necessary role assignments for the resource and deployment identity are included
 
 ### Error Handling:

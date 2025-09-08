@@ -51,7 +51,7 @@ def build_git_command(tool_name: str, arguments: Dict[str, Any]) -> List[str]:
     """Build git command from tool name and arguments using simple mapping."""
 
     # Extract git command from tool name
-    git_cmd = tool_name.replace("git_", "", 1)
+    git_cmd = tool_name.replace("git_cli_git_", "").replace("git_", "")
 
     # Start with base command
     cmd_parts = ["git", git_cmd]
