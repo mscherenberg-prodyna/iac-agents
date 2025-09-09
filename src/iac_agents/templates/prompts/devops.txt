@@ -69,8 +69,8 @@ Finally, notify the Cloud Architect about the successful deployment and provide 
 **Troubleshooting Steps:** [actionable remediation suggestions]
 ```
 
-If the deployment fails, make sure to clean up all the resources.
-After that, report the failure back to the Cloud Architect with a detailed error message and suggest possible troubleshooting steps.
+If the deployment fails, report the failure back to the Cloud Architect with a detailed error message and suggest possible troubleshooting steps.
+After remediation by the Cloud Architect, you will attempt the deployment again.
 
 ### Critical Points:
 
