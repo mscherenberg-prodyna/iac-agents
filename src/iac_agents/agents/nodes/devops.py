@@ -6,16 +6,25 @@ import os
 from pathlib import Path
 from typing import List, Tuple
 
-from ...logging_system import (get_thread_id, log_agent_response,
-                               log_agent_start, log_info, log_warning)
+from ...logging_system import (
+    get_thread_id,
+    log_agent_response,
+    log_agent_start,
+    log_info,
+    log_warning,
+)
 from ...templates import template_manager
 from ..git_utils import get_git_tools, git_tool_executor
 from ..mcp_utils import MultiMCPClient
 from ..react_agent import agent_react_step
 from ..state import InfrastructureStateDict
 from ..terraform_utils import get_terraform_tools, terraform_tool_executor
-from ..utils import (add_error_to_state, get_github_token,
-                     load_agent_response_schema, verify_azure_auth)
+from ..utils import (
+    add_error_to_state,
+    get_github_token,
+    load_agent_response_schema,
+    verify_azure_auth,
+)
 
 AGENT_NAME = "devops"
 
@@ -74,7 +83,13 @@ def devops_agent(state: InfrastructureStateDict) -> InfrastructureStateDict:
     deployment_dir = (
         Path.cwd() / "terraform_deployments" / f"deployment_{get_thread_id()}"
     )
-    deployment_dir.mkdir(parents=True, exist_ok=True)
+    if not os.path.isdir(deployment_dir):
+        os.makedirs(deployment_dir)
+        with open(deployment_dir / ".gitignore", "w", encoding="utf-8") as f:
+            f.write(".terraform/\n")
+            f.write("*.tfstate\n")
+            f.write("*.tfstate.backup\n")
+            f.write(".terraform.lock.hcl\n")
 
     # Write Terraform configuration
     main_tf_path = deployment_dir / "main.tf"
