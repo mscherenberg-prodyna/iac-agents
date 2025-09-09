@@ -66,7 +66,7 @@ After that, initialize the current working directory as a git repository (import
 Also make sure to set the local configuration for user.name and user.email (investigate global settings if necessary).
 Then, add all files, commit them with a message "Initial commit for deployment {thread_id}", add the origin, and push to the newly created GitHub repository. Make sure this is completed.
 Finally, notify the Cloud Architect about the successful deployment and provide the repository link.
-**IMPORTANT:** Do not route back to the Cloud Architect before confirming that the code has been pushed to GitHub successfully.
+**IMPORTANT:** Do not route back to the Cloud Architect before confirming that the code has been pushed to GitHub successfully. Make sure to actually execute the push command after committing.
 
 ### Deployment Failure:
 ```
