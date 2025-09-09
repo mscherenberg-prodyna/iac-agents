@@ -62,6 +62,7 @@ def build_git_command(tool_name: str, arguments: Dict[str, Any]) -> List[str]:
     # Map common argument patterns to git flags
     arg_mappings = {
         "all": "-a",
+        "A": "-A",  # git add -A (add all files including untracked)
         "force": "--force",
         "cached": "--cached",
         "porcelain": "--porcelain",
@@ -79,6 +80,7 @@ def build_git_command(tool_name: str, arguments: Dict[str, Any]) -> List[str]:
         "amend": "--amend",
         "name_only": "--name-only",
         "set_upstream": "-u",
+        "set_upstream_flag": "-u",
         "create_branch": "-b",
         "force_delete": "-D",
         "include_untracked": "-u",
@@ -91,6 +93,7 @@ def build_git_command(tool_name: str, arguments: Dict[str, Any]) -> List[str]:
         "others": "--others",
         "ignored": "--ignored",
         "global": "--global",
+        "local": "--local",
         "bare": "--bare",
         "no_commit": "--no-commit",
         "recursive": "--recursive",
@@ -109,6 +112,15 @@ def build_git_command(tool_name: str, arguments: Dict[str, Any]) -> List[str]:
         elif isinstance(options, str):
             cmd_parts.append(options)
 
+    # Handle raw args (most flexible - direct CLI arguments)
+    if "args" in arguments:
+        args_str = arguments["args"]
+        if isinstance(args_str, str):
+            cmd_parts.extend(args_str.split())
+        elif isinstance(args_str, list):
+            cmd_parts.extend(args_str)
+        return cmd_parts
+
     # Handle special cases
     if "message" in arguments:
         cmd_parts.extend(["-m", arguments["message"]])
@@ -121,6 +133,16 @@ def build_git_command(tool_name: str, arguments: Dict[str, Any]) -> List[str]:
 
     if "branch" in arguments and git_cmd in ["push", "pull", "checkout"]:
         cmd_parts.append(arguments["branch"])
+
+    # Handle git add patterns
+    if "filepattern" in arguments:
+        cmd_parts.append(arguments["filepattern"])
+
+    # Handle git push repository/refspec
+    if "repository" in arguments:
+        cmd_parts.append(arguments["repository"])
+    if "refspec" in arguments:
+        cmd_parts.append(arguments["refspec"])
 
     if "pathspec" in arguments:
         pathspec = arguments["pathspec"]
@@ -154,20 +176,31 @@ def build_git_command(tool_name: str, arguments: Dict[str, Any]) -> List[str]:
         action = arguments["action"]
         cmd_parts = ["git", "stash", action]
 
-    elif git_cmd == "config" and "action" in arguments:
-        action = arguments["action"]
-        if action == "list":
-            cmd_parts = ["git", "config", "--list"]
-        elif action == "get" and "key" in arguments:
-            cmd_parts = ["git", "config", arguments["key"]]
-        elif action == "set" and "key" in arguments and "value" in arguments:
+    elif git_cmd == "config":
+        # Handle git config without requiring 'action' parameter
+        if "key" in arguments and "value" in arguments:
+            # Setting a config value
             cmd_parts = ["git", "config", arguments["key"], arguments["value"]]
-        elif action == "unset" and "key" in arguments:
-            cmd_parts = ["git", "config", "--unset", arguments["key"]]
+        elif "key" in arguments:
+            # Getting a config value
+            cmd_parts = ["git", "config", arguments["key"]]
+        elif "action" in arguments:
+            # Original structured approach
+            action = arguments["action"]
+            if action == "list":
+                cmd_parts = ["git", "config", "--list"]
+            elif action == "get" and "key" in arguments:
+                cmd_parts = ["git", "config", arguments["key"]]
+            elif action == "set" and "key" in arguments and "value" in arguments:
+                cmd_parts = ["git", "config", arguments["key"], arguments["value"]]
+            elif action == "unset" and "key" in arguments:
+                cmd_parts = ["git", "config", "--unset", arguments["key"]]
 
-        # Add global flag if specified
+        # Add global/local flags if specified
         if arguments.get("global", False) and "--global" not in cmd_parts:
             cmd_parts.insert(2, "--global")
+        elif arguments.get("local", False) and "--local" not in cmd_parts:
+            cmd_parts.insert(2, "--local")
 
     return cmd_parts
 
@@ -175,12 +208,23 @@ def build_git_command(tool_name: str, arguments: Dict[str, Any]) -> List[str]:
 def git_tool_executor(tool_name: str, arguments: Dict[str, Any]) -> str:
     """Execute git tools using dynamic command building."""
     try:
-        # Extract directory parameter if provided (support both 'directory' and 'repo_path')
-        working_dir = arguments.pop("directory", None) or arguments.pop("repo_path", None)
-        
+        # Extract directory parameter if provided (support multiple names)
+        working_dir = (
+            arguments.pop("directory", None)
+            or arguments.pop("repo_path", None)
+            or arguments.pop("working_directory", None)
+        )
+
         # Handle legacy parameter mappings
         if "add_all" in arguments:
             arguments["all"] = arguments.pop("add_all")
+
+        # Handle set_upstream flag for git push
+        if git_cmd := tool_name.replace("git_cli_git_", "").replace("git_", ""):
+            if git_cmd == "push" and arguments.get("set_upstream"):
+                if "args" not in arguments:
+                    # Add -u flag for set_upstream
+                    arguments["set_upstream_flag"] = True
 
         command = build_git_command(tool_name, arguments)
         return execute_git_command(command, working_dir)
