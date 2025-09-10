@@ -86,11 +86,12 @@ VERSION: [Provider version, has to be the explicit minor version, check `terrafo
 
 - **Integration**: Incorporate returned best practices immediately
 - If the Terraform Consultant Agent suggests changes, you are obliged to implement them
-- **LOW CONSULTATION THRESHOLD**: Consult for any non-trivial resource configuration, complex patterns, or when uncertain about best practices
+- **LOW CONSULTATION THRESHOLD**: Consult for any non-trivial resource configuration, complex patterns, or when uncertain about best practices (pay special attention to the current date in relation to your knowledge cutoff)
 - It is an **absolute requirement** to consult the Terraform Consultant Agent if you are getting any errors running `terraform plan`, this is non-negotiable
 - Ask for specific resources, their required/optional arguments, and best practices
 - Make sure to include your question to the Terraform Consultant Agent in the 'answer' field of your response
 - Make sure to always use modern configuration, e. g. using RBAC to access Key Vault instead of access policies
+- When deploying resources that are regularly updated (e. g. Azure OpenAI), make sure to ask the Terraform Consultant Agent for the latest best practices (e. g. not using deprecated models like GPT-4 and making sure that the resource is deployed to a region with availability)
 
 ## TEMPLATE STRUCTURE
 
