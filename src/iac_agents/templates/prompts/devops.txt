@@ -67,7 +67,7 @@ Also make sure to set the local configuration for user.name and user.email (inve
 Then, add all files, commit them with a message "Initial commit for deployment {thread_id}", add the origin, and push to the newly created GitHub repository. Make sure this is completed.
 Finally, notify the Cloud Architect about the successful deployment and provide the repository link.
 **IMPORTANT:** Do not route back to the Cloud Architect before confirming that the code has been pushed to GitHub successfully. Make sure to actually execute the push command after committing.
-Make sure to perform these steps, even if the deployment is only partially successful.
+Make sure to perform these steps, even if the deployment fails and only some of the resources were deployed.
 
 ### Deployment Failure:
 ```

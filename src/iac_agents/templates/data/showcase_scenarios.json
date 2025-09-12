@@ -29,7 +29,7 @@
       "ISO 27001"
     ],
     "suggested_answers": [
-      "We want to start by using the newest OpenAI models since that is what our developers are most familiar with. Make sure to include a modern model deployment.",
+      "We want to start by using the newest OpenAI models since that is what our developers are most familiar with.",
       "",
       "We are looking at 10 - 15 developers doing real-time inference, though usually not at the same time.",
       "",
