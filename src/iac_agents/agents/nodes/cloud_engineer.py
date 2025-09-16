@@ -8,16 +8,19 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Tuple
 
-from ...logging_system import (log_agent_response, log_agent_start, log_info,
-                               log_warning)
+from ...logging_system import log_agent_response, log_agent_start, log_info, log_warning
 from ...templates.template_manager import template_manager
 from ..iap_workflow_utils import get_iap_tools, iap_tool_executor
 from ..mcp_utils import MultiMCPClient
 from ..react_agent import agent_react_step
 from ..state import InfrastructureStateDict, WorkflowStage
 from ..terraform_utils import get_terraform_tools, terraform_tool_executor
-from ..utils import (add_error_to_state, get_azure_subscription_info,
-                     load_agent_response_schema, verify_azure_auth)
+from ..utils import (
+    add_error_to_state,
+    get_azure_subscription_info,
+    load_agent_response_schema,
+    verify_azure_auth,
+)
 
 AGENT_NAME = "cloud_engineer"
 

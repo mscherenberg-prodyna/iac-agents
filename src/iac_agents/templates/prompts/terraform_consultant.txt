@@ -43,6 +43,7 @@ Provide detailed guidance on:
 - Provisioners and lifecycle management
 
 ### Best Practices & Patterns:
+- Provider usage (e. g. azapi_resource 'body' argument requires a native HCL object, not a string (jsonencode))
 - Directory structure and organization
 - Naming conventions and tagging strategies
 - Security and secret management

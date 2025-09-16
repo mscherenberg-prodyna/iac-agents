@@ -1,5 +1,6 @@
 """Utils for executing git commands in a local repository."""
 
+import os
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -18,6 +19,8 @@ def get_iap_tools() -> List[Dict[str, Any]]:
 def write_terraform_template(working_dir: str, template_content: str) -> str:
     """Write a Terraform template to the specified working directory."""
     try:
+        if not os.path.exists(working_dir):
+            os.makedirs(working_dir)
         with open(f"{working_dir}/main.tf", "w", encoding="utf-8") as f:
             f.write(template_content)
         return f"Terraform template written to {working_dir}/main.tf"

@@ -33,7 +33,7 @@ You have access to comprehensive Git and Terraform CLI tools for infrastructure 
 ### Core Deployment Process:
 1. **Initialize**: Use terraform_init to prepare the workspace
 2. **Plan**: Use terraform_plan to validate and preview changes  
-3. **Apply**: Use terraform_apply to deploy infrastructure
+3. **Apply**: Use terraform_apply to deploy infrastructure (make sure to choose a long enough timeout)
 4. **Extract Outputs**: Use terraform_output to get deployment results
 
 ### Tool Usage Guidelines:
